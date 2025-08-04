@@ -1,36 +1,36 @@
-# Architecture Overview
+# Обзор архитектуры
 
-This document provides a high-level overview of the system architecture, including the main components and the authentication flow.
+В этом документе представлен высокоуровневый обзор архитектуры системы, включая основные компоненты и процесс аутентификации.
 
-## Components
+## Компоненты
 
-The system consists of two main components:
+Система состоит из двух основных компонентов:
 
--   **Callback Server (`src/callback_server`):** A lightweight FastAPI server responsible for a single task: capturing the `authorization_code` during the OAuth2 flow. It starts up, waits for the user to be redirected from the authentication provider, saves the code to a temporary file, and shuts down.
+- **Callback Server (`src/callback_server`):** Легковесный сервер на FastAPI, отвечающий за одну задачу: перехват `authorization_code` в процессе OAuth2. Он запускается, ожидает перенаправления пользователя от провайдера аутентификации, сохраняет код во временный файл и завершает работу.
 
--   **HH Adapter (`src/hh_adapter`):** A comprehensive client for the HH.ru API. It handles token management (exchanging the code for tokens, refreshing them automatically) and provides a clean interface for making API requests.
+- **HH Adapter (`src/hh_adapter`):** Комплексный клиент для API HH.ru. Он управляет токенами (обмен кода на токены, их автоматическое обновление) и предоставляет чистый интерфейс для выполнения запросов к API.
 
-## Authentication Flow
+## Процесс аутентификации
 
-The diagram below illustrates the complete authentication process:
+Диаграмма ниже иллюстрирует полный процесс аутентификации:
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant App as Main Application
+    participant User as Пользователь
+    participant App as Основное приложение
     participant Callback as Callback Server
     participant HH as HH.ru API
 
-    App->>+Callback: Start server in background
-    App->>User: Open browser with Auth URL
-    User->>+HH: Login and grant access
-    HH-->>-User: Redirect to http://localhost/callback?code=...
-    User->>+Callback: Request /callback?code=...
-    Callback-->>-User: Show "Success" page
-    Callback->>App: Save code to file & shutdown
-    App->>App: Read code from file
-    App->>HH: Exchange code for tokens
-    HH-->>App: Return access & refresh tokens
-    App->>HH: Make API requests with access token
-    HH-->>App: Return requested data
+    App->>+Callback: Запустить сервер в фоновом режиме
+    App->>User: Открыть браузер с URL для аутентификации
+    User->>+HH: Войти и предоставить доступ
+    HH-->>-User: Перенаправить на http://localhost/callback?code=...
+    User->>+Callback: Запросить /callback?code=...
+    Callback-->>-User: Показать страницу "Успех"
+    Callback->>App: Сохранить код в файл и выключиться
+    App->>App: Прочитать код из файла
+    App->>HH: Обменять код на токены
+    HH-->>App: Вернуть access и refresh токены
+    App->>HH: Делать запросы к API с access токеном
+    HH-->>App: Вернуть запрошенные данные
 ```
