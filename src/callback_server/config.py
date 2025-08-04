@@ -1,11 +1,14 @@
 # src/callback_server/config.py
 # --- agent_meta ---
-# role: callback-server-settings-model
+# role: oauth2-callback-server-settings
 # owner: @backend
-# contract: Defines the settings structure for the callback server.
-# last_reviewed: 2025-07-24
+# contract: Модель конфигурации для OAuth2 callback сервера
+# last_reviewed: 2025-08-04
 # interfaces:
 #   - CallbackServerSettings
+# dependencies:
+#   - pydantic_settings.BaseSettings
+# patterns: Configuration Object, Settings Pattern
 # --- /agent_meta ---
 
 from pydantic_settings import BaseSettings, SettingsConfigDict

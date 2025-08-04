@@ -1,11 +1,14 @@
 # src/hh_adapter/auth.py
 # --- agent_meta ---
-# role: hh-auth-service
+# role: hh-oauth2-auth-service
 # owner: @backend
-# contract: Provides HH.ru authorization URL.
-# last_reviewed: 2025-07-24
+# contract: Генерирует URL для OAuth2 авторизации HH.ru
+# last_reviewed: 2025-08-04
 # interfaces:
 #   - HHAuthService.get_auth_url() -> str
+# dependencies:
+#   - HHSettings
+# patterns: Single Responsibility Principle, Service Pattern
 # --- /agent_meta ---
 
 from src.utils import get_logger

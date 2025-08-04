@@ -1,11 +1,16 @@
 # src/callback_server/code_handler.py
 # --- agent_meta ---
-# role: auth-code-file-handler
+# role: oauth2-code-file-handler
 # owner: @backend
-# contract: Manages reading, writing, and cleaning up the auth code file.
-# last_reviewed: 2025-07-24
+# contract: Обработчик временных файлов для хранения OAuth2 кодов авторизации
+# last_reviewed: 2025-08-04
 # interfaces:
-#   - CodeFileHandler
+#   - CodeFileHandler.write(code: str) -> None
+#   - CodeFileHandler.read() -> str
+#   - CodeFileHandler.cleanup() -> None
+#   - CodeFileHandler.exists() -> bool
+# dependencies: None (pure file operations)
+# patterns: Data Access Object (DAO), Resource Management
 # --- /agent_meta ---
 
 import os

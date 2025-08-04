@@ -1,11 +1,14 @@
 # src/hh_adapter/config.py
 # --- agent_meta ---
-# role: hh-adapter-settings-model
+# role: hh-oauth2-settings-model
 # owner: @backend
-# contract: Defines the settings structure for the HH.ru adapter.
-# last_reviewed: 2025-07-24
+# contract: Модель конфигурации OAuth2 интеграции с API HH.ru
+# last_reviewed: 2025-08-04
 # interfaces:
 #   - HHSettings
+# dependencies:
+#   - pydantic_settings.BaseSettings
+# patterns: Configuration Object, Settings Pattern
 # --- /agent_meta ---
 
 from pydantic_settings import BaseSettings, SettingsConfigDict

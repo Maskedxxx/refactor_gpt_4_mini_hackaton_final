@@ -1,15 +1,16 @@
 # src/hh_adapter/tokens.py
 # --- agent_meta ---
-# role: hh-token-manager
+# role: hh-oauth2-token-manager
 # owner: @backend
-# contract: Manages the lifecycle of HH.ru API tokens with automatic refresh
+# contract: Управляет жизненным циклом OAuth2 токенов HH.ru с автоматическим обновлением
 # last_reviewed: 2025-08-04
 # interfaces:
-#   - HHTokenManager.__init__(settings, session, access_token=None, refresh_token=None, expires_in=0) -> None
 #   - HHTokenManager.exchange_code(code: str) -> None
 #   - HHTokenManager.get_valid_access_token() -> str
-#   - HHTokenManager._refresh_token() -> None  # internal
-#   - HHTokenManager._update_tokens(tokens: Dict[str, Any]) -> None  # internal
+# dependencies:
+#   - HHSettings
+#   - aiohttp.ClientSession
+# patterns: Token Manager, Automatic Refresh, OAuth2 RFC 6749
 # --- /agent_meta ---
 
 import time

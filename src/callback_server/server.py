@@ -1,11 +1,16 @@
 # src/callback_server/server.py
 # --- agent_meta ---
-# role: callback-server-logic
+# role: oauth2-callback-fastapi-app
 # owner: @backend
-# contract: Handles the OAuth callback, saves the code, and signals shutdown.
-# last_reviewed: 2025-07-24
+# contract: FastAPI приложение для обработки OAuth2 callback запросов
+# last_reviewed: 2025-08-04
 # interfaces:
-#   - create_app()
+#   - create_app(shutdown_event: asyncio.Event) -> FastAPI
+# dependencies:
+#   - CodeFileHandler
+#   - FastAPI
+#   - asyncio.Event
+# patterns: Factory Pattern, Event-driven Architecture
 # --- /agent_meta ---
 
 import asyncio

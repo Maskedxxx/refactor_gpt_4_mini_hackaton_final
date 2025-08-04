@@ -1,16 +1,20 @@
 # src/callback_server/manager.py
 # --- agent_meta ---
-# role: callback-server-manager
+# role: oauth2-callback-server-manager
 # owner: @backend
-# contract: Manages the lifecycle of the callback server.
-# last_reviewed: 2025-07-24
+# contract: Управляет жизненным циклом callback сервера для OAuth2 авторизации
+# last_reviewed: 2025-08-04
 # interfaces:
-#   - ServerManager
+#   - ServerManager.run_and_wait_for_code() -> str
+# dependencies:
+#   - CallbackServerSettings
+#   - CodeFileHandler
+#   - uvicorn.Server
+# patterns: Facade Pattern, Server Lifecycle Management
 # --- /agent_meta ---
 
 import asyncio
 import sys
-import threading
 
 import uvicorn
 

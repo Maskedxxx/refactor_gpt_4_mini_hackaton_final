@@ -1,11 +1,16 @@
 # src/hh_adapter/client.py
 # --- agent_meta ---
-# role: hh-api-client
+# role: hh-authenticated-api-client
 # owner: @backend
-# contract: Implements the client for interacting with the HH.ru API.
-# last_reviewed: 2025-07-24
+# contract: HTTP клиент для аутентифицированных запросов к API HH.ru
+# last_reviewed: 2025-08-04
 # interfaces:
 #   - HHApiClient.request(endpoint: str, method: str, data: Optional[Dict], params: Optional[Dict]) -> Dict[str, Any]
+# dependencies:
+#   - HHTokenManager
+#   - HHSettings
+#   - aiohttp.ClientSession
+# patterns: HTTP Client, Dependency Injection, Error Handling
 # --- /agent_meta ---
 
 from typing import Any, Dict, Optional
