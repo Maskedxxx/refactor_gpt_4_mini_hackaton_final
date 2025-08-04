@@ -47,6 +47,9 @@ class HHTokenManager:
         self.refresh_token = refresh_token
         # Сразу вычисляем абсолютное время истечения токена для удобства.
         self.expires_at = time.time() + expires_in
+        
+        token_status = "с токенами" if access_token else "без токенов"
+        logger.debug("HHTokenManager инициализирован %s", token_status)
 
     async def exchange_code(self, code: str) -> None:
         """
@@ -55,6 +58,9 @@ class HHTokenManager:
         Args:
             code: Код авторизации.
         """
+        logger.info("Начинается обмен кода авторизации на токены")
+        logger.debug("Код авторизации: %s...", code[:8] if code else "None")
+        
         # Для первичного получения токенов HH.ru требует grant_type 'authorization_code'.
         payload = {
             'grant_type': 'authorization_code',
@@ -72,8 +78,9 @@ class HHTokenManager:
                 response.raise_for_status()
                 tokens = await response.json()
                 self._update_tokens(tokens)
+                logger.info("Токены успешно получены и обновлены")
         except ClientError as e:
-            logger.error(f"Ошибка при обмене кода на токен: {e}")
+            logger.error("Ошибка при обмене кода на токен: %s", e)
             raise HHTokenError(f"Не удалось обменять код на токен: {e}") from e
 
     async def get_valid_access_token(self) -> str:
@@ -85,20 +92,33 @@ class HHTokenManager:
         """
         # Обновляем токен превентивно, за 5 минут до истечения срока,
         # чтобы избежать гонки состояний и ошибок при реальных запросах.
-        if not self.access_token or time.time() + 300 >= self.expires_at:
+        current_time = time.time()
+        expires_soon = current_time + 300 >= self.expires_at
+        
+        if not self.access_token:
+            logger.debug("Токен доступа отсутствует, требуется обновление")
+        elif expires_soon:
+            logger.debug("Токен доступа истекает в течение 5 минут, требуется обновление")
+            
+        if not self.access_token or expires_soon:
             await self._refresh_token()
         
         if not self.access_token:
             # Если токен так и не появился, значит, произошла ошибка.
+            logger.error("Отсутствует access_token после попытки обновления")
             raise HHTokenError("Отсутствует access_token после попытки обновления.")
 
+        logger.debug("Возвращается действительный токен доступа")
         return self.access_token
 
     async def _refresh_token(self) -> None:
         """Обновление токена доступа."""
+        logger.info("Начинается обновление токена доступа")
+        
         if not self.refresh_token:
             # Если refresh_token отсутствует, мы не можем обновить access_token
             # и должны будем заново проходить процесс авторизации.
+            logger.error("Отсутствует refresh_token для обновления")
             raise HHTokenError("Отсутствует refresh_token для обновления.")
 
         # Для обновления токена используется grant_type 'refresh_token'.
@@ -112,8 +132,9 @@ class HHTokenManager:
                 response.raise_for_status()
                 tokens = await response.json()
                 self._update_tokens(tokens)
+                logger.info("Токен доступа успешно обновлен")
         except ClientError as e:
-            logger.error(f"Ошибка при обновлении токена: {e}")
+            logger.error("Ошибка при обновлении токена: %s", e)
             raise HHTokenError(f"Не удалось обновить токен: {e}") from e
 
     def _update_tokens(self, tokens: Dict[str, Any]) -> None:
@@ -123,8 +144,15 @@ class HHTokenManager:
         Args:
             tokens: Словарь с токенами.
         """
+        old_token_present = bool(self.access_token)
+        
         self.access_token = tokens['access_token']
         # При обновлении токена HH.ru может не вернуть новый refresh_token.
         # В таком случае стандарт OAuth2 предписывает использовать старый.
         self.refresh_token = tokens.get('refresh_token', self.refresh_token)
         self.expires_at = time.time() + tokens['expires_in']
+        
+        logger.debug("Токены обновлены: access_token=%s, refresh_token=%s, expires_in=%ds", 
+                    "обновлен" if old_token_present else "получен",
+                    "обновлен" if tokens.get('refresh_token') else "сохранен старый",
+                    tokens['expires_in'])

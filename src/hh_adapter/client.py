@@ -40,6 +40,7 @@ class HHApiClient:
         self._settings = settings
         self._token_manager = token_manager
         self._session = session
+        logger.debug("HHApiClient инициализирован для base_url: %s", settings.base_url)
 
     async def request(
         self, endpoint: str, method: str = 'GET', data: Optional[Dict] = None, params: Optional[Dict] = None
@@ -56,11 +57,16 @@ class HHApiClient:
         Returns:
             Ответ от API в виде словаря.
         """
+        url = f'{self._settings.base_url}{endpoint}'
+        logger.info("Выполняется запрос к API: %s %s", method, endpoint)
+        logger.debug("Полный URL: %s, params: %s, data: %s", url, params, "[присутствует]" if data else None)
+        
         try:
             # Перед каждым запросом получаем действительный токен.
             # Менеджер токенов сам позаботится о его обновлении, если нужно.
             access_token = await self._token_manager.get_valid_access_token()
         except HHTokenError as e:
+            logger.error("Ошибка получения токена доступа: %s", e)
             raise HHApiError(f"Ошибка получения токена доступа: {e}") from e
 
         # Формируем стандартные заголовки для запроса к API HH.ru.
@@ -68,16 +74,23 @@ class HHApiClient:
             'Authorization': f'Bearer {access_token}',
             'User-Agent': 'ResumeBot/1.0'
         }
-        url = f'{self._settings.base_url}{endpoint}'
 
         try:
             async with self._session.request(method, url, headers=headers, params=params, json=data) as response:
+                logger.debug("Получен ответ: status=%d, content-type=%s", 
+                           response.status, response.headers.get('content-type', 'unknown'))
                 response.raise_for_status()
+                
                 # Некоторые запросы (например, DELETE) могут возвращать пустой ответ
                 # со статусом 204, который нельзя парсить как JSON.
                 if response.status == 204:  # No Content
+                    logger.debug("Получен ответ без содержимого (204)")
                     return {}
-                return await response.json()
+                    
+                result = await response.json()
+                logger.info("Запрос к API успешно выполнен: %s %s", method, endpoint)
+                return result
+                
         except ClientError as e:
-            logger.error(f"Ошибка при запросе к API {url}: {e}")
+            logger.error("Ошибка при запросе к API %s: %s", url, e)
             raise HHApiError(f"Ошибка API: {e}") from e

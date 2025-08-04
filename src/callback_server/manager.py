@@ -30,6 +30,7 @@ class ServerManager:
         self._settings = settings
         self._code_handler = CodeFileHandler()
         self._shutdown_event = asyncio.Event()
+        logger.debug("ServerManager инициализирован для %s:%d", settings.host, settings.port)
 
     async def run_and_wait_for_code(self) -> str:
         """
@@ -38,6 +39,8 @@ class ServerManager:
         Returns:
             Код авторизации.
         """
+        logger.info("Запуск callback сервера для получения кода авторизации")
+        logger.debug("Очистка предыдущих файлов с кодом авторизации")
         self._code_handler.cleanup()
 
         config = uvicorn.Config(
@@ -47,17 +50,25 @@ class ServerManager:
             log_level="warning",
         )
         server = uvicorn.Server(config)
-
+        
+        logger.info("Сервер запускается на %s:%d", self._settings.host, self._settings.port)
         server_task = asyncio.create_task(server.serve())
+        
+        logger.info("Ожидание получения кода авторизации...")
         await self._shutdown_event.wait()
+        
+        logger.info("Получен сигнал завершения, останавливаем сервер")
         server.should_exit = True
         await server_task
+        logger.debug("Сервер успешно остановлен")
 
         try:
             code = self._code_handler.read()
+            logger.info("Код авторизации успешно получен: %s...", code[:8] if code else "None")
             return code
         except FileNotFoundError:
-            logger.error("Сервер был остановлен, но код авторизации не был получен.")
+            logger.error("Сервер был остановлен, но код авторизации не был получен")
             sys.exit(1)
         finally:
+            logger.debug("Очистка временных файлов")
             self._code_handler.cleanup()
