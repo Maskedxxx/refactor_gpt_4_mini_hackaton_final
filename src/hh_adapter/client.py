@@ -22,20 +22,55 @@ logger = get_logger(__name__)
 
 
 class HHApiError(Exception):
-    """Базовое исключение для ошибок API клиента."""
+    """
+    Исключение для ошибок при взаимодействии с API HeadHunter.
+    
+    Возникает при HTTP ошибках, проблемах сети, некорректных ответах API
+    или других проблемах взаимодействия с внешним сервисом. Оборачивает
+    исходные исключения для удобства обработки на верхних уровнях.
+    """
     pass
 
 class HHApiClient:
-    """Клиент для работы с API HeadHunter."""
+    """
+    HTTP клиент для взаимодействия с REST API HeadHunter.
+    
+    Предоставляет высокоуровневый интерфейс для выполнения аутентифицированных
+    запросов к API HH.ru. Автоматически управляет токенами доступа через 
+    интеграцию с HHTokenManager, обеспечивая бесшовную работу приложения.
+    
+    Основные возможности:
+    - Автоматическая аутентификация всех запросов
+    - Прозрачное обновление истекших токенов
+    - Обработка различных HTTP методов (GET, POST, PUT, DELETE)
+    - Автоматическая сериализация/десериализация JSON
+    - Комплексная обработка ошибок и логирование
+    
+    Attributes:
+        _settings: Конфигурация API (base_url, endpoints)
+        _token_manager: Менеджер OAuth2 токенов  
+        _session: Переиспользуемая HTTP сессия aiohttp
+    """
 
     def __init__(self, settings: HHSettings, token_manager: HHTokenManager, session: aiohttp.ClientSession):
         """
-        Инициализация клиента API.
+        Инициализация HTTP клиента для API HeadHunter.
 
         Args:
-            settings: Настройки для сервиса HH.ru.
-            token_manager: Менеджер токенов.
-            session: Сессия aiohttp.
+            settings: Конфигурация подключения к API HH.ru, включая base_url
+                     и другие параметры. Обычно загружается из переменных окружения.
+            token_manager: Экземпляр HHTokenManager для управления OAuth2 токенами.
+                          Должен быть предварительно инициализирован с валидными токенами.
+            session: Переиспользуемая aiohttp сессия для выполнения HTTP запросов.
+                    Рекомендуется использовать один экземпляр для всего приложения.
+                    
+        Example:
+            >>> settings = HHSettings()
+            >>> token_manager = HHTokenManager(settings, session)
+            >>> await token_manager.exchange_code("auth_code_from_oauth")
+            >>> 
+            >>> api_client = HHApiClient(settings, token_manager, session)
+            >>> user_info = await api_client.request("me")
         """
         self._settings = settings
         self._token_manager = token_manager
@@ -46,16 +81,43 @@ class HHApiClient:
         self, endpoint: str, method: str = 'GET', data: Optional[Dict] = None, params: Optional[Dict] = None
     ) -> Dict[str, Any]:
         """
-        Выполнение запроса к API с автоматическим обновлением токена.
+        Выполняет аутентифицированный HTTP запрос к API HeadHunter.
+        
+        Автоматически добавляет необходимые заголовки (Authorization, User-Agent),
+        получает валидный токен доступа и обрабатывает ответы API. При необходимости
+        прозрачно обновляет истекшие токены через HHTokenManager.
 
         Args:
-            endpoint: Эндпоинт API.
-            method: HTTP метод.
-            data: Тело запроса.
-            params: Параметры запроса.
+            endpoint: Относительный путь к API эндпоинту (например, "me", "vacancies/search").
+                     Будет добавлен к base_url из настроек.
+            method: HTTP метод для запроса. Поддерживаются: GET, POST, PUT, DELETE, PATCH.
+                   По умолчанию 'GET'.
+            data: Данные для отправки в теле запроса (для POST/PUT). Автоматически 
+                 сериализуются в JSON. Для GET запросов должно быть None.
+            params: URL параметры запроса в виде словаря. Будут добавлены в query string.
+                   Например: {"per_page": 50, "page": 1}
 
         Returns:
-            Ответ от API в виде словаря.
+            Dict[str, Any]: Десериализованный JSON ответ от API в виде словаря.
+                           Для запросов с статусом 204 (No Content) возвращается пустой словарь.
+
+        Raises:
+            HHApiError: При ошибках HTTP запроса, проблемах сети или некорректных ответах.
+                       Оборачивает исходные aiohttp.ClientError для удобства обработки.
+            HHTokenError: При проблемах получения или обновления токенов доступа.
+                         Передается как HHApiError с дополнительным контекстом.
+                         
+        Example:
+            >>> # Получение информации о текущем пользователе
+            >>> user_info = await client.request("me")
+            >>> print(user_info["first_name"])
+            
+            >>> # Поиск вакансий с параметрами
+            >>> vacancies = await client.request("vacancies", params={"text": "Python", "per_page": 10})
+            >>> 
+            >>> # Создание резюме (POST запрос)
+            >>> resume_data = {"title": "Python Developer", "skills": ["Python", "Django"]}
+            >>> new_resume = await client.request("resumes", method="POST", data=resume_data)
         """
         url = f'{self._settings.base_url}{endpoint}'
         logger.info("Выполняется запрос к API: %s %s", method, endpoint)

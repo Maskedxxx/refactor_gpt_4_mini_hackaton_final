@@ -15,29 +15,56 @@ logger = get_logger(__name__)
 
 
 class HHAuthService:
-    """Сервис для работы с авторизацией в HH.ru."""
+    """
+    Сервис для работы с OAuth2 авторизацией HeadHunter.
+    
+    Отвечает за генерацию URL для инициации процесса авторизации пользователя
+    через OAuth2 Authorization Code flow. Следует принципу единственной 
+    ответственности (SRP) - только формирование URL авторизации.
+    
+    Attributes:
+        _settings: Настройки подключения к API HH.ru (client_id, redirect_uri и др.)
+    """
 
     def __init__(self, settings: HHSettings):
         """
         Инициализация сервиса авторизации.
 
         Args:
-            settings: Настройки для сервиса HH.ru.
+            settings: Экземпляр HHSettings с конфигурацией OAuth2 клиента.
+                     Должен содержать client_id и redirect_uri.
+                     
+        Example:
+            >>> settings = HHSettings(client_id="your_id", redirect_uri="http://localhost:8080/callback")
+            >>> auth_service = HHAuthService(settings)
         """
         self._settings = settings
         logger.debug("HHAuthService инициализирован с client_id: %s", settings.client_id[:8] + "...")
 
     def get_auth_url(self) -> str:
         """
-        Генерация URL для авторизации пользователя.
+        Формирует URL для авторизации пользователя в системе HH.ru.
+        
+        Создает стандартный OAuth2 Authorization Code URL, который перенаправляет 
+        пользователя на страницу авторизации HH.ru. После успешной авторизации
+        пользователь будет перенаправлен на redirect_uri с кодом авторизации.
 
         Returns:
-            URL для авторизации.
+            str: Полный URL для авторизации, включающий параметры:
+                - response_type=code (тип OAuth2 flow)
+                - client_id (идентификатор OAuth2 приложения)  
+                - redirect_uri (URL для возврата с кодом авторизации)
+                
+        Example:
+            >>> auth_service = HHAuthService(settings)
+            >>> url = auth_service.get_auth_url()
+            >>> print(url)
+            "https://hh.ru/oauth/authorize?response_type=code&client_id=***&redirect_uri=http://localhost:8080/callback"
         """
         logger.info("Генерируется URL авторизации для HH.ru")
         
-        # Формируем URL, на который нужно перенаправить пользователя
-        # для получения кода авторизации (authorization code).
+        # Формируем стандартный OAuth2 Authorization Code URL согласно RFC 6749
+        # Параметры URL строго соответствуют спецификации HH.ru API
         auth_url = (
             f'https://hh.ru/oauth/authorize?'
             f'response_type=code&'
