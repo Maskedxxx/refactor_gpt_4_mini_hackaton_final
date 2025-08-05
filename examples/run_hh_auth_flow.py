@@ -1,5 +1,13 @@
 # examples/run_hh_auth_flow.py
 
+# --- agent_meta ---
+# role: integration-example
+# owner: @backend
+# contract: Demonstrates the end-to-end OAuth2 flow by orchestrating callback_server and hh_adapter.
+# last_reviewed: 2025-08-05
+# dependencies: [aiohttp, src.config, src.hh_adapter, src.callback_server]
+# --- /agent_meta ---
+
 import asyncio
 import webbrowser
 

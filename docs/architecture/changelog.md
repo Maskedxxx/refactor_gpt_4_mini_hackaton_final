@@ -1,5 +1,17 @@
 # Changelog
 
+## 2025-08-05 (Project Scaffolding & DX)
+
+-   **Added `README.md`:** Created a comprehensive root `README.md` with a project overview, setup instructions, and usage examples for all run modes.
+-   **Added Component Demos:** Implemented `__main__.py` entry points for both `hh_adapter` and `callback_server` to allow for independent demonstration and testing.
+-   **Added Unit Tests:**
+    -   Set up `pytest` with `pytest-asyncio` and `pytest-mock`.
+    -   Added critical unit tests for `CodeFileHandler` (file operations) and `HHTokenManager` (token refresh logic).
+-   **Improved Project Structure:**
+    -   Added `src/callback_server/__init__.py` to define the component's public API.
+    -   Added `agent_meta` blocks to all new test and demo files for clarity.
+-   **Enhanced Documentation:** Updated component-specific markdown files (`hh_adapter.md`, `callback_server.md`) with new sections on testing and standalone execution.
+
 ## 2025-08-04 (Observability, Documentation & Metadata)
 
 -   **Улучшено логирование:**
