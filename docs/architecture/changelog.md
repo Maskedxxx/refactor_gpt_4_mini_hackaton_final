@@ -1,5 +1,14 @@
 # Changelog
 
+## 2025-08-10 (WebApp for multi-user OAuth2)
+
+-   Added `src/webapp` FastAPI service with routes `/auth/hh/start`, `/auth/hh/callback`, `/vacancies` for production use.
+-   Implemented SQLite-based `TokenStorage` and `OAuthStateStore` (per-school container pattern).
+-   Added `PersistentTokenManager` wrapper with per-HR `asyncio.Lock` to serialize refresh.
+-   Updated `docs/architecture/overview.md` to reflect WebApp flow; `callback_server` marked as demo-only.
+-   Added `docs/architecture/components/webapp.md` and `docs/architecture/components/docker.md` with run/ops details.
+-   Updated Docker artifacts (`Dockerfile`, `docker-compose.yml` without deprecated version key).
+
 ## 2025-08-05 (Project Scaffolding & DX)
 
 -   **Added `README.md`:** Created a comprehensive root `README.md` with a project overview, setup instructions, and usage examples for all run modes.
