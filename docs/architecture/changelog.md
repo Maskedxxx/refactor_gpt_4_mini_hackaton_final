@@ -1,5 +1,15 @@
 # Changelog
 
+## 2025-08-10 (Tests & concurrency fix for WebApp)
+
+- Добавлены асинхронные интеграционные тесты FastAPI (`tests/webapp`):
+  - `/auth/hh/start` и `/auth/hh/callback` (мок обмена кода на токены, одноразовый `state`, сохранение токенов в SQLite).
+  - Конкурентные запросы к `/vacancies` с истёкшим `access_token` (пер‑HR `asyncio.Lock`, единичный refresh под нагрузкой).
+- Исправлена гонка при обновлении токена: `PersistentTokenManager.get_valid_access_token` синхронизирует состояние из `TokenStorage` под пер‑HR локом перед решением о refresh и сохраняет обновлённые токены обратно.
+- Документация тестов: добавлены `tests/README.md` и `tests/webapp/README.md` (что/как/зачем, изоляция окружения, TTL `state`).
+- Обновлён корневой `README.md`: ссылки на `docs/architecture/*`, упоминание `/healthz`/`/readyz`, параметр `WEBAPP_DB_PATH`, пояснение про TTL `state`.
+- Зависимости: добавлен `httpx>=0.27` для ASGI‑клиента в тестах.
+
 ## 2025-08-10 (WebApp for multi-user OAuth2)
 
 -   Added `src/webapp` FastAPI service with routes `/auth/hh/start`, `/auth/hh/callback`, `/vacancies` for production use.
