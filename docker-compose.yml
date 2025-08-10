@@ -1,0 +1,14 @@
+services:
+  webapp:
+    build: .
+    image: hh-webapp:latest
+    env_file: .env
+    environment:
+      - WEBAPP_DB_PATH=/data/app.sqlite3
+    ports:
+      - "8080:8080"
+    volumes:
+      - hh_data:/data
+volumes:
+  hh_data: {}
+
