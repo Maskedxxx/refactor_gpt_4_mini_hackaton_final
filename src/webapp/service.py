@@ -1,3 +1,4 @@
+# src/webapp/service.py
 # --- agent_meta ---
 # role: webapp-services
 # owner: @backend
@@ -51,17 +52,17 @@ class PersistentTokenManager(HHTokenManager):
     async def get_valid_access_token(self) -> str:  # type: ignore[override]
         async with self._lock:
             # Перед попыткой refresh синхронизируемся с актуальным состоянием из стораджа
-            latest = self._storage.get(self._hr_id)
+            latest = self._storage.get_record(self._hr_id)
             if latest:
                 # Если в хранилище токены/срок отличаются — обновим локальное состояние
                 if (
-                    self.access_token != latest.get("access_token")
-                    or self.refresh_token != latest.get("refresh_token")
-                    or float(self.expires_at) < float(latest.get("expires_at", 0))
+                    self.access_token != latest.access_token
+                    or self.refresh_token != latest.refresh_token
+                    or float(self.expires_at) < float(latest.expires_at)
                 ):
-                    self.access_token = latest["access_token"]
-                    self.refresh_token = latest["refresh_token"]
-                    self.expires_at = float(latest["expires_at"])
+                    self.access_token = latest.access_token
+                    self.refresh_token = latest.refresh_token
+                    self.expires_at = float(latest.expires_at)
 
             token_before = self.access_token
             res = await super().get_valid_access_token()

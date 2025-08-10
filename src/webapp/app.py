@@ -1,3 +1,4 @@
+# src/webapp/app.py
 # --- agent_meta ---
 # role: webapp-fastapi
 # owner: @backend
@@ -94,20 +95,20 @@ async def auth_callback(code: str, state: str):
 
 @app.get("/vacancies")
 async def vacancies(hr_id: str, text: str = Query("", description="Строка поиска")):
-    row = _tokens.get(hr_id)
-    if not row:
+    record = _tokens.get_record(hr_id)
+    if not record:
         raise HTTPException(status_code=401, detail="HR not authorized")
 
     # Восстанавливаем менеджер токенов из стораджа
-    expires_in = max(0, int(float(row["expires_at"]) - time.time()))
+    expires_in = max(0, int(float(record.expires_at) - time.time()))
     async with aiohttp.ClientSession() as session:
         manager = PersistentTokenManager(
             hr_id=hr_id,
             storage=_tokens,
             settings=_settings,
             session=session,
-            access_token=row["access_token"],
-            refresh_token=row["refresh_token"],
+            access_token=record.access_token,
+            refresh_token=record.refresh_token,
             expires_in=expires_in,
             lock=_get_lock(hr_id),
         )
@@ -117,4 +118,3 @@ async def vacancies(hr_id: str, text: str = Query("", description="Строка 
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"Upstream error: {e}")
         return JSONResponse(content=data)
-

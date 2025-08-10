@@ -1,3 +1,4 @@
+# src/webapp/storage.py
 # --- agent_meta ---
 # role: token-storage
 # owner: @backend
@@ -16,6 +17,8 @@ import sqlite3
 import time
 import secrets
 from typing import Optional, Dict, Any
+
+from src.webapp.models import TokenRecord
 
 
 class TokenStorage:
@@ -53,6 +56,10 @@ class TokenStorage:
             "expires_at": float(row[2]),
         }
 
+    def get_record(self, hr_id: str) -> Optional[TokenRecord]:
+        row = self.get(hr_id)
+        return TokenRecord.from_row(row) if row else None
+
     def save(self, hr_id: str, tokens: Dict[str, Any]) -> None:
         self._conn.execute(
             "REPLACE INTO tokens (hr_id, access_token, refresh_token, expires_at) VALUES (?, ?, ?, ?)",
@@ -64,6 +71,9 @@ class TokenStorage:
             ),
         )
         self._conn.commit()
+
+    def save_record(self, hr_id: str, record: TokenRecord) -> None:
+        self.save(hr_id, record.to_row())
 
     def delete(self, hr_id: str) -> None:
         self._conn.execute("DELETE FROM tokens WHERE hr_id = ?", (hr_id,))
