@@ -1,3 +1,4 @@
+# src/webapp/__main__.py
 # --- agent_meta ---
 # role: webapp-entrypoint
 # owner: @backend
@@ -14,4 +15,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

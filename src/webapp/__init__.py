@@ -1,3 +1,4 @@
+# src/webapp/__init__.py
 # --- agent_meta ---
 # role: webapp-package
 # owner: @backend
@@ -6,4 +7,3 @@
 # --- /agent_meta ---
 
 __all__ = []
-

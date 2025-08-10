@@ -1,4 +1,13 @@
 # Changelog
+# Changelog
+
+## 2025-08-10 (Parsing docs, demo & webapp headers)
+
+- Компонент Parser: добавлены sequenceDiagram диаграммы потоков (резюме и вакансия) в `docs/architecture/components/parser.md`.
+- Обзор архитектуры: `overview.md` дополнен компонентом `src/parsing` с ссылкой на подробности.
+- README: добавлена секция демонстрации парсинга и ссылка на документацию компонента; указаны команды запуска с реальным LLM и офлайн.
+- WebApp: во все файлы пакета `src/webapp/*` добавлены относительные пути в шапку перед блоком `agent_meta`.
+- Без изменения контрактов и кода логики; только документация и метаданные.
 
 ## 2025-08-10 (Tests & concurrency fix for WebApp)
 

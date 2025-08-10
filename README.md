@@ -159,6 +159,21 @@ python -m src.callback_server
 python -m src.hh_adapter
 ```
 
+### 6. Демонстрация Parsing (LLM резюме и HH вакансия)
+
+Пример запуска парсинга резюме из PDF (через LLM) и вакансии из локального JSON:
+
+```bash
+# Реальный вызов LLM (нужен ключ OpenAI)
+export OPENAI_API_KEY=...  # опционально: OPENAI_MODEL_NAME=gpt-4o-mini-2024-07-18
+python -m examples.parse_parsers --resume tests/data/resume.pdf --vacancy tests/data/vacancy.json
+
+# Офлайн-режим без сети (фейковый LLM)
+python -m examples.parse_parsers --fake-llm --resume tests/data/resume.pdf --vacancy tests/data/vacancy.json
+```
+
+Подробнее о внутренних контрактах и потоках: `docs/architecture/components/parser.md`.
+
 ---
 
 ## Тестирование
@@ -187,6 +202,7 @@ pytest
   - `docs/architecture/components/webapp.md`
   - `docs/architecture/components/hh_adapter.md`
   - `docs/architecture/components/callback_server.md`
+  - `docs/architecture/components/parser.md`
   - Деплой: `docs/architecture/components/docker.md`
 
 Также см. правила и стиль для агентов/контрибьюторов: `AGENTS.md`, `CLAUDE.md`.
