@@ -49,18 +49,18 @@ cp .env.example .env
 # .env
 HH_CLIENT_ID=ВАШ_ID_КЛИЕНТА
 HH_CLIENT_SECRET=ВАШ_СЕКРЕТНЫЙ_КЛЮЧ
-HH_REDIRECT_URI=http://localhost:8080/callback
+HH_REDIRECT_URI=http://localhost:8080/auth/hh/callback
 
-# Настройки для локального callback-сервера (обычно не требуют изменений)
-CALLBACK_HOST=127.0.0.1
-CALLBACK_PORT=8080
+# Примечание: локальный callback_server оставлен для демо и не требуется для WebApp
+# CALLBACK_HOST=127.0.0.1
+# CALLBACK_PORT=8080
 ```
 
 ---
 
 ## Как использовать
 
-Проект можно запустить в трех разных режимах.
+Проект можно запустить в трёх режимах.
 
 ### 1. Полный интеграционный сценарий (Рекомендуемый)
 
@@ -70,15 +70,78 @@ CALLBACK_PORT=8080
 python -m examples.run_hh_auth_flow
 ```
 
-### 2. Демонстрация `callback_server`
+### 2. WebApp (мультипользовательский сценарий)
 
-Запускает только локальный сервер, который ожидает редиректа от HH.ru. Полезно для отладки.
+Запускает FastAPI сервис с маршрутами `/auth/hh/start`, `/auth/hh/callback`, `/vacancies`.
+
+```bash
+python -m src.webapp
+```
+
+После запуска откройте:
+
+```
+http://localhost:8080/auth/hh/start?hr_id=hr-123&redirect_to=http%3A%2F%2Flocalhost%3A8080%2Fhealthz
+```
+
+После успешной авторизации можно вызывать:
+
+```
+curl "http://localhost:8080/vacancies?hr_id=hr-123&text=Python"
+```
+
+### 3. Docker (рекомендуется для per‑школа деплоя)
+
+Быстрый запуск в Docker:
+
+```bash
+# 1) Собрать образ
+docker build -t hh-webapp .
+
+# 2) Создать .env со значениями (как выше) и задать путь БД
+echo "WEBAPP_DB_PATH=/data/app.sqlite3" >> .env
+
+# 3) Запустить контейнер с volume для БД
+docker run --env-file .env -p 8080:8080 -v hh_data:/data --name hh-webapp hh-webapp
+
+# Проверка
+curl http://localhost:8080/healthz
+```
+
+С docker-compose:
+
+```yaml
+version: "3.9"
+services:
+  webapp:
+    build: .
+    image: hh-webapp:latest
+    env_file: .env
+    ports:
+      - "8080:8080"
+    environment:
+      - WEBAPP_DB_PATH=/data/app.sqlite3
+    volumes:
+      - hh_data:/data
+volumes:
+  hh_data: {}
+```
+
+После запуска откройте:
+
+```
+http://localhost:8080/auth/hh/start?hr_id=hr-123
+```
+
+### 4. Демонстрация `callback_server`
+
+Локальный одноразовый сервер (демо‑режим, не для прод):
 
 ```bash
 python -m src.callback_server
 ```
 
-### 3. Демонстрация `hh_adapter`
+### 5. Демонстрация `hh_adapter`
 
 Мгновенно генерирует и выводит в консоль ссылку для авторизации на HH.ru.
 
