@@ -1,0 +1,168 @@
+{
+  "id": "120234346",
+  "premium": false,
+  "billing_type": {
+    "id": "standard_plus",
+    "name": "Стандарт плюс"
+  },
+  "relations": [],
+  "name": "Senior/Lead Data Scientist",
+  "insider_interview": null,
+  "response_letter_required": false,
+  "area": {
+    "id": "1002",
+    "name": "Минск",
+    "url": "https://api.hh.ru/areas/1002"
+  },
+  "salary": null,
+  "salary_range": null,
+  "type": {
+    "id": "open",
+    "name": "Открытая"
+  },
+  "address": {
+    "city": "Минск",
+    "street": "проспект Независимости",
+    "building": "32А",
+    "lat": 53.904772,
+    "lng": 27.569341,
+    "description": null,
+    "raw": "Минск, проспект Независимости, 32А",
+    "metro": {
+      "station_name": "Октябрьская",
+      "line_name": "Московская",
+      "station_id": "62.410",
+      "line_id": "62",
+      "lat": 53.901562,
+      "lng": 27.561068
+    },
+    "metro_stations": [
+      {
+        "station_name": "Октябрьская",
+        "line_name": "Московская",
+        "station_id": "62.410",
+        "line_id": "62",
+        "lat": 53.901562,
+        "lng": 27.561068
+      },
+      {
+        "station_name": "Площадь Победы",
+        "line_name": "Московская",
+        "station_id": "62.409",
+        "line_id": "62",
+        "lat": 53.908644,
+        "lng": 27.575054
+      }
+    ]
+  },
+  "allow_messages": true,
+  "experience": {
+    "id": "between3And6",
+    "name": "От 3 до 6 лет"
+  },
+  "schedule": {
+    "id": "fullDay",
+    "name": "Полный день"
+  },
+  "employment": {
+    "id": "full",
+    "name": "Полная занятость"
+  },
+  "department": null,
+  "show_contacts": false,
+  "contacts": null,
+  "description": "<strong>Обязанности:</strong> <ul> <li>Взаимодействие с заказчиками для сбора и уточнения требований</li> <li>Проектирование и разработка моделей машинного обучения (NLP)</li> <li>Внедрение современных подходов (fine-tuning, prompt-engineering, RAG)</li> <li>Организация процессов валидации моделей</li> <li>Управление командой из 3 датасайнтистов, распределение задач</li> <li>Внедрение методологий MLOps</li> <li>Взаимодействие с Data Architect, Data Analyst, Agile-командами, Data Engineer по вопросам обеспечения потребностей бизнеса в моделях</li> </ul> <strong>Требования:</strong> <ul> <li> <p>Знание и понимание основных методов машинного обучения, глубокого обучения</p> </li> <li> <p>Опыт использования LLM (написание промптов, RAG), работы с langchain</p> </li> <li> <p>Опыт вывода моделей в промышленную эксплуатацию</p> </li> <li> <p>Знания по терверу и мат. статистике и умение применять их на практике</p> <p>Pytorch</p> </li> <li>Хорошие аналитические и организационные навыки, коммуникабельность</li> </ul> <strong>Условия:</strong> <ul> <li>Амбициозные и нестандартные задачи, интересные проекты, возможность внедрять инновационные изменения</li> <li>Возможности внешнего и внутреннего обучения, доступ 24/7 к платформе дистанционного обучения Сбербанка: курсы, лекции, книги, ролики по актуальным направлениям</li> <li>Дружная команда с культурой поддержки и сотрудничества</li> <li>Комфортные условия работы в новом современном офисе в центре города</li> </ul> <strong>Ссылка на вакансию в банке вакансий на gsz.gov.⁣by:</strong> <div>*Вакансия, планируемая к созданию (перспективная)</div>",
+  "branded_description": "",
+  "vacancy_constructor_template": null,
+  "key_skills": [
+    {
+      "name": "PyTorch"
+    },
+    {
+      "name": "NLP"
+    },
+    {
+      "name": "LLM"
+    },
+    {
+      "name": "LangChain"
+    }
+  ],
+  "accept_handicapped": false,
+  "accept_kids": false,
+  "archived": false,
+  "response_url": null,
+  "specializations": [],
+  "professional_roles": [
+    {
+      "id": "165",
+      "name": "Дата-сайентист"
+    }
+  ],
+  "code": null,
+  "hidden": false,
+  "quick_responses_allowed": false,
+  "driver_license_types": [],
+  "accept_incomplete_resumes": false,
+  "employer": {
+    "id": "829010",
+    "name": "Сбер Банк",
+    "url": "https://api.hh.ru/employers/829010",
+    "alternate_url": "https://hh.ru/employer/829010",
+    "logo_urls": {
+      "original": "https://img.hhcdn.ru/employer-logo-original/919444.png",
+      "90": "https://img.hhcdn.ru/employer-logo/4118352.png",
+      "240": "https://img.hhcdn.ru/employer-logo/4118353.png"
+    },
+    "vacancies_url": "https://api.hh.ru/vacancies?employer_id=829010",
+    "applicant_services": {
+      "target_employer": {
+        "count": 0
+      }
+    },
+    "accredited_it_employer": false,
+    "trusted": true,
+    "blacklisted": false
+  },
+  "published_at": "2025-05-17T14:44:17+0300",
+  "created_at": "2025-05-17T14:44:17+0300",
+  "initial_created_at": "2025-05-05T14:44:17+0300",
+  "negotiations_url": "https://api.hh.ru/negotiations?vacancy_id=120234346",
+  "suitable_resumes_url": "https://api.hh.ru/vacancies/120234346/suitable_resumes",
+  "apply_alternate_url": "https://hh.ru/applicant/vacancy_response?vacancyId=120234346",
+  "has_test": false,
+  "test": null,
+  "alternate_url": "https://hh.ru/vacancy/120234346",
+  "working_days": [],
+  "working_time_intervals": [],
+  "working_time_modes": [],
+  "accept_temporary": false,
+  "languages": [],
+  "approved": true,
+  "employment_form": {
+    "id": "FULL",
+    "name": "Полная"
+  },
+  "fly_in_fly_out_duration": [],
+  "internship": false,
+  "night_shifts": false,
+  "work_format": [
+    {
+      "id": "HYBRID",
+      "name": "Гибрид"
+    }
+  ],
+  "work_schedule_by_days": [
+    {
+      "id": "FIVE_ON_TWO_OFF",
+      "name": "5/2"
+    }
+  ],
+  "working_hours": [
+    {
+      "id": "HOURS_8",
+      "name": "8 часов"
+    }
+  ],
+  "show_logo_in_search": true
+}
