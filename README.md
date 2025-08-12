@@ -176,6 +176,21 @@ python -m examples.parse_parsers --fake-llm --resume tests/data/resume.pdf --vac
 
 ---
 
+### 7. Демонстрация LLM Cover Letter (сопроводительное письмо)
+
+Генерация персонализированного письма на основе `ResumeInfo` и `VacancyInfo`:
+
+```bash
+# Офлайн-режим без сети (фейковый LLM)
+python -m examples.generate_cover_letter --vacancy tests/data/vacancy.json --fake-llm
+
+# Реальный вызов LLM (нужен ключ OpenAI)
+export OPENAI_API_KEY=...
+python -m examples.generate_cover_letter --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json
+```
+
+Подробности: `docs/architecture/components/llm_cover_letter.md`.
+
 ## Тестирование
 
 Проект содержит набор юнит‑ и интеграционных тестов. Тесты используют моки и не требуют реальных сетевых запросов.

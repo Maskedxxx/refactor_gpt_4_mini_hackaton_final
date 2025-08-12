@@ -129,3 +129,14 @@
 -   **Initialized project structure:**
     -   Created directories `src/hh_adapter` and `docs/architecture/components`.
     -   Created `docs/architecture/components/hh_adapter.md` and `docs/architecture/changelog.md`.
+## 2025-08-10 (LLM Cover Letter module — contract-first)
+
+- Добавлен библиотечный компонент `src/llm_cover_letter`:
+  - Публичный контракт: `ILetterGenerator`, `CoverLetterOptions`, модели письма.
+  - Версионируемая система промптов и билдеров (`prompts/*`).
+  - Сервис `LLMCoverLetterGenerator` с DI (LLM, билдеры, валидатор, настройки).
+  - Валидатор качества и форматтеры блоков резюме/вакансии и email‑текста.
+- Документация:
+  - Новый файл `docs/architecture/components/llm_cover_letter.md`.
+  - Обновлён `overview.md`, добавлена секция в README с примерами.
+- Примеры: `examples/generate_cover_letter.py` (офлайн/онлайн режимы).
