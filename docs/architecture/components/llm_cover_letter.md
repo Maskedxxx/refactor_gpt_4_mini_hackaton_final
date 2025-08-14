@@ -91,4 +91,3 @@ python -m examples.generate_cover_letter --resume-pdf tests/data/resume.pdf --va
 - Замените `IContextBuilder`/`IPromptBuilder` для иной логики промптов.
 - Добавьте новые версии шаблонов в `prompts/templates.py` и переключайте `COVER_LETTER_PROMPT_VERSION`.
 - Подмените валидатор качества `ICoverLetterValidator` для бизнес‑правил.
-

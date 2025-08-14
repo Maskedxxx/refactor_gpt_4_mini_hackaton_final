@@ -34,9 +34,7 @@ class CoverLetterOptions(BaseModel):
         "cover_letter.v1", description="Версия шаблона промпта"
     )
     quality_checks: bool = Field(False, description="Включить проверку качества письма")
-    extra_context: Optional[dict[str, Any]] = Field(
-        None, description="Произвольные дополнительные сигналы в промпт"
-    )
+    extra_context: Optional[dict[str, Any]] = Field(None, description="Произвольные дополнительные сигналы в промпт")
 
     class Config:
         extra = "forbid"

@@ -19,6 +19,11 @@ from src.parsing.llm.prompt import Prompt
 
 from ..options import CoverLetterOptions
 from .templates import get_template
+from .mappings import (
+    detect_role_from_title,
+    get_company_tone_instruction,
+    get_role_adaptation_instruction,
+)
 
 
 class IContextBuilder(Protocol):
@@ -38,27 +43,29 @@ class DefaultContextBuilder:
         elif any(w in description for w in ["международная", "global", "multinational", "мировой лидер"]):
             company_size = "LARGE"
 
+        # Автоопределение role_hint из названия должности в резюме (если не задано пользователем)
+        effective_role_hint = options.role_hint
+        if not effective_role_hint and resume.title:
+            detected_role = detect_role_from_title(resume.title)
+            if detected_role:
+                effective_role_hint = detected_role
+
         ctx = {
             "company_size": company_size,
             "company_name": vacancy.company_name,
             "position_title": vacancy.name,
             "language": options.language,
             "length": options.length,
-            "role_hint": options.role_hint.value if options.role_hint else "",
+            "role_hint": effective_role_hint.value if effective_role_hint else "",
+            # Динамические блоки для промпта
+            "company_tone_instruction": get_company_tone_instruction(company_size),
+            "role_adaptation_instruction": get_role_adaptation_instruction(effective_role_hint) if effective_role_hint else "",
         }
-        # место для расширяемого контекста
         return ctx
 
 
 class IPromptBuilder(Protocol):
-    def build(
-        self,
-        *,
-        resume_block: str,
-        vacancy_block: str,
-        ctx: dict,
-        options: CoverLetterOptions,
-    ) -> Prompt:
+    def build(self, *, resume_block: str, vacancy_block: str, ctx: dict, options: CoverLetterOptions,) -> Prompt:
         ...
 
 
@@ -75,7 +82,10 @@ class DefaultPromptBuilder:
         context = dict(ctx)
         context["resume_block"] = resume_block
         context["vacancy_block"] = vacancy_block
-        context["extra_context_block"] = (options.extra_context or {}) or {}
+        # Дополнительный контекст из опций (dict | str | None)
+        # Если dict — ниже будет преобразован в маркированный список.
+        context["extra_context_block"] = (options.extra_context or {})
+        
         # если extra_context_block словарь — превращаем в строку
         if isinstance(context["extra_context_block"], dict):
             if context["extra_context_block"]:

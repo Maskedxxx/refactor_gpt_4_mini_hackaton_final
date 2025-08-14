@@ -5,9 +5,21 @@
 
 - Зафиксировано правило: первая строка — относительный путь к файлу; добавлено в `AGENTS.md` и `CLAUDE.md`.
 - Добавлены переменные `COVER_LETTER_*` в `.env.example` (версия промпта, температура, язык, проверки, модель).
+- Добавлены `OPENAI_API_KEY` и `OPENAI_MODEL_NAME` (опц.) в `.env.example`.
 - README: добавлена ссылка на `components/llm_cover_letter.md` в разделе архитектуры.
 - Changelog: запись про Cover Letter (2025‑08‑10) поднята наверх для видимости.
 - Проставлены относительные пути в шапках файлов `src/llm_cover_letter/*`.
+
+## 2025-08-14 (Prompts: dynamic blocks, v2, extra_context)
+
+- Подсистема промптов для Cover Letter расширена:
+  - Добавлены динамические блоки: `company_tone_instruction` и `role_adaptation_instruction` (см. `prompts/mappings.py`).
+  - Реализовано автоопределение `role_hint` по `resume.title` (ключевые слова в `ROLE_DETECTION_KEYWORDS`).
+  - Добавлен шаблон `cover_letter.v2` с более строгими требованиями к качеству.
+  - Обновлен `cover_letter.v1` (структурированные секции контекста, тональности и адаптации).
+- В `DefaultPromptBuilder` восстановлена передача `options.extra_context` в `extra_context_block` (dict → маркированный список).
+- Добавлен `src/llm_cover_letter/prompts/README.md` с детальным описанием сборки промпта и примерами.
+- Добавлен `examples/show_full_prompt.py` для демонстрации финального System/User промптов.
 
 ## 2025-08-10 (LLM Cover Letter module — contract-first)
 
