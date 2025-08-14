@@ -1,0 +1,495 @@
+{
+  "last_name": "Немов",
+  "first_name": "Максим",
+  "middle_name": "Юрьевич",
+  "title": "NLP LLM Engineer",
+  "created_at": "2025-06-04T08:19:15+0300",
+  "updated_at": "2025-07-10T13:43:24+0300",
+  "area": {
+    "id": "1",
+    "name": "Москва",
+    "url": "https://api.hh.ru/areas/1"
+  },
+  "age": 24,
+  "gender": {
+    "id": "male",
+    "name": "Мужской"
+  },
+  "salary": {
+    "amount": 250000,
+    "currency": "RUR"
+  },
+  "photo": {
+    "id": "184744592",
+    "small": "https://img.hhcdn.ru/photo/788192684.jpeg?t=1752230621&h=nitagAcnuq4VrYL0IAmfTQ",
+    "medium": "https://img.hhcdn.ru/photo/788192685.jpeg?t=1752230621&h=nQok8TRfoiGureMBA5ISZQ",
+    "40": "https://img.hhcdn.ru/photo/788192683.jpeg?t=1752230621&h=fRObhOqjIyiYBLBL1PT__Q",
+    "100": "https://img.hhcdn.ru/photo/788192684.jpeg?t=1752230621&h=nitagAcnuq4VrYL0IAmfTQ",
+    "500": "https://img.hhcdn.ru/photo/788192685.jpeg?t=1752230621&h=nQok8TRfoiGureMBA5ISZQ"
+  },
+  "total_experience": {
+    "months": 41
+  },
+  "certificate": [
+    {
+      "owner": null,
+      "type": "custom",
+      "title": "Специализиция \"Data Engineering\"",
+      "achieved_at": "2025-01-01",
+      "url": "https://coursera.org/share/14fa929b753068ffaa46c93f5162843e"
+    },
+    {
+      "owner": null,
+      "type": "custom",
+      "title": "GPT Week от Школы анализа данных",
+      "achieved_at": "2024-01-01",
+      "url": "https://lyceum.s3.yandex.net/gpt_certs/1345_НемовМаксимЮрьевич.pdf?m-message-key-id=-4854880391446593536&m-message-click-id=cc265509-06fa-4272-9a78-db60cc777937&utm_source=mindbox&utm_medium=email&utm_campaign=gptweek23&utm_content=post2612"
+    }
+  ],
+  "hidden_fields": [],
+  "actions": {
+    "download": {
+      "pdf": {
+        "url": "https://api.hh.ru/resumes/77111a28ff0eed02270039ed1f7871436c3845/download/%D0%9D%D0%B5%D0%BC%D0%BE%D0%B2%20%D0%9C%D0%B0%D0%BA%D1%81%D0%B8%D0%BC%20%D0%AE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.pdf?type=pdf"
+      },
+      "rtf": {
+        "url": "https://api.hh.ru/resumes/77111a28ff0eed02270039ed1f7871436c3845/download/%D0%9D%D0%B5%D0%BC%D0%BE%D0%B2%20%D0%9C%D0%B0%D0%BA%D1%81%D0%B8%D0%BC%20%D0%AE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.rtf?type=rtf"
+      }
+    }
+  },
+  "alternate_url": "https://hh.ru/resume/77111a28ff0eed02270039ed1f7871436c3845",
+  "id": "77111a28ff0eed02270039ed1f7871436c3845",
+  "download": {
+    "pdf": {
+      "url": "https://api.hh.ru/resumes/77111a28ff0eed02270039ed1f7871436c3845/download/%D0%9D%D0%B5%D0%BC%D0%BE%D0%B2%20%D0%9C%D0%B0%D0%BA%D1%81%D0%B8%D0%BC%20%D0%AE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.pdf?type=pdf"
+    },
+    "rtf": {
+      "url": "https://api.hh.ru/resumes/77111a28ff0eed02270039ed1f7871436c3845/download/%D0%9D%D0%B5%D0%BC%D0%BE%D0%B2%20%D0%9C%D0%B0%D0%BA%D1%81%D0%B8%D0%BC%20%D0%AE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.rtf?type=rtf"
+    }
+  },
+  "platform": {
+    "id": "headhunter"
+  },
+  "real_id": "250413607",
+  "resume_locale": {
+    "id": "RU",
+    "name": "Русский"
+  },
+  "skills": "AI Engineer с 3+ годами создания production LLM-решений и RAG-систем. Автоматизировал бизнес-процессы с impact $50K+ экономии, повысил конверсию продаж на 35% и точность корпоративного поиска на 40%. Специализируюсь на conversational AI, voice технологиях и образовательных AI-платформах.\nСсылка но мой git:\nhttps://github.com/Maskedxxx",
+  "citizenship": [
+    {
+      "id": "113",
+      "name": "Россия",
+      "url": "https://api.hh.ru/areas/113"
+    }
+  ],
+  "work_ticket": [
+    {
+      "id": "113",
+      "name": "Россия",
+      "url": "https://api.hh.ru/areas/113"
+    }
+  ],
+  "access": {
+    "type": {
+      "id": "clients",
+      "name": "Видно всем работодателям, зарегистрированным на hh.ru"
+    }
+  },
+  "birth_date": "2000-08-04",
+  "contact": [
+    {
+      "value": {
+        "country": "7",
+        "city": "987",
+        "number": "5056990",
+        "formatted": "+7 987 505-69-90"
+      },
+      "type": {
+        "id": "cell",
+        "name": "Мобильный телефон"
+      },
+      "preferred": true,
+      "comment": null,
+      "need_verification": false,
+      "verified": true
+    },
+    {
+      "type": {
+        "id": "email",
+        "name": "Эл. почта"
+      },
+      "value": "aangers07@gmail.com",
+      "preferred": false
+    }
+  ],
+  "education": {
+    "level": {
+      "id": "higher",
+      "name": "Высшее"
+    },
+    "primary": [
+      {
+        "id": "373428440",
+        "name": "Пензенский государственный университет, Пенза",
+        "organization": "Факультет приборостроения, информационных технологий и систем",
+        "result": "Автоматизация технологических процессов и производств (по отраслям)",
+        "year": 2016,
+        "university_acronym": "ПГУ",
+        "name_id": "40913",
+        "organization_id": "26195",
+        "result_id": null,
+        "education_level": {
+          "id": "higher",
+          "name": "Высшее"
+        }
+      }
+    ],
+    "additional": [
+      {
+        "id": "105423703",
+        "name": "Специализация \"Data Engineering\"",
+        "organization": "Couresra | AWS",
+        "result": "\"Data Engineering\"",
+        "year": 2025
+      },
+      {
+        "id": "105423757",
+        "name": "GPT Week от Школы анализа данных (Яндекс)",
+        "organization": "Яндекс",
+        "result": "AI Engineer",
+        "year": 2024
+      },
+      {
+        "id": "105423805",
+        "name": "Vector DataBase Master",
+        "organization": "Udemy",
+        "result": "Data engineer",
+        "year": 2024
+      },
+      {
+        "id": "105423768",
+        "name": "Prompt Engineering for ChatGPT (Coursera)",
+        "organization": "Coursera (Университет Вандербильта)",
+        "result": "Prompt Engineer",
+        "year": 2023
+      },
+      {
+        "id": "105423813",
+        "name": "API ChatGPT Professional",
+        "organization": "Udemy",
+        "result": "Prompt engineer",
+        "year": 2023
+      }
+    ],
+    "attestation": [],
+    "elementary": []
+  },
+  "employment": {
+    "id": "full",
+    "name": "Полная занятость"
+  },
+  "employments": [
+    {
+      "id": "full",
+      "name": "Полная занятость"
+    },
+    {
+      "id": "part",
+      "name": "Частичная занятость"
+    },
+    {
+      "id": "project",
+      "name": "Проектная работа"
+    },
+    {
+      "id": "volunteer",
+      "name": "Волонтерство"
+    },
+    {
+      "id": "probation",
+      "name": "Стажировка"
+    }
+  ],
+  "experience": [
+    {
+      "start": "2024-05-01",
+      "end": null,
+      "company": "Союзснаб",
+      "company_id": "2288",
+      "industry": {
+        "id": "34",
+        "name": "Химическое производство, удобрения"
+      },
+      "industries": [
+        {
+          "id": "34.417",
+          "name": "Агрохимия (продвижение, оптовая торговля)"
+        },
+        {
+          "id": "27.563",
+          "name": "Корма для животных (продвижение, оптовая торговля)"
+        },
+        {
+          "id": "27.562",
+          "name": "Корма для животных (производство)"
+        },
+        {
+          "id": "29.533",
+          "name": "Сельскохозяйственная продукция (продвижение, оптовая торговля)"
+        },
+        {
+          "id": "29.531",
+          "name": "Земледелие, растениеводство, животноводство"
+        }
+      ],
+      "area": {
+        "id": "1",
+        "name": "Москва",
+        "url": "https://api.hh.ru/areas/1"
+      },
+      "company_url": "http://www.ssnab.ru/",
+      "employer": {
+        "id": "2288",
+        "name": "Союзснаб",
+        "url": "https://api.hh.ru/employers/2288",
+        "alternate_url": "https://hh.ru/employer/2288",
+        "logo_urls": {
+          "240": "https://img.hhcdn.ru/employer-logo/6207054.png",
+          "original": "https://img.hhcdn.ru/employer-logo-original/1146622.png",
+          "90": "https://img.hhcdn.ru/employer-logo/6207053.png"
+        }
+      },
+      "position": "AI engineer",
+      "description": "СОЮЗСНАБ | AI Engineer\nКлючевые достижения:\n- Автоматизировал HR-процессы, сократив время создания поздравлений с 3+ часов до 30 секунд  \n- Повысил точность корпоративного поиска на 40% через внедрение LLM-ансамбля  \n- Масштабировал AI-решения на 4 отдела, обеспечив производительность 100+ операций/день\n\n---\n\nПРОЕКТ 1: Корпоративная система интеллектуального поиска  \nРезультат: Точность маршрутизации +40%, снижение ошибок выбора документов на 50%\n\nЗадача: Автоматизировать ответы сотрудников по внутренней документации, заменив менее точные методы поиска\n\nРешение:\n- Создал многоуровневый ансамбль локальных LLM (Llama 3: 7B + 70B модели)  \n- Внедрил семантический роутинг с голосующим механизмом по 6 подвопросам  \n- Развернул production-ready решение на GPU-сервере с миграцией на vLLM  \n- Дообучил embedding-модели на размеченной обратной связи с индексацией в Chroma  \n\nМасштаб: Успешно внедрено в 4 отделах компании с высокой масштабируемостью\n\n---\n\nПРОЕКТ 2: Автоматизация HR-коммуникаций через Voice AI\nРезультат: Рост производительности HR с 5-10 до 100 поздравлений/день\n\nЗадача: Заменить ручной 3-часовой процесс создания персонализированных голосовых поздравлений\n\nРешение: \n- Разработал Telegram-бота с интеграцией Yandex SpeechKit для синтеза речи  \n- Реализовал автоматическое склонение имён через морфологический анализ  \n- Настроил прямую доставку в корпоративные системы коммуникации  \n- Исключил человеческие ошибки, повысив единообразие корпоративной коммуникации\n\n---\n\nТехнический стек:\n\nAI/ML: LLM Fine-tuning, RAG Systems, Semantic Search, Ensemble Methods, Voice AI  \nAI техники: Chain of Thought (CoT), Tree of Thought (ToT), Self-Reflection, Decomposition, CheckList, Structured Output (Pydantic)  \nFrameworks: LangChain, LangGraph, semantic_router, Hugging Face Transformers  \nInfrastructure: Docker, Ollama, vLLM, GPU Computing, NVIDIA GPU  \nData: Vector Databases (Chroma, Pinecone), Embedding Models  \nAPIs: Telegram API, Yandex SpeechKit, Python\n\n---\n\nДополнительно: Реализованы множественные проекты с LLM-агентами и RAG-системами различной сложности. Детальное описание дополнительных проектов предоставляется по запросу."
+    },
+    {
+      "start": "2023-05-01",
+      "end": "2024-05-01",
+      "company": "Академия астрологии Ирины Чайки",
+      "company_id": null,
+      "industry": null,
+      "industries": [
+        {
+          "id": "39.446",
+          "name": "Тренинговые компании"
+        },
+        {
+          "id": "39.449",
+          "name": "Обучение искусствам (рисование, пение, танцы, фото)"
+        }
+      ],
+      "area": {
+        "id": "1",
+        "name": "Москва",
+        "url": "https://api.hh.ru/areas/1"
+      },
+      "company_url": "https://astrologchayka.ru/academy",
+      "employer": null,
+      "position": "AI Engineer",
+      "description": "ОНЛАЙН-ШКОЛА АСТРОЛОГИИ ИРИНЫ ЧАЙКИ | AI Engineer\nКлючевые достижения:\n- Увеличил конверсию продаж на 35% через персонализированный AI-консультант  \n- Автоматизировал 65% работы кураторов, сэкономив $50K+ годовых расходов  \n- Сократил время получения ответов студентами с часов до 1 минуты\n\n---\n\nПРОЕКТ 1: AI-консультант для автоматизации продаж\nРезультат: Рост конверсии на 35%, сокращение расходов на колл-центр на 42%\n\nЗадача: Повысить эффективность воронки продаж и снизить расходы на клиентский сервис\n\nРешение:\n- Разработал персонализированного чат-бота на базе GPT-4 для консультаций клиентов  \n- Создал AstrService для генерации натальных карт с автоматическими консультациями  \n- Внедрил цепочку из 9 специализированных LLM-вызовов для глубокой персонализации  \n- Автоматизировал создание PDF-отчетов с визуализацией и отправку клиентам  \n\nImpact: Значительный прирост выручки уже в первые 6 месяцев, высокая клиентская удовлетворенность\n\n---\n\nПРОЕКТ 2: Автоматизация образовательного процесса  \nРезультат: Сокращение времени кураторов на 65%, экономия ~30% годовых расходов на проверку\n\nЗадача: Автоматизировать проверку домашних заданий, которая занимала до 65% времени кураторов\n\nРешение:\n- Создал 4 специализированных чат-бота для проверки заданий по разным дисциплинам  \n- Реализовал гибридную систему поиска и проверки через Pinecone с морфологическим анализом  \n- Провел fine-tuning GPT-3.5 на 900 страницах контента и 1200 парах вопрос-ответ  \n- Применил продвинутые методы промпт-инженерии (CoT, ToT) для повышения точности  \n\nМасштаб: Стабильное качество проверок без человеческого фактора, повышение общей удовлетворенности\n\n---\n\nПРОЕКТ 3: Корпоративная RAG-система для студентов\nРезультат: Время получения ответа < 1 минуты, существенное улучшение качества обучения\n\nКраткое описание: Построил RAG-систему на тысячах страниц учебных материалов с семантическими коллекциями, иерархической картой знаний и поэтапным семантическим роутингом. Исключил \"галлюцинации\" LLM через точное соответствие исходному тексту.\n\n---\n\nТехнический стек:\n\nAI/ML: LLM Fine-tuning, RAG Systems, Conversational AI, Hybrid Search  \nAI техники: Chain of Thought (CoT), Tree of Thought (ToT), Self-Reflection, Decomposition  \nFrameworks: LangChain, LlamaIndex, Hugging Face Transformers  \nLLM: GPT-4, GPT-3.5 Fine-tuning, RAGAS Validation  \nData: Pinecone, Chroma, BM-25, Vector Databases  \nTools: PyMuPDF, Pymorphy2, JSON Structuring\n\n---\n\nДополнительно: Реализованы системы аудита телефонных звонков, валидация RAG-ответов через RAGAS framework и другие AI-решения. Подробности по запросу."
+    },
+    {
+      "start": "2022-03-01",
+      "end": "2023-04-01",
+      "company": "Фриланс проекты",
+      "company_id": null,
+      "industry": null,
+      "industries": [
+        {
+          "id": "7.540",
+          "name": "Разработка программного обеспечения"
+        }
+      ],
+      "area": {
+        "id": "1",
+        "name": "Москва",
+        "url": "https://api.hh.ru/areas/1"
+      },
+      "company_url": null,
+      "employer": null,
+      "position": "Python Developer / ML Engineer (Freelance)",
+      "description": "ПРОЕКТ: Telegram-бот \"Учет расходов\"\nРезультат: 1500+ активных пользователей, автоматизация учета личных финансов\nЗадача: Создать простого бота для автоматического учета и категоризации трат\nРешение:\n\nРазработал Telegram-бота на Python с базой данных SQLite\nОбучил простую модель на логистической регрессии для классификации трат по категориям\nИспользовал ключевые слова и паттерны для автоматического определения типа расходов\nДобавил визуализацию трат через простые графики\nСоздал систему уведомлений о превышении бюджета\n\nФункциональность:\n\nАвтоматическое определение категории трат из текста\nЭкспорт статистики в Excel\nУстановка месячных лимитов по категориям\nПростые графики расходов\n\n\nТехнический стек:\nBackend: Python, aiogram, SQLite\nML: scikit-learn, логистическая регрессия, pandas\nVisualization: matplotlib\nTools: Git, регулярные выражения"
+    }
+  ],
+  "language": [
+    {
+      "id": "rus",
+      "name": "Русский",
+      "level": {
+        "id": "l1",
+        "name": "Родной"
+      }
+    }
+  ],
+  "metro": null,
+  "moderation_note": [],
+  "recommendation": [],
+  "relocation": {
+    "type": {
+      "id": "no_relocation",
+      "name": "не могу переехать"
+    },
+    "area": [],
+    "district": []
+  },
+  "schedule": {
+    "id": "fullDay",
+    "name": "Полный день"
+  },
+  "schedules": [
+    {
+      "id": "fullDay",
+      "name": "Полный день"
+    },
+    {
+      "id": "shift",
+      "name": "Сменный график"
+    },
+    {
+      "id": "flexible",
+      "name": "Гибкий график"
+    },
+    {
+      "id": "remote",
+      "name": "Удаленная работа"
+    },
+    {
+      "id": "flyInFlyOut",
+      "name": "Вахтовый метод"
+    }
+  ],
+  "site": [
+    {
+      "type": {
+        "id": "personal",
+        "name": "Другой сайт"
+      },
+      "url": "https://t.me/dizilx"
+    }
+  ],
+  "travel_time": {
+    "id": "any",
+    "name": "Не имеет значения"
+  },
+  "business_trip_readiness": {
+    "id": "ready",
+    "name": "готов к командировкам"
+  },
+  "next_publish_at": "2025-07-10T17:43:24+0300",
+  "can_publish_or_update": false,
+  "publish_url": "https://api.hh.ru/resumes/77111a28ff0eed02270039ed1f7871436c3845/publish",
+  "paid_services": [
+    {
+      "id": "resume_autoupdating",
+      "name": "Автоподнятие резюме",
+      "active": false
+    },
+    {
+      "id": "resume_marked",
+      "name": "Яркое резюме",
+      "active": false
+    }
+  ],
+  "finished": true,
+  "blocked": false,
+  "status": {
+    "id": "published",
+    "name": "опубликовано"
+  },
+  "portfolio": [],
+  "skill_set": [
+    "SQL",
+    "Python",
+    "Linux",
+    "Git",
+    "Docker",
+    "LLM",
+    "LangChain",
+    "REST API",
+    "RAG Systems",
+    "Fine-tuning",
+    "Prompt Engineering",
+    "LangGraph",
+    "Hugging Face",
+    "Ollama",
+    "vLLM",
+    "GPT-4",
+    "Text-to-Speech",
+    "Multimodal AI",
+    "Chroma",
+    "Pinecone",
+    "Pydantic",
+    "Telegram API",
+    "GPU Computing",
+    "Bash",
+    "Spark",
+    "Hive",
+    "AirFlow",
+    "Kafka",
+    "Hadoop",
+    "OpenShift"
+  ],
+  "has_vehicle": true,
+  "driver_license_types": [
+    {
+      "id": "B"
+    }
+  ],
+  "specialization": [],
+  "professional_roles": [
+    {
+      "id": "165",
+      "name": "Дата-сайентист"
+    },
+    {
+      "id": "96",
+      "name": "Программист, разработчик"
+    },
+    {
+      "id": "104",
+      "name": "Руководитель группы разработки"
+    }
+  ],
+  "tags": [],
+  "progress": {
+    "percentage": 90,
+    "mandatory": [],
+    "recommended": [
+      {
+        "id": "education",
+        "name": "Образование"
+      },
+      {
+        "id": "district",
+        "name": "Район проживания"
+      },
+      {
+        "id": "portfolio",
+        "name": "Портфолио"
+      },
+      {
+        "id": "hidden_fields",
+        "name": "Список скрытых полей"
+      },
+      {
+        "id": "recommendation",
+        "name": "Рекомендации"
+      }
+    ]
+  },
+  "_progress": {
+    "percentage": 90,
+    "mandatory": [],
+    "recommended": [
+      "education",
+      "district",
+      "portfolio",
+      "hidden_fields",
+      "recommendation"
+    ]
+  },
+  "total_views": 21,
+  "new_views": 1,
+  "views_url": "https://api.hh.ru/resumes/77111a28ff0eed02270039ed1f7871436c3845/views"
+}

@@ -13,6 +13,8 @@
 - **HH Adapter (`src/hh_adapter`):** Комплексный клиент для API HH.ru. Он управляет токенами (обмен кода на токены, их автоматическое обновление) и предоставляет чистый интерфейс для выполнения запросов к API.
 
 - **Parsing (`src/parsing`):** Библиотечный модуль без собственного сервиса. Решает две задачи: извлечение информации из резюме (PDF → LLM → `ResumeInfo`) и преобразование вакансий из HH JSON в `VacancyInfo`. Подробности и диаграммы см. в `docs/architecture/components/parser.md`.
+ 
+- **LLM Cover Letter (`src/llm_cover_letter`):** Генерация персонализированных сопроводительных писем из `ResumeInfo` и `VacancyInfo` с использованием LLM и версионируемой системы промптов. См. `docs/architecture/components/llm_cover_letter.md`.
 
 ## Процесс аутентификации
 
