@@ -218,6 +218,7 @@ pytest
   - `docs/architecture/components/hh_adapter.md`
   - `docs/architecture/components/callback_server.md`
   - `docs/architecture/components/parser.md`
+  - `docs/architecture/components/llm_cover_letter.md`
   - Деплой: `docs/architecture/components/docker.md`
 
 Также см. правила и стиль для агентов/контрибьюторов: `AGENTS.md`, `CLAUDE.md`.

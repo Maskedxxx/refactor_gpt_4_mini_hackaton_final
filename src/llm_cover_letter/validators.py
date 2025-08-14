@@ -1,3 +1,4 @@
+# src/llm_cover_letter/validators.py
 # --- agent_meta ---
 # role: llm-cover-letter-validator
 # owner: @backend
@@ -40,4 +41,3 @@ class DefaultCoverLetterValidator(ICoverLetterValidator):
         ]
         if not all(checks):
             raise QualityValidationError("Сопроводительное письмо не прошло проверку качества")
-

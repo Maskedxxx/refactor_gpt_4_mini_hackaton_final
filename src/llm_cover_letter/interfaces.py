@@ -1,3 +1,4 @@
+# src/llm_cover_letter/interfaces.py
 # --- agent_meta ---
 # role: llm-cover-letter-interface
 # owner: @backend
@@ -33,4 +34,3 @@ class ILetterGenerator(Protocol):
     def format_for_email(self, letter: EnhancedCoverLetter) -> str:  # pragma: no cover
         """Вернуть строку письма, готовую к отправке по email."""
         ...
-

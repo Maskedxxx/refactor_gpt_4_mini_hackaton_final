@@ -1,3 +1,4 @@
+# src/llm_cover_letter/service.py
 # --- agent_meta ---
 # role: llm-cover-letter-service
 # owner: @backend
@@ -76,9 +77,7 @@ class LLMCoverLetterGenerator(ILetterGenerator):
         self._prompt_builder = prompt_builder or DefaultPromptBuilder()
         self._validator = validator or DefaultCoverLetterValidator()
 
-    async def generate(
-        self, resume: ResumeInfo, vacancy: VacancyInfo, options: CoverLetterOptions
-    ) -> EnhancedCoverLetter:
+    async def generate(self, resume: ResumeInfo, vacancy: VacancyInfo, options: CoverLetterOptions) -> EnhancedCoverLetter:
         # Слияние опций с дефолтами
         opts = CoverLetterOptions(
             **{
@@ -106,11 +105,7 @@ class LLMCoverLetterGenerator(ILetterGenerator):
             getattr(getattr(self._prompt_builder, "_template", None), "name", "cover_letter"),
             opts.prompt_version,
         )
-        letter = await self._llm.generate_structured(
-            prompt=prompt,
-            schema=EnhancedCoverLetter,
-            temperature=opts.temperature,
-        )
+        letter = await self._llm.generate_structured(prompt=prompt, schema=EnhancedCoverLetter, temperature=opts.temperature,)
 
         # Валидация качества (можно отключить через опции)
         if opts.quality_checks:

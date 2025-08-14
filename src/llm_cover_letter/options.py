@@ -1,3 +1,4 @@
+# src/llm_cover_letter/options.py
 # --- agent_meta ---
 # role: llm-cover-letter-options
 # owner: @backend
@@ -40,4 +41,3 @@ class CoverLetterOptions(BaseModel):
     class Config:
         extra = "forbid"
         title = "CoverLetterOptions"
-

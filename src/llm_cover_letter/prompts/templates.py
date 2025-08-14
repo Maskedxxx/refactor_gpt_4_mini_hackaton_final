@@ -1,3 +1,4 @@
+# src/llm_cover_letter/prompts/templates.py
 # --- agent_meta ---
 # role: llm-cover-letter-prompts
 # owner: @backend
@@ -38,4 +39,3 @@ def get_template(version: str) -> PromptTemplate:
 
     # fallback на v1
     return get_template("cover_letter.v1")
-

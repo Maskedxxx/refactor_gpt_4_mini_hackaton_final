@@ -1,6 +1,26 @@
 # Changelog
 # Changelog
 
+## 2025-08-14 (Docs polish: path headers, env, refs)
+
+- Зафиксировано правило: первая строка — относительный путь к файлу; добавлено в `AGENTS.md` и `CLAUDE.md`.
+- Добавлены переменные `COVER_LETTER_*` в `.env.example` (версия промпта, температура, язык, проверки, модель).
+- README: добавлена ссылка на `components/llm_cover_letter.md` в разделе архитектуры.
+- Changelog: запись про Cover Letter (2025‑08‑10) поднята наверх для видимости.
+- Проставлены относительные пути в шапках файлов `src/llm_cover_letter/*`.
+
+## 2025-08-10 (LLM Cover Letter module — contract-first)
+
+- Добавлен библиотечный компонент `src/llm_cover_letter`:
+  - Публичный контракт: `ILetterGenerator`, `CoverLetterOptions`, модели письма.
+  - Версионируемая система промптов и билдеров (`prompts/*`).
+  - Сервис `LLMCoverLetterGenerator` с DI (LLM, билдеры, валидатор, настройки).
+  - Валидатор качества и форматтеры блоков резюме/вакансии и email‑текста.
+- Документация:
+  - Новый файл `docs/architecture/components/llm_cover_letter.md`.
+  - Обновлён `overview.md`, добавлена секция в README с примерами.
+- Примеры: `examples/generate_cover_letter.py` (офлайн/онлайн режимы).
+
 ## 2025-08-10 (Parsing docs, demo & webapp headers)
 
 - Компонент Parser: добавлены sequenceDiagram диаграммы потоков (резюме и вакансия) в `docs/architecture/components/parser.md`.
@@ -129,14 +149,3 @@
 -   **Initialized project structure:**
     -   Created directories `src/hh_adapter` and `docs/architecture/components`.
     -   Created `docs/architecture/components/hh_adapter.md` and `docs/architecture/changelog.md`.
-## 2025-08-10 (LLM Cover Letter module — contract-first)
-
-- Добавлен библиотечный компонент `src/llm_cover_letter`:
-  - Публичный контракт: `ILetterGenerator`, `CoverLetterOptions`, модели письма.
-  - Версионируемая система промптов и билдеров (`prompts/*`).
-  - Сервис `LLMCoverLetterGenerator` с DI (LLM, билдеры, валидатор, настройки).
-  - Валидатор качества и форматтеры блоков резюме/вакансии и email‑текста.
-- Документация:
-  - Новый файл `docs/architecture/components/llm_cover_letter.md`.
-  - Обновлён `overview.md`, добавлена секция в README с примерами.
-- Примеры: `examples/generate_cover_letter.py` (офлайн/онлайн режимы).

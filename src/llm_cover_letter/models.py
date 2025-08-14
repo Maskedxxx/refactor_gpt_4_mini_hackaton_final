@@ -1,3 +1,4 @@
+# src/llm_cover_letter/models.py
 # --- agent_meta ---
 # role: llm-cover-letter-models
 # owner: @backend
@@ -147,4 +148,3 @@ class EnhancedCoverLetter(BaseModel):
     class Config:
         extra = "forbid"
         title = "EnhancedCoverLetter"
-

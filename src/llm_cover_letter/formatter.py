@@ -1,3 +1,4 @@
+# src/llm_cover_letter/formatter.py
 # --- agent_meta ---
 # role: llm-cover-letter-formatter
 # owner: @backend
@@ -126,4 +127,3 @@ def format_letter_for_email_text(letter) -> str:
         f"{letter.professional_closing}\n\n"
         f"{letter.signature}"
     )
-

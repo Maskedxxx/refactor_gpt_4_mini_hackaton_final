@@ -1,3 +1,4 @@
+# src/llm_cover_letter/config.py
 # --- agent_meta ---
 # role: llm-cover-letter-settings
 # owner: @backend
@@ -41,4 +42,3 @@ class LLMCoverLetterSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_prefix="COVER_LETTER_", extra="ignore"
     )
-

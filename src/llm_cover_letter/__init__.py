@@ -1,3 +1,4 @@
+# src/llm_cover_letter/__init__.py
 # --- agent_meta ---
 # role: llm-cover-letter
 # owner: @backend

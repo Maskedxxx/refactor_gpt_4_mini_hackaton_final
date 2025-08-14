@@ -1,3 +1,4 @@
+# src/llm_cover_letter/prompts/builders.py
 # --- agent_meta ---
 # role: llm-cover-letter-prompt-builders
 # owner: @backend
@@ -83,4 +84,3 @@ class DefaultPromptBuilder:
             else:
                 context["extra_context_block"] = "(нет)"
         return tmpl.render(context)
-

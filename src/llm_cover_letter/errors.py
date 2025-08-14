@@ -1,3 +1,4 @@
+# src/llm_cover_letter/errors.py
 # --- agent_meta ---
 # role: llm-cover-letter-errors
 # owner: @backend
@@ -19,4 +20,3 @@ class QualityValidationError(CoverLetterError):
 
 class PromptBuildError(CoverLetterError):
     """Ошибка построения промпта/контекста."""
-
