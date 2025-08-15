@@ -5,6 +5,8 @@
 ## Ключевые возможности
 
 -   **Модульная архитектура**: Четкое разделение на `hh_adapter` (клиент HH API), `webapp` (FastAPI‑сервис с OAuth2 флоу и персистентным хранением токенов) и `callback_server` (демо для локального получения кода).
+-   **Plugin-система LLM фич**: Новая архитектура `llm_features` позволяет легко добавлять и удалять LLM-функции без изменения основного кода.
+-   **Унифицированное API для LLM**: Универсальные роуты `/features/{name}/generate` для всех LLM-фич с автоматической регистрацией.
 -   **Полный цикл OAuth2**: Реализован полный поток авторизации "Authorization Code Grant".
 -   **Автоматическое управление токенами**: Прозрачное обновление `access_token` с помощью `refresh_token`.
 -   **Асинхронность**: Построен на `asyncio`, `aiohttp` и `FastAPI` для высокой производительности.
@@ -176,9 +178,32 @@ python -m examples.parse_parsers --fake-llm --resume tests/data/resume.pdf --vac
 
 ---
 
-### 7. Демонстрация LLM Cover Letter (сопроводительное письмо)
+### 7. LLM Features (новая модульная система)
 
-Генерация персонализированного письма на основе `ResumeInfo` и `VacancyInfo`:
+#### A. Через унифицированное API
+
+Все LLM-фичи доступны через универсальные роуты после запуска webapp:
+
+```bash
+# Запустить webapp
+python -m src.webapp
+
+# Получить список всех доступных фич
+curl http://localhost:8080/features
+
+# Генерация сопроводительного письма
+curl -X POST http://localhost:8080/features/cover_letter/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resume": {...},
+    "vacancy": {...},
+    "options": {"temperature": 0.4, "language": "ru"}
+  }'
+```
+
+#### B. Через legacy примеры
+
+Старые примеры все еще работают:
 
 ```bash
 # Офлайн-режим без сети (фейковый LLM)
@@ -189,7 +214,9 @@ export OPENAI_API_KEY=...
 python -m examples.generate_cover_letter --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json
 ```
 
-Подробности: `docs/architecture/components/llm_cover_letter.md`.
+#### C. Добавление новых фич
+
+См. подробное руководство: `src/llm_features/README.md`
 
 ## Тестирование
 
@@ -219,6 +246,7 @@ pytest
   - `docs/architecture/components/callback_server.md`
   - `docs/architecture/components/parser.md`
   - `docs/architecture/components/llm_cover_letter.md`
+  - **LLM Features Framework**: `src/llm_features/README.md`
   - Деплой: `docs/architecture/components/docker.md`
 
 Также см. правила и стиль для агентов/контрибьюторов: `AGENTS.md`, `CLAUDE.md`.

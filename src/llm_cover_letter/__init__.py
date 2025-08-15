@@ -22,10 +22,18 @@ from .models import (
 )
 from .options import CoverLetterOptions
 from .errors import CoverLetterError, QualityValidationError, PromptBuildError
+from .bootstrap import register_cover_letter_feature
+
+# Автоматическая регистрация фичи при импорте модуля
+try:
+    register_cover_letter_feature()
+except Exception:
+    # Игнорируем ошибки регистрации (например, отсутствие OPENAI_API_KEY)
+    pass
 
 __all__ = [
     "ILetterGenerator",
-    "LLMCoverLetterGenerator",
+    "LLMCoverLetterGenerator", 
     "CoverLetterOptions",
     "RoleType",
     "CompanyContext",
@@ -35,4 +43,5 @@ __all__ = [
     "CoverLetterError",
     "QualityValidationError",
     "PromptBuildError",
+    "register_cover_letter_feature",
 ]
