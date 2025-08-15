@@ -29,7 +29,6 @@ from src.webapp.features import router as features_router
 
 # Импортируем модуль для автоматической регистрации фич
 import src.llm_cover_letter  # Автоматически регистрирует cover_letter фичу
-import src.llm_gap_analyzer  # Автоматически регистрирует gap_analyzer фичу
 
 
 app = FastAPI(title="HH Adapter WebApp", version="0.1.0")
