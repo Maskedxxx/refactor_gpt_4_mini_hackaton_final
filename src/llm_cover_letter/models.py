@@ -77,9 +77,6 @@ class PersonalizationStrategy(BaseModel):
     company_hook: str = Field(..., description="Зацепка: что конкретно привлекает в компании/продукте")
     role_motivation: str = Field(..., description="Мотивация именно для этой роли и уровня")
     value_proposition: str = Field(..., description="Конкретная ценность, которую принесет кандидат")
-    company_knowledge: Optional[str] = Field(
-        None, description="Демонстрация знаний о компании/продукте"
-    )
 
     class Config:
         extra = "forbid"
@@ -99,6 +96,11 @@ class EnhancedCoverLetter(BaseModel):
             "Оценка длины письма в зависимости от уровня кандидата и его вклада"
         ),
     )
+    
+    # Рекомендации по улучшению
+    improvement_suggestions: List[str] = Field(
+        ..., description="Конкретные рекомендации по улучшению"
+    )
 
     # Анализ соответствия
     skills_match: SkillsMatchAnalysis = Field(..., description="Анализ соответствия навыков")
@@ -110,22 +112,22 @@ class EnhancedCoverLetter(BaseModel):
     subject_line: str = Field(..., max_length=100, description="Тема письма")
     personalized_greeting: str = Field(..., description="Персонализированное приветствие")
     opening_hook: str = Field(
-        ..., max_length=300, description="Зацепляющее начало — достижение/история"
+        ..., max_length=500, description="Зацепляющее начало: краткая история успеха с конкретными цифрами ИЛИ достижение, связанное с продуктом компании. НЕ 'Меня заинтересовала ваша вакансия'"
     )
     company_interest: str = Field(
-        ..., max_length=250, description="Конкретный интерес к компании и роли"
+        ..., max_length=250, description="Конкретное знание о компании/продукте, личная связь с ценностями или подходами. НЕ общие фразы типа 'лидер рынка'"
     )
     relevant_experience: str = Field(
-        ..., max_length=400, description="Релевантный опыт с достижениями"
+        ..., max_length=400, description="1-2 самых релевантных достижения с конкретными цифрами и точные совпадения навыков из требований вакансии"
     )
     value_demonstration: str = Field(
-        ..., max_length=300, description="Как навыки решат проблемы работодателя"
+        ..., max_length=300, description="КАК конкретные навыки решат задачи работодателя. Фокус на ценности для компании с релевантными метриками и достижениями"
     )
     growth_mindset: Optional[str] = Field(
         None, max_length=150, description="Готовность к развитию при пробелах"
     )
     professional_closing: str = Field(
-        ..., max_length=200, description="Профессиональное завершение и CTA"
+        ..., max_length=200, description="Профессиональное завершение с энтузиазмом и конкретным call-to-action (готовность к интервью)"
     )
     signature: str = Field(..., description="Подпись с контактной информацией")
 
@@ -138,11 +140,6 @@ class EnhancedCoverLetter(BaseModel):
     )
     relevance_score: int = Field(
         ..., ge=1, le=10, description="Оценка релевантности содержания (1-10)"
-    )
-
-    # Рекомендации по улучшению
-    improvement_suggestions: List[str] = Field(
-        ..., description="Конкретные рекомендации по улучшению"
     )
 
     class Config:
