@@ -10,13 +10,14 @@
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, ConfigDict
+
+from src.llm_features.config import BaseFeatureSettings
 
 
-class LLMCoverLetterSettings(BaseSettings):
+class LLMCoverLetterSettings(BaseFeatureSettings):
     """Конфигурация генератора сопроводительных писем.
 
     Environment:
@@ -27,18 +28,21 @@ class LLMCoverLetterSettings(BaseSettings):
       - COVER_LETTER_MODEL_NAME (опционально переопределяет LLM модель)
     """
 
+    # Переопределяем дефолты для cover_letter
     prompt_version: str = Field(
-        default="cover_letter.v1", description="Версия шаблона промпта"
+        default="cover_letter.v2", description="Версия шаблона промпта"
     )
     temperature: float = Field(default=0.4, ge=0.0, le=2.0, description="Температура LLM")
     quality_checks: bool = Field(default=False, description="Включить проверки качества")
     language: Literal["ru", "en"] = Field(
         default="ru", description="Язык генерируемого письма"
     )
-    model_name: Optional[str] = Field(
-        default=None, description="Имя LLM модели (override, если задано)"
+    
+    # Специфичные для cover_letter настройки
+    length: Literal["SHORT", "MEDIUM", "LONG"] = Field(
+        default="MEDIUM", description="Желаемая длина письма"
     )
 
-    model_config = SettingsConfigDict(
+    model_config = ConfigDict(
         env_file=".env", env_prefix="COVER_LETTER_", extra="ignore"
     )

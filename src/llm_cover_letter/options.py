@@ -12,12 +12,13 @@ from __future__ import annotations
 
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from src.llm_features.base.options import BaseLLMOptions
 from .models import RoleType
 
 
-class CoverLetterOptions(BaseModel):
+class CoverLetterOptions(BaseLLMOptions):
     """Опции генерации письма, настраиваемые снаружи."""
 
     role_hint: Optional[RoleType] = Field(
@@ -27,8 +28,9 @@ class CoverLetterOptions(BaseModel):
         "ru", description="Язык генерируемого письма"
     )
     length: Literal["SHORT", "MEDIUM", "LONG"] = Field(
-        "MEDIUM", description="Желаемая длина письма"
+        "LONG", description="Желаемая длина письма"
     )
+    # Переопределяем дефолты из BaseLLMOptions
     temperature: float = Field(0.4, ge=0.0, le=2.0, description="Температура LLM")
     prompt_version: str = Field(
         "cover_letter.v1", description="Версия шаблона промпта"
@@ -37,5 +39,5 @@ class CoverLetterOptions(BaseModel):
     extra_context: Optional[dict[str, Any]] = Field(None, description="Произвольные дополнительные сигналы в промпт")
 
     class Config:
-        extra = "forbid"
+        extra = "allow"  # Наследуем от BaseLLMOptions, который поддерживает дополнительные поля
         title = "CoverLetterOptions"
