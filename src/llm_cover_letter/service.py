@@ -102,15 +102,16 @@ class LLMCoverLetterGenerator(AbstractLLMGenerator[EnhancedCoverLetter], ILetter
         """Слить пользовательские опции с дефолтами фичи."""
         # Если переданы CoverLetterOptions, используем их
         if isinstance(options, CoverLetterOptions):
-            return CoverLetterOptions(
-                **{
-                    "language": self._settings.language,
-                    "prompt_version": self._settings.prompt_version,
-                    "temperature": self._settings.temperature,
-                    "quality_checks": self._settings.quality_checks,
-                },
-                **options.model_dump(exclude_unset=True),
-            )
+            # Сначала дефолты, затем переданные опции (они перезапишут дефолты)
+            defaults = {
+                "language": self._settings.language,
+                "prompt_version": self._settings.prompt_version,
+                "temperature": self._settings.temperature,
+                "quality_checks": self._settings.quality_checks,
+            }
+            user_options = options.model_dump(exclude_unset=True)
+            merged = {**defaults, **user_options}
+            return CoverLetterOptions(**merged)
         else:
             # Fallback для BaseLLMOptions
             return CoverLetterOptions(
@@ -118,7 +119,7 @@ class LLMCoverLetterGenerator(AbstractLLMGenerator[EnhancedCoverLetter], ILetter
                 prompt_version=options.prompt_version or self._settings.prompt_version,
                 temperature=options.temperature or self._settings.temperature,
                 quality_checks=options.quality_checks if options.quality_checks is not None else self._settings.quality_checks,
-                extra_context=options.extra_context,
+                extra_context=getattr(options, 'extra_context', None),
             )
     
     def get_feature_name(self) -> str:

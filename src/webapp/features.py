@@ -43,9 +43,17 @@ class FeatureGenerateResponse(BaseModel):
     formatted_output: Optional[str] = Field(default=None, description="Форматированный вывод")
 
 
+class FeatureApiInfo(BaseModel):
+    """API представление информации о фиче (без generator_class)."""
+    name: str
+    version: str
+    description: str
+    default_config: Dict[str, Any]
+
+
 class FeatureListResponse(BaseModel):
     """Список доступных фич."""
-    features: list[FeatureInfo]
+    features: Dict[str, Dict[str, Any]]
 
 
 @router.get("/", response_model=FeatureListResponse)
@@ -54,22 +62,36 @@ async def list_features():
     registry = get_global_registry()
     features = registry.list_features()
     
-    logger.info("Запрошен список фич: %d доступно", len(features))
-    return FeatureListResponse(features=features)
+    # Конвертируем в API-дружелюбный формат
+    features_dict = {}
+    for feature in features:
+        if feature.name not in features_dict:
+            features_dict[feature.name] = {
+                "description": feature.description,
+                "versions": [],
+                "default_version": "v1"  # TODO: получить из реестра
+            }
+        features_dict[feature.name]["versions"].append(feature.version)
+    
+    logger.info("Запрошен список фич: %d доступно", len(features_dict))
+    return FeatureListResponse(features=features_dict)
 
 
 @router.post("/{feature_name}/generate", response_model=FeatureGenerateResponse)
 async def generate_feature(
     feature_name: str,
-    request: FeatureGenerateRequest
+    request: FeatureGenerateRequest,
+    version: Optional[str] = None  # Query parameter для версии
 ):
     """Универсальный роут для генерации любой LLM-фичи."""
     try:
-        # Получаем генератор из реестра
+        # Получаем генератор из реестра  
         registry = get_global_registry()
+        # Версия: query parameter имеет приоритет над версией в теле
+        final_version = version or request.version
         generator = registry.get_generator(
             feature_name, 
-            version=request.version
+            version=final_version
         )
         
         # Конвертируем options в BaseLLMOptions
@@ -78,7 +100,7 @@ async def generate_feature(
         logger.info(
             "Генерация %s@%s: resume_title=%s, vacancy=%s", 
             feature_name,
-            request.version or "default",
+            final_version or "default",
             request.resume.title or "Unknown",
             request.vacancy.name
         )
@@ -110,7 +132,7 @@ async def generate_feature(
         
         return FeatureGenerateResponse(
             feature_name=feature_name,
-            version=request.version or "default", 
+            version=final_version or "default", 
             result=result_dict,
             formatted_output=formatted_output
         )
