@@ -231,6 +231,7 @@ pytest
 Полезно:
 
 - Запуск только webapp‑тестов: `pytest -q tests/webapp`
+- Запуск только llm_features‑тестов: `pytest -q tests/llm_features`
 - Подробности о тестах: см. `tests/README.md` и `tests/webapp/README.md`
 
 Примечание про TTL: одноразовый `state` в OAuth‑флоу имеет ограниченный TTL (время жизни), по умолчанию 600 секунд. По истечении времени `state` считается недействительным и будет отклонён (см. `src/webapp/storage.py`).

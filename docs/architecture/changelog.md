@@ -1,5 +1,13 @@
 # Changelog
 
+## 2025-08-15 (Tests: LLM Features API, Registry, Integration)
+
+- Добавлены тесты для нового фреймворка LLM‑фич:
+  - `tests/llm_features/test_features_api.py` — интеграционные тесты универсальных роутов `GET /features` и `POST /features/{name}/generate` с мок‑реестром и мок‑генератором.
+  - `tests/llm_features/test_feature_registry.py` — юнит‑тесты `FeatureRegistry` (регистрация, версии, список, ошибки `FeatureNotFoundError`).
+  - `tests/llm_features/test_cover_letter_integration.py` — интеграция `LLMCoverLetterGenerator` в рамках нового API (без внешней сети; моки).
+- Обновлены разделы про тестирование: добавлена команда запуска только LLM‑фич `pytest -q tests/llm_features` в корневом `README.md` и расширен `tests/README.md`.
+
 ## 2025-08-15 (LLM Features Framework — plugin architecture)
 
 - **Новая модульная архитектура для LLM-фич:**
