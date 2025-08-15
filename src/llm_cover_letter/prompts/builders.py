@@ -24,6 +24,7 @@ from .mappings import (
     get_company_tone_instruction,
     get_role_adaptation_instruction,
 )
+from ..formatter import format_cover_letter_context
 
 
 class IContextBuilder(Protocol):
@@ -60,6 +61,9 @@ class DefaultContextBuilder:
             # Динамические блоки для промпта
             "company_tone_instruction": get_company_tone_instruction(company_size),
             "role_adaptation_instruction": get_role_adaptation_instruction(effective_role_hint) if effective_role_hint else "",
+            # Сохраняем объекты для анализа в промпт-билдере
+            "_resume": resume,
+            "_vacancy": vacancy,
         }
         return ctx
 
@@ -78,12 +82,22 @@ class DefaultPromptBuilder:
         ctx: dict,
         options: CoverLetterOptions,
     ) -> Prompt:
+        # Получаем resume и vacancy из контекста для анализа
+        resume = ctx.get('_resume')  
+        vacancy = ctx.get('_vacancy')
+        
         tmpl = get_template(options.prompt_version)
         context = dict(ctx)
         context["resume_block"] = resume_block
         context["vacancy_block"] = vacancy_block
+        
+        # Добавляем контекстный анализ если есть данные
+        if resume and vacancy:
+            context["context_analysis"] = format_cover_letter_context(resume, vacancy)
+        else:
+            context["context_analysis"] = ""
+        
         # Дополнительный контекст из опций (dict | str | None)
-        # Если dict — ниже будет преобразован в маркированный список.
         context["extra_context_block"] = (options.extra_context or {})
         
         # если extra_context_block словарь — превращаем в строку
