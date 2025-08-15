@@ -92,6 +92,8 @@ def get_template(version: str) -> PromptTemplate:
             "<resume_start>\n{resume_block}\n</resume_end>\n\n"
             "### Целевая вакансия:\n"
             "<vacancy_start>\n{vacancy_block}\n</vacancy_end>\n\n"
+            "### Анализ соответствия:\n"
+            "{context_analysis}\n\n"
             "### Дополнительный контекст:\n"
             "{extra_context_block}\n\n"
             "## ЗАДАЧА\n"
