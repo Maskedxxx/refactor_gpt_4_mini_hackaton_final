@@ -9,6 +9,7 @@
 - Обрабатывать callback от HH и обменивать `code` на токены (`/auth/hh/callback`).
 - Хранить токены per‑HR в SQLite с безопасной моделью доступа.
 - Выполнять запросы к HH API от имени HR с авто‑обновлением токена (`/vacancies`).
+- Предоставлять унифицированное API для LLM-фич (`/features/{name}/generate`).
 
 ## 2. Контракт (роуты)
 
@@ -20,6 +21,9 @@
   - Возвращает HTML «успех» или 302 на `redirect_to` из `state`.
 - `GET /vacancies?hr_id=<str>&text=<str>`
   - Поднимает токены HR, выполняет запрос к HH API с авто‑refresh, возвращает JSON.
+- **Новые LLM Features роуты:**
+  - `GET /features` — список всех доступных LLM-фич
+  - `POST /features/{feature_name}/generate` — генерация через любую зарегистрированную фичу
 - Технические: `GET /healthz`, `GET /readyz`.
 
 ## 3. Архитектура
@@ -40,7 +44,9 @@ graph TD
 - `app.py` — FastAPI приложение (роуты, DI одноразовых сервисов).
 - `storage.py` — SQLite‑хранилища: `TokenStorage` и `OAuthStateStore` (с TTL), путь задаётся `WEBAPP_DB_PATH`.
 - `service.py` — `PersistentTokenManager` (обёртка над `HHTokenManager`), сериализует refresh через `asyncio.Lock` per‑HR, сохраняет обновлённые токены.
+- **`features.py`** — унифицированные роуты для LLM-фич через `FeatureRegistry`.
 - Использует `HHSettings`, `HHApiClient`, `HHTokenManager` из `hh_adapter`.
+- Использует `FeatureRegistry`, `ILLMGenerator` из `llm_features`.
 
 ## 4. Поток аутентификации
 

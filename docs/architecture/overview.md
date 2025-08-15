@@ -14,7 +14,9 @@
 
 - **Parsing (`src/parsing`):** Библиотечный модуль без собственного сервиса. Решает две задачи: извлечение информации из резюме (PDF → LLM → `ResumeInfo`) и преобразование вакансий из HH JSON в `VacancyInfo`. Подробности и диаграммы см. в `docs/architecture/components/parser.md`.
  
-- **LLM Cover Letter (`src/llm_cover_letter`):** Генерация персонализированных сопроводительных писем из `ResumeInfo` и `VacancyInfo` с использованием LLM и версионируемой системы промптов. См. `docs/architecture/components/llm_cover_letter.md`.
+- **LLM Features Framework (`src/llm_features`):** Модульная архитектура для LLM-фич с автоматической регистрацией, версионированием и унифицированным API. Включает базовые классы (`AbstractLLMGenerator`), систему регистрации (`FeatureRegistry`) и универсальные роуты (`/features/{name}/generate`). Подробности: `src/llm_features/README.md`.
+
+- **LLM Cover Letter (`src/llm_cover_letter`):** Первая фича в новой архитектуре. Генерация персонализированных сопроводительных писем из `ResumeInfo` и `VacancyInfo` с использованием LLM и версионируемой системы промптов. См. `docs/architecture/components/llm_cover_letter.md`.
 
 ## Процесс аутентификации
 
@@ -37,4 +39,60 @@ sequenceDiagram
     WebApp->>HH: Запрос c access токеном (auto refresh)
     HH-->>WebApp: Вернуть данные
     WebApp-->>App: JSON данные
+```
+
+## LLM Features Architecture
+
+Новая модульная архитектура для LLM-функций обеспечивает легкое добавление и удаление фич:
+
+```mermaid
+graph TB
+    API["/features/{name}/generate"] --> Registry[FeatureRegistry]
+    Registry --> CoverLetter[LLMCoverLetterGenerator]
+    Registry --> GapAnalyzer[LLMGapAnalyzer]
+    Registry --> Future[Future Features...]
+    
+    CoverLetter --> Base[AbstractLLMGenerator]
+    GapAnalyzer --> Base
+    Future --> Base
+    
+    Base --> LLM[LLM Client]
+    Base --> Prompt[Prompt Builder]
+    Base --> Validator[Quality Validator]
+    
+    subgraph "Plugin System"
+        CoverLetter
+        GapAnalyzer 
+        Future
+    end
+    
+    subgraph "Base Framework"
+        Base
+        Registry
+        LLM
+        Prompt
+        Validator
+    end
+```
+
+### Процесс использования LLM фич:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant WebApp
+    participant Registry as FeatureRegistry
+    participant Feature as LLMGenerator
+    participant LLM as OpenAI
+
+    Client->>WebApp: POST /features/cover_letter/generate
+    WebApp->>Registry: get_generator("cover_letter")
+    Registry-->>WebApp: LLMCoverLetterGenerator instance
+    WebApp->>Feature: generate(resume, vacancy, options)
+    Feature->>Feature: _build_prompt()
+    Feature->>LLM: generate_structured()
+    LLM-->>Feature: EnhancedCoverLetter
+    Feature->>Feature: validate()
+    Feature-->>WebApp: Result
+    WebApp-->>Client: JSON Response
 ```
