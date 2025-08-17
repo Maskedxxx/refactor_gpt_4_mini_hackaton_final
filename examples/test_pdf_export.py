@@ -17,47 +17,61 @@ from datetime import datetime
 from pathlib import Path
 
 from src.pdf_export.service import PDFExportService
-from src.pdf_export.formatters import GapAnalyzerPDFFormatter
+from src.pdf_export.formatters import GapAnalyzerPDFFormatter, CoverLetterPDFFormatter
 from src.utils import get_logger
 
 log = get_logger("examples.test_pdf_export")
 
 
-async def run_async(result_file: str) -> int:
-    """Тестирование PDF экспорта с сохраненным результатом GAP анализа."""
+async def run_async(result_file: str, feature_name: str = "gap_analyzer") -> int:
+    """Тестирование PDF экспорта с сохраненным результатом LLM фичи."""
     
     # Загрузка сохраненного результата
     test_data_dir = Path("tests/data")
     result_path = test_data_dir / result_file
     
     if not result_path.exists():
-        print("❌ Файл не найден: {result_path}")
+        print(f"❌ Файл не найден: {result_path}")
         print("💡 Сгенерируйте результат командой:")
-        print("   python -m examples.generate_gap_analysis --save-result")
+        if feature_name == "gap_analyzer":
+            print("   python -m examples.generate_gap_analysis --fake-llm --save-result")
+        elif feature_name == "cover_letter":
+            print("   python -m examples.generate_cover_letter --fake-llm --save-result")
         return 1
     
     with result_path.open("r", encoding="utf-8") as f:
-        gap_result = json.load(f)
+        feature_result = json.load(f)
     
-    log.info("Загружен GAP результат из %s", result_path)
+    log.info("Загружен результат %s из %s", feature_name, result_path)
     
     # Подготовка метаданных
     metadata = {
-        "feature_name": "gap_analyzer",
+        "feature_name": feature_name,
         "version": "v1",
         "generated_at": datetime.now().isoformat(),
         "source_file": str(result_path)
     }
     
+    # Выбор форматтера по типу фичи
+    formatters = {
+        "gap_analyzer": GapAnalyzerPDFFormatter(),
+        "cover_letter": CoverLetterPDFFormatter(),
+    }
+    
+    formatter = formatters.get(feature_name)
+    if not formatter:
+        print(f"❌ Неподдерживаемая фича: {feature_name}")
+        print(f"💡 Доступные фичи: {', '.join(formatters.keys())}")
+        return 1
+    
     # Инициализация PDF сервиса
     pdf_service = PDFExportService()
-    formatter = GapAnalyzerPDFFormatter()
     
     # Генерация PDF
     log.info("Генерация PDF...")
     pdf_bytes = await pdf_service.generate_pdf(
         formatter=formatter,
-        data=gap_result,
+        data=feature_result,
         metadata=metadata
     )
     
@@ -71,36 +85,49 @@ async def run_async(result_file: str) -> int:
     with pdf_path.open("wb") as f:
         f.write(pdf_bytes)
     
-    print(f"✅ PDF успешно сгенерирован!")
+    print("✅ PDF успешно сгенерирован!")
     print(f"📁 Файл: {pdf_path}")
     print(f"📊 Размер: {len(pdf_bytes):,} байт")
-    print(f"🎯 GAP анализ: {gap_result.get('overall_match_percentage', 'N/A')}% соответствие")
+    
+    # Специфичная информация в зависимости от фичи
+    if feature_name == "gap_analyzer":
+        match_pct = feature_result.get('overall_match_percentage', 'N/A')
+        print(f"🎯 Соответствие: {match_pct}%")
+    elif feature_name == "cover_letter":
+        quality_scores = feature_result.get('personalization_score', 'N/A')
+        print(f"🎯 Персонализация: {quality_scores}/10")
     
     return 0
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Тестирование PDF экспорта GAP анализа")
+    p = argparse.ArgumentParser(description="Тестирование PDF экспорта LLM фич")
     p.add_argument("--result-file", type=str, help="Имя файла с результатом в tests/data/")
+    p.add_argument("--feature", type=str, choices=["gap_analyzer", "cover_letter"], 
+                   default="gap_analyzer", help="Тип фичи для PDF экспорта")
     args = p.parse_args()
     
     if not args.result_file:
-        # Автопоиск последнего файла результата
+        # Автопоиск последнего файла результата для выбранной фичи
         test_data_dir = Path("tests/data")
-        gap_files = list(test_data_dir.glob("gap_analysis_result_*.json"))
+        pattern = f"{args.feature.replace('_', '_')}_result_*.json"
+        feature_files = list(test_data_dir.glob(pattern))
         
-        if not gap_files:
-            print("❌ Нет сохраненных результатов GAP анализа")
+        if not feature_files:
+            print(f"❌ Нет сохраненных результатов для {args.feature}")
             print("💡 Сгенерируйте результат командой:")
-            print("   python -m examples.generate_gap_analysis --save-result")
+            if args.feature == "gap_analyzer":
+                print("   python -m examples.generate_gap_analysis --fake-llm --save-result")
+            elif args.feature == "cover_letter":
+                print("   python -m examples.generate_cover_letter --fake-llm --save-result")
             return 1
         
         # Берем последний по времени создания
-        latest_file = max(gap_files, key=lambda p: p.stat().st_mtime)
+        latest_file = max(feature_files, key=lambda p: p.stat().st_mtime)
         args.result_file = latest_file.name
         print(f"🔍 Автовыбор файла: {args.result_file}")
     
-    return asyncio.run(run_async(args.result_file))
+    return asyncio.run(run_async(args.result_file, args.feature))
 
 
 if __name__ == "__main__":
