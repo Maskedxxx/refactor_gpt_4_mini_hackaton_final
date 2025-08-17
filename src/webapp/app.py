@@ -27,6 +27,7 @@ from src.webapp.storage import TokenStorage, OAuthStateStore
 from src.webapp.service import PersistentTokenManager, exchange_code_for_tokens
 from src.webapp.features import router as features_router
 from src.webapp.sessions import router as sessions_router
+from src.webapp.pdf import router as pdf_router
 
 # Импортируем модуль для автоматической регистрации фич
 import src.llm_cover_letter  # Автоматически регистрирует cover_letter фичу
@@ -38,6 +39,7 @@ app = FastAPI(title="HH Adapter WebApp", version="0.1.0")
 # Подключаем роуты для LLM-фич
 app.include_router(features_router)
 app.include_router(sessions_router)
+app.include_router(pdf_router)
 
 
 # Простые DI-синглтоны (per-process) для демо/atomarного сервиса

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <!-- Заголовок отчета -->
+    <header class="report-header">
+        <h1>{{ title }}</h1>
+        <div class="meta-info">
+            <div class="generated-date">Сгенерировано: {{ generated_at }}</div>
+            <div class="version">Версия: {{ feature_version }}</div>
+        </div>
+    </header>
+
+    <!-- Первичный скрининг -->
+    <section class="screening-section">
+        <h2>Первичный скрининг (7-15 секунд)</h2>
+        <div class="screening-result {{ screening.overall_result.lower() }}">
+            <h3>Результат: {{ screening.overall_result }}</h3>
+        </div>
+        
+        <div class="screening-grid">
+            <div class="screening-item">
+                <span class="label">Соответствие должности:</span>
+                <span class="value {{ 'yes' if screening.job_title_match else 'no' }}">
+                    {{ 'Да' if screening.job_title_match else 'Нет' }}
+                </span>
+            </div>
+            <div class="screening-item">
+                <span class="label">Опыт работы:</span>
+                <span class="value {{ 'yes' if screening.experience_match else 'no' }}">
+                    {{ 'Да' if screening.experience_match else 'Нет' }}
+                </span>
+            </div>
+            <div class="screening-item">
+                <span class="label">Ключевые навыки:</span>
+                <span class="value {{ 'yes' if screening.key_skills_visible else 'no' }}">
+                    {{ 'Да' if screening.key_skills_visible else 'Нет' }}
+                </span>
+            </div>
+            <div class="screening-item">
+                <span class="label">Локация:</span>
+                <span class="value {{ 'yes' if screening.location_suitable else 'no' }}">
+                    {{ 'Да' if screening.location_suitable else 'Нет' }}
+                </span>
+            </div>
+            <div class="screening-item">
+                <span class="label">Зарплатные ожидания:</span>
+                <span class="value {{ 'yes' if screening.salary_match else 'no' }}">
+                    {{ 'Да' if screening.salary_match else 'Нет' }}
+                </span>
+            </div>
+        </div>
+        
+        {% if screening.notes %}
+        <div class="screening-notes">
+            <h4>Примечания:</h4>
+            <p>{{ screening.notes }}</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Критические рекомендации -->
+    {% if critical_recommendations %}
+    <section class="recommendations-section critical">
+        <h2>🚨 Критические рекомендации</h2>
+        <p class="section-description">Без выполнения этих рекомендаций высок риск отказа</p>
+        
+        {% for rec in critical_recommendations %}
+        <div class="recommendation-card critical">
+            <h3>{{ rec.section }}</h3>
+            <div class="issue">
+                <strong>Проблема:</strong> {{ rec.issue }}
+            </div>
+            <div class="actions">
+                <strong>Действия:</strong>
+                <ul>
+                    {% for action in rec.actions %}
+                    <li>{{ action }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% if rec.example %}
+            <div class="example">
+                <strong>Пример:</strong> {{ rec.example }}
+            </div>
+            {% endif %}
+            <div class="rationale">
+                <strong>Обоснование:</strong> {{ rec.rationale }}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Важные рекомендации -->
+    {% if important_recommendations %}
+    <section class="recommendations-section important">
+        <h2>⚡ Важные рекомендации</h2>
+        <p class="section-description">Существенно улучшат впечатление от резюме</p>
+        
+        {% for rec in important_recommendations %}
+        <div class="recommendation-card important">
+            <h3>{{ rec.section }}</h3>
+            <div class="issue">
+                <strong>Проблема:</strong> {{ rec.issue }}
+            </div>
+            <div class="actions">
+                <strong>Действия:</strong>
+                <ul>
+                    {% for action in rec.actions %}
+                    <li>{{ action }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% if rec.example %}
+            <div class="example">
+                <strong>Пример:</strong> {{ rec.example }}
+            </div>
+            {% endif %}
+            <div class="rationale">
+                <strong>Обоснование:</strong> {{ rec.rationale }}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Анализ требований -->
+    <section class="requirements-section">
+        <h2>Анализ требований вакансии</h2>
+        
+        <div class="requirements-table">
+            <div class="table-header">
+                <div class="col-requirement">Требование</div>
+                <div class="col-type">Тип</div>
+                <div class="col-status">Статус</div>
+                <div class="col-impact">Влияние</div>
+                <div class="col-evidence">Подтверждение</div>
+            </div>
+            
+            {% for req in requirements %}
+            <div class="table-row">
+                <div class="col-requirement">
+                    <div class="requirement-text">{{ req.text }}</div>
+                    <div class="requirement-category">{{ req.category }}</div>
+                    {% if req.gap %}
+                    <div class="gap-info">Пробел: {{ req.gap }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-type">{{ req.type }}</div>
+                <div class="col-status">
+                    <span class="status-badge {{ req.status_class }}">{{ req.status }}</span>
+                </div>
+                <div class="col-impact">
+                    <span class="impact-badge {{ req.impact_class }}">{{ req.impact }}</span>
+                </div>
+                <div class="col-evidence">{{ req.evidence }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Оценка качества резюме -->
+    <section class="quality-section">
+        <h2>Оценка качества резюме</h2>
+        
+        <div class="quality-scores">
+            <div class="score-item">
+                <div class="score-label">Структурированность</div>
+                <div class="score-bar">
+                    <div class="score-fill" style="width: {{ quality.structure_clarity * 10 }}%"></div>
+                    <span class="score-value">{{ quality.structure_clarity }}/10</span>
+                </div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Релевантность</div>
+                <div class="score-bar">
+                    <div class="score-fill" style="width: {{ quality.content_relevance * 10 }}%"></div>
+                    <span class="score-value">{{ quality.content_relevance }}/10</span>
+                </div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Фокус на достижениях</div>
+                <div class="score-bar">
+                    <div class="score-fill" style="width: {{ quality.achievement_focus * 10 }}%"></div>
+                    <span class="score-value">{{ quality.achievement_focus }}/10</span>
+                </div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Адаптация под вакансию</div>
+                <div class="score-bar">
+                    <div class="score-fill" style="width: {{ quality.adaptation_quality * 10 }}%"></div>
+                    <span class="score-value">{{ quality.adaptation_quality }}/10</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="quality-impression">
+            <strong>Общее впечатление:</strong> {{ quality.overall_impression }}
+        </div>
+        
+        {% if quality.notes %}
+        <div class="quality-notes">
+            <strong>Примечания:</strong> {{ quality.notes }}
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Итоговая сводка -->
+    <section class="summary-section">
+        <h2>Итоговая оценка</h2>
+        
+        <div class="summary-grid">
+            <div class="summary-item match-percentage">
+                <div class="big-number">{{ summary.match_percentage }}%</div>
+                <div class="label">Соответствие вакансии</div>
+            </div>
+            <div class="summary-item hiring-recommendation">
+                <div class="recommendation {{ summary.hiring_recommendation.lower() }}">
+                    {{ summary.hiring_recommendation }}
+                </div>
+                <div class="label">Рекомендация по найму</div>
+            </div>
+        </div>
+        
+        <div class="summary-lists">
+            <div class="strengths">
+                <h3>Сильные стороны</h3>
+                <ul>
+                    {% for strength in summary.strengths %}
+                    <li>{{ strength }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="gaps">
+                <h3>Основные пробелы</h3>
+                <ul>
+                    {% for gap in summary.gaps %}
+                    <li>{{ gap }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        {% if summary.next_steps %}
+        <div class="next-steps">
+            <h3>Следующие шаги</h3>
+            <ul>
+                {% for step in summary.next_steps %}
+                <li>{{ step }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Дополнительные рекомендации -->
+    {% if optional_recommendations %}
+    <section class="recommendations-section optional">
+        <h2>💡 Дополнительные рекомендации</h2>
+        <p class="section-description">Nice-to-have улучшения</p>
+        
+        {% for rec in optional_recommendations %}
+        <div class="recommendation-card optional">
+            <h3>{{ rec.section }}</h3>
+            <div class="issue">
+                <strong>Возможность улучшения:</strong> {{ rec.issue }}
+            </div>
+            <div class="actions">
+                <strong>Действия:</strong>
+                <ul>
+                    {% for action in rec.actions %}
+                    <li>{{ action }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% if rec.example %}
+            <div class="example">
+                <strong>Пример:</strong> {{ rec.example }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+</body>
+</html>
