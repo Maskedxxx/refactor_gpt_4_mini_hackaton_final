@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <!-- Заголовок отчета -->
+    <header class="report-header">
+        <h1>{{ title }}</h1>
+        <div class="meta-info">
+            <div class="generated-date">Сгенерировано: {{ generated_at }}</div>
+            <div class="version">Версия: {{ feature_version }}</div>
+        </div>
+    </header>
+
+    <!-- Мета-информация -->
+    <section class="meta-section">
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="label">Тип роли:</span>
+                <span class="value">{{ role_type }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">Компания:</span>
+                <span class="value">{{ company.name }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">Размер компании:</span>
+                <span class="value">{{ company.size }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="label">Длина письма:</span>
+                <span class="value">{{ estimated_length }}</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Основное письмо -->
+    <section class="letter-section">
+        <h2>Сопроводительное письмо</h2>
+        
+        <div class="letter-content">
+            <div class="letter-part subject">
+                <h3>Тема письма</h3>
+                <div class="content">{{ letter.subject_line }}</div>
+            </div>
+            
+            <div class="letter-part greeting">
+                <h3>Приветствие</h3>
+                <div class="content">{{ letter.greeting }}</div>
+            </div>
+            
+            <div class="letter-part opening">
+                <h3>Открывающий абзац</h3>
+                <div class="content">{{ letter.opening_hook }}</div>
+            </div>
+            
+            <div class="letter-part company-interest">
+                <h3>Интерес к компании</h3>
+                <div class="content">{{ letter.company_interest }}</div>
+            </div>
+            
+            <div class="letter-part experience">
+                <h3>Релевантный опыт</h3>
+                <div class="content">{{ letter.relevant_experience }}</div>
+            </div>
+            
+            <div class="letter-part value">
+                <h3>Демонстрация ценности</h3>
+                <div class="content">{{ letter.value_demonstration }}</div>
+            </div>
+            
+            {% if letter.growth_mindset %}
+            <div class="letter-part growth">
+                <h3>Готовность к развитию</h3>
+                <div class="content">{{ letter.growth_mindset }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="letter-part closing">
+                <h3>Заключение</h3>
+                <div class="content">{{ letter.closing }}</div>
+            </div>
+            
+            <div class="letter-part signature">
+                <h3>Подпись</h3>
+                <div class="content">{{ letter.signature }}</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Полное письмо -->
+    <section class="full-letter-section">
+        <h2>Готовое письмо</h2>
+        <div class="full-letter">
+            <div class="letter-header">
+                <strong>Тема:</strong> {{ letter.subject_line }}
+            </div>
+            <div class="letter-body">
+                <p>{{ letter.greeting }}</p>
+                <p>{{ letter.opening_hook }}</p>
+                <p>{{ letter.company_interest }}</p>
+                <p>{{ letter.relevant_experience }}</p>
+                <p>{{ letter.value_demonstration }}</p>
+                {% if letter.growth_mindset %}
+                <p>{{ letter.growth_mindset }}</p>
+                {% endif %}
+                <p>{{ letter.closing }}</p>
+                <p>{{ letter.signature }}</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Анализ соответствия навыков -->
+    <section class="skills-section">
+        <h2>Анализ соответствия навыков</h2>
+        
+        <div class="skills-grid">
+            <div class="skills-item matched">
+                <h3>Совпадающие навыки</h3>
+                <ul>
+                    {% for skill in skills_analysis.matched_skills %}
+                    <li>{{ skill }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="skills-item experience">
+                <h3>Релевантный опыт</h3>
+                <div class="content">{{ skills_analysis.relevant_experience }}</div>
+            </div>
+            
+            {% if skills_analysis.quantified_achievement %}
+            <div class="skills-item achievement">
+                <h3>Ключевое достижение</h3>
+                <div class="content">{{ skills_analysis.quantified_achievement }}</div>
+            </div>
+            {% endif %}
+            
+            {% if skills_analysis.growth_potential %}
+            <div class="skills-item growth">
+                <h3>Потенциал роста</h3>
+                <div class="content">{{ skills_analysis.growth_potential }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Стратегия персонализации -->
+    <section class="personalization-section">
+        <h2>Стратегия персонализации</h2>
+        
+        <div class="personalization-grid">
+            <div class="personalization-item hook">
+                <h3>Зацепка компании</h3>
+                <div class="content">{{ personalization.company_hook }}</div>
+            </div>
+            
+            <div class="personalization-item motivation">
+                <h3>Мотивация роли</h3>
+                <div class="content">{{ personalization.role_motivation }}</div>
+            </div>
+            
+            <div class="personalization-item value">
+                <h3>Ценностное предложение</h3>
+                <div class="content">{{ personalization.value_proposition }}</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Дополнительная информация о компании -->
+    {% if company.culture or company.product %}
+    <section class="company-section">
+        <h2>Информация о компании</h2>
+        
+        {% if company.culture %}
+        <div class="company-item culture">
+            <h3>Культура компании</h3>
+            <div class="content">{{ company.culture }}</div>
+        </div>
+        {% endif %}
+        
+        {% if company.product %}
+        <div class="company-item product">
+            <h3>Продукт/Сервис</h3>
+            <div class="content">{{ company.product }}</div>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- Оценки качества -->
+    <section class="quality-section">
+        <h2>Оценка качества письма</h2>
+        
+        <div class="quality-scores">
+            <div class="score-item">
+                <div class="score-label">Персонализация</div>
+                <div class="score-bar">
+                    <div class="score-fill" style="width: {{ quality_scores.personalization * 10 }}%"></div>
+                    <span class="score-value">{{ quality_scores.personalization }}/10</span>
+                </div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Профессиональный тон</div>
+                <div class="score-bar">
+                    <div class="score-fill" style="width: {{ quality_scores.professional_tone * 10 }}%"></div>
+                    <span class="score-value">{{ quality_scores.professional_tone }}/10</span>
+                </div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Релевантность</div>
+                <div class="score-bar">
+                    <div class="score-fill" style="width: {{ quality_scores.relevance * 10 }}%"></div>
+                    <span class="score-value">{{ quality_scores.relevance }}/10</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Рекомендации по улучшению -->
+    {% if improvements %}
+    <section class="improvements-section">
+        <h2>Рекомендации по улучшению</h2>
+        
+        <ul class="improvements-list">
+            {% for improvement in improvements %}
+            <li class="improvement-item">{{ improvement }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+</body>
+</html>
