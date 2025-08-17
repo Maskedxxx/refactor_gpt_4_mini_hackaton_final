@@ -26,6 +26,10 @@
   - `POST /features/{feature_name}/generate` — генерация через любую зарегистрированную фичу
     - Тело запроса: либо `{ session_id, options, version? }`, либо `{ resume, vacancy, options, version? }`
     - Рекомендованный путь — через `session_id` (см. ниже "Сессии")
+- **PDF Export роуты:**
+  - `POST /pdf/generate` — генерация PDF отчета из результата любой фичи
+    - Тело запроса: `{ feature_name, data, metadata }`
+    - Возвращает: binary PDF content с заголовком `Content-Type: application/pdf`
 - **Сессии и персистентность:**
   - `POST /sessions/init_upload` — инициализация сессии из сырого ввода (PDF + vacancy URL)
   - `POST /sessions/init_json` — инициализация сессии из готовых моделей (`ResumeInfo` + `VacancyInfo`)
@@ -50,10 +54,12 @@ graph TD
 - `storage.py` — SQLite‑хранилища: `TokenStorage` и `OAuthStateStore` (с TTL), путь задаётся `WEBAPP_DB_PATH`.
 - `service.py` — `PersistentTokenManager` (обёртка над `HHTokenManager`), сериализует refresh через `asyncio.Lock` per‑HR, сохраняет обновлённые токены.
 - **`features.py`** — унифицированные роуты для LLM-фич через `FeatureRegistry`.
+- **`pdf.py`** — роуты экспорта результатов фич в PDF через `PDFExportService`.
 - **`sessions.py`** — роуты инициализации сессий (`/sessions/init_upload`, `/sessions/init_json`).
 - Использует `HHSettings`, `HHApiClient`, `HHTokenManager` из `hh_adapter`.
 - Использует `FeatureRegistry`, `ILLMGenerator` из `llm_features`.
- - **`storage_docs.py`** — SQLite‑хранилища резюме/вакансий/сессий: `ResumeStore`, `VacancyStore`, `SessionStore`.
+- Использует `PDFExportService` из `pdf_export`.
+- **`storage_docs.py`** — SQLite‑хранилища резюме/вакансий/сессий: `ResumeStore`, `VacancyStore`, `SessionStore`.
 
 ## 4. Поток аутентификации
 
@@ -190,4 +196,20 @@ curl -X POST http://localhost:8080/sessions/init_json \
 curl -X POST http://localhost:8080/features/gap_analyzer/generate \
   -H "Content-Type: application/json" \
   -d '{"session_id":"<uuid>", "options":{"temperature":0.2}}'
+```
+
+Генерация PDF отчета:
+```bash
+curl -X POST http://localhost:8080/pdf/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "feature_name": "gap_analyzer",
+    "data": {/* результат фичи */},
+    "metadata": {
+      "feature_name": "gap_analyzer",
+      "version": "v1",
+      "generated_at": "2025-08-17T10:00:00"
+    }
+  }' \
+  --output report.pdf
 ```

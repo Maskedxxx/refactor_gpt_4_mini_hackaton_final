@@ -19,7 +19,9 @@
 
 - **LLM Cover Letter (`src/llm_cover_letter`):** Первая фича в новой архитектуре. Генерация персонализированных сопроводительных писем из `ResumeInfo` и `VacancyInfo` с использованием LLM и версионируемой системы промптов. См. `docs/architecture/components/llm_cover_letter.md`.
 
-- **LLM Gap Analyzer (`src/llm_gap_analyzer`):** Вторая фича в LLM Features Framework. Детальный GAP-анализ соответствия резюме вакансии с использованием профессиональной HR методологии (6 этапов: скрининг, анализ требований, оценка качества, рекомендации). Генерирует структурированный анализ с процентом соответствия и рекомендацией по найму. См. `docs/architecture/components/llm_gap_analyzer.md`.
+- **LLM Gap Analyzer (`src/llm_gap_analyzer`):** Вторая фича в LLM Features Framework. Детальный GAP-анализ соответствия резюме вакансии с использованием профессиональной HR методологии (6 этапов: скрининг, анализ требований, оценка качества, рекомендации). Генерирует структурированный анализ с процентом соответствия и рекомендацией по найму. Поддерживает PDF экспорт. См. `docs/architecture/components/llm_gap_analyzer.md`.
+
+- **PDF Export (`src/pdf_export`):** Модульная система экспорта результатов LLM-фич в PDF формат. Использует WeasyPrint + Jinja2 для рендеринга HTML шаблонов с профессиональными CSS стилями. Поддерживает все зарегистрированные фичи через систему форматтеров. Интегрирован с WebApp API. См. `docs/architecture/components/pdf_export.md`.
 
 ## Процесс аутентификации
 
@@ -51,6 +53,8 @@ sequenceDiagram
 ```mermaid
 graph TB
     API["/features/{name}/generate"] --> Registry[FeatureRegistry]
+    PDF_API["/pdf/generate"] --> PDFService[PDFExportService]
+    
     Registry --> CoverLetter[LLMCoverLetterGenerator]
     Registry --> GapAnalyzer[LLMGapAnalyzerGenerator]
     Registry --> Future[Future Features...]
@@ -63,11 +67,27 @@ graph TB
     Base --> Prompt[Prompt Builder]
     Base --> Validator[Quality Validator]
     
+    PDFService --> GAFormatter[GapAnalyzerPDFFormatter]
+    PDFService --> CLFormatter[CoverLetterPDFFormatter]
+    PDFService --> FutureFormatter[Future Formatters...]
+    
+    GAFormatter --> Templates[HTML Templates]
+    CLFormatter --> Templates
+    Templates --> WeasyPrint[WeasyPrint + CSS]
+    
     subgraph "Implemented Features"
         CoverLetter
         GapAnalyzer
         CoverLetter -.-> CL_Model[EnhancedCoverLetter]
         GapAnalyzer -.-> GA_Model[EnhancedResumeTailoringAnalysis]
+    end
+    
+    subgraph "PDF Export System"
+        PDFService
+        GAFormatter
+        CLFormatter
+        Templates
+        WeasyPrint
     end
     
     subgraph "Base Framework"
@@ -82,6 +102,7 @@ graph TB
         Future
         Interview[Interview Checklist]
         Simulation[Interview Simulation]
+        FutureFormatter
     end
 ```
 
