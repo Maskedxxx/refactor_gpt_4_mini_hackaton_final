@@ -19,7 +19,7 @@ from src.llm_features.base.generator import AbstractLLMGenerator
 from src.llm_features.base.options import BaseLLMOptions
 from src.llm_features.prompts.versioning import get_template_registry
 
-from src.models.gap_analysis_models import EnhancedResumeTailoringAnalysis
+from .models import EnhancedResumeTailoringAnalysis
 from .options import GapAnalyzerOptions
 from .config import GapAnalyzerSettings
 from .formatter import format_resume_data, format_vacancy_data

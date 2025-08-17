@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import json
 import os
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -80,7 +81,7 @@ async def _load_resume(resume_pdf: Path | None, fake_llm: bool) -> ResumeInfo:
     return await parser.parse(resume_pdf)
 
 
-async def main_async(resume_pdf: Path | None, vacancy_json: Path, fake_llm: bool) -> int:
+async def main_async(resume_pdf: Path | None, vacancy_json: Path, fake_llm: bool, save_result: bool = False) -> int:
     log = get_logger("examples.generate_cover_letter")
     log.info("Старт генерации сопроводительного письма")
 
@@ -146,6 +147,23 @@ async def main_async(resume_pdf: Path | None, vacancy_json: Path, fake_llm: bool
         options=CoverLetterOptions(role_hint=RoleType.DEVELOPER)
     )
 
+    # Сохранение результата в тестовые данные
+    if save_result:
+        test_data_dir = Path("tests/data")
+        test_data_dir.mkdir(exist_ok=True)
+        
+        random_id = str(uuid.uuid4())[:8]
+        result_filename = f"cover_letter_result_{random_id}.json"
+        result_path = test_data_dir / result_filename
+        
+        with result_path.open("w", encoding="utf-8") as f:
+            json.dump(letter.model_dump(), f, ensure_ascii=False, indent=2)
+        
+        print("\n=== RESULT SAVED ===")
+        print(f"Saved to: {result_path}")
+        print(f"File ID: {random_id}")
+        print(f"Use for PDF testing: python examples/test_pdf_export.py --feature cover_letter --result-file {result_filename}")
+
     print("\n=== EnhancedCoverLetter (JSON) ===")
     print(json.dumps(letter.model_dump(mode="json"), indent=2, ensure_ascii=False))
 
@@ -174,13 +192,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Офлайн режим без сетевого вызова LLM",
     )
+    p.add_argument(
+        "--save-result",
+        action="store_true",
+        help="Сохранить результат в tests/data для использования в тестах",
+    )
     return p
 
 
 def main() -> int:
     init_logging_from_env()
     args = build_arg_parser().parse_args()
-    return asyncio.run(main_async(args.resume_pdf, args.vacancy, args.fake_llm))
+    return asyncio.run(main_async(args.resume_pdf, args.vacancy, args.fake_llm, args.save_result))
 
 
 if __name__ == "__main__":
