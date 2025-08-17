@@ -1,0 +1,193 @@
+{
+  "primary_screening": {
+    "job_title_match": true,
+    "experience_years_match": true,
+    "key_skills_visible": false,
+    "location_suitable": false,
+    "salary_expectations_match": false,
+    "overall_screening_result": "ВОЗМОЖНО",
+    "screening_notes": "В резюме не указаны навыки PyTorch и NLP (явно), что требуется в вакансии. Нет информации о локации, готовности к офису, зарплатных ожиданиях и опыте управления командой."
+  },
+  "requirements_analysis": [
+    {
+      "requirement_text": "PyTorch",
+      "requirement_type": "MUST_HAVE",
+      "skill_category": "HARD_SKILLS",
+      "compliance_status": "MISSING",
+      "evidence_in_resume": null,
+      "gap_description": "В резюме нет упоминания PyTorch или аналогичного опыта с deep learning фреймворками.",
+      "decision_impact": "BLOCKER",
+      "decision_rationale": "PyTorch — ключевой инструмент для разработки и внедрения современных NLP/LLM моделей; отсутствие опыта критично для роли Senior/Lead."
+    },
+    {
+      "requirement_text": "NLP",
+      "requirement_type": "MUST_HAVE",
+      "skill_category": "HARD_SKILLS",
+      "compliance_status": "UNCLEAR",
+      "evidence_in_resume": "AI Engineer с 3+ годами создания production LLM-решений и RAG-систем. Специализируюсь на conversational AI, voice технологиях и образовательных AI-платформах.",
+      "gap_description": "Нет явного упоминания NLP как отдельного навыка или проектов с NLP-задачами (кроме LLM/Conversational AI).",
+      "decision_impact": "HIGH",
+      "decision_rationale": "NLP — базовая область для данной роли; важно видеть прямой опыт в NLP-задачах, а не только LLM/чат-ботах."
+    },
+    {
+      "requirement_text": "LLM",
+      "requirement_type": "MUST_HAVE",
+      "skill_category": "HARD_SKILLS",
+      "compliance_status": "FULL_MATCH",
+      "evidence_in_resume": "Создал многоуровневый ансамбль локальных LLM (Llama 3: 7B + 70B модели). Разработал персонализированного чат-бота на базе GPT-4.",
+      "gap_description": null,
+      "decision_impact": "HIGH",
+      "decision_rationale": "Опыт с LLM подтверждён, что критично для роли."
+    },
+    {
+      "requirement_text": "LangChain",
+      "requirement_type": "MUST_HAVE",
+      "skill_category": "HARD_SKILLS",
+      "compliance_status": "FULL_MATCH",
+      "evidence_in_resume": "Ключевые навыки: LangChain",
+      "gap_description": null,
+      "decision_impact": "HIGH",
+      "decision_rationale": "LangChain — важный инструмент для построения RAG-систем и интеграции LLM в production."
+    },
+    {
+      "requirement_text": "Опыт работы дата-сайентистом от 3 до 6 лет",
+      "requirement_type": "MUST_HAVE",
+      "skill_category": "EXPERIENCE",
+      "compliance_status": "FULL_MATCH",
+      "evidence_in_resume": "Общий опыт работы: 3 лет 5 мес.",
+      "gap_description": null,
+      "decision_impact": "HIGH",
+      "decision_rationale": "Требуемый опыт подтверждён."
+    },
+    {
+      "requirement_text": "Опыт вывода моделей в промышленную эксплуатацию",
+      "requirement_type": "NICE_TO_HAVE",
+      "skill_category": "EXPERIENCE",
+      "compliance_status": "FULL_MATCH",
+      "evidence_in_resume": "AI Engineer с 3+ годами создания production LLM-решений и RAG-систем.",
+      "gap_description": null,
+      "decision_impact": "MEDIUM",
+      "decision_rationale": "Production опыт явно заявлен."
+    },
+    {
+      "requirement_text": "Fine-tuning, prompt-engineering, RAG",
+      "requirement_type": "NICE_TO_HAVE",
+      "skill_category": "HARD_SKILLS",
+      "compliance_status": "FULL_MATCH",
+      "evidence_in_resume": "Ключевые навыки: Fine-tuning, Prompt Engineering, RAG Systems",
+      "gap_description": null,
+      "decision_impact": "MEDIUM",
+      "decision_rationale": "Все методы явно указаны в навыках."
+    },
+    {
+      "requirement_text": "Опыт управления командой из 3 датасайнтистов",
+      "requirement_type": "NICE_TO_HAVE",
+      "skill_category": "SOFT_SKILLS",
+      "compliance_status": "MISSING",
+      "evidence_in_resume": null,
+      "gap_description": "Нет информации о лидерском или управленческом опыте.",
+      "decision_impact": "HIGH",
+      "decision_rationale": "Для Senior/Lead роли управленческий опыт важен для организации работы команды."
+    },
+    {
+      "requirement_text": "Взаимодействие с заказчиками для сбора и уточнения требований",
+      "requirement_type": "NICE_TO_HAVE",
+      "skill_category": "SOFT_SKILLS",
+      "compliance_status": "UNCLEAR",
+      "evidence_in_resume": null,
+      "gap_description": "Нет явных примеров взаимодействия с заказчиками.",
+      "decision_impact": "MEDIUM",
+      "decision_rationale": "Навык коммуникации с заказчиками важен для роли Lead, но не критичен для технической оценки."
+    },
+    {
+      "requirement_text": "Организация процессов валидации моделей",
+      "requirement_type": "NICE_TO_HAVE",
+      "skill_category": "HARD_SKILLS",
+      "compliance_status": "UNCLEAR",
+      "evidence_in_resume": null,
+      "gap_description": "Нет прямого упоминания о валидации моделей.",
+      "decision_impact": "MEDIUM",
+      "decision_rationale": "Валидация — важная часть ML-процессов, желательно видеть опыт."
+    }
+  ],
+  "quality_assessment": {
+    "structure_clarity": 8,
+    "content_relevance": 7,
+    "achievement_focus": 8,
+    "adaptation_quality": 6,
+    "overall_impression": "СРЕДНИЙ",
+    "quality_notes": "Резюме структурировано, достижения с метриками, релевантный опыт. Недостаточно раскрыты управленческие и коммуникационные компетенции, отсутствует детализация по PyTorch/NLP."
+  },
+  "critical_recommendations": [
+    {
+      "section": "skills",
+      "criticality": "CRITICAL",
+      "issue_description": "Отсутствует опыт работы с PyTorch.",
+      "specific_actions": [
+        "Добавить опыт работы с PyTorch, если он есть (проекты, задачи, обучение).",
+        "Если опыта нет — начать изучение и реализовать pet-проект с PyTorch."
+      ],
+      "example_wording": "Разработал и обучил нейросетевые модели с использованием PyTorch для задач классификации текстов.",
+      "business_rationale": "PyTorch — стандарт индустрии для deep learning и NLP; отсутствие опыта ограничит возможности на позиции Senior/Lead."
+    }
+  ],
+  "important_recommendations": [
+    {
+      "section": "skills",
+      "criticality": "IMPORTANT",
+      "issue_description": "Нет явного упоминания NLP как отдельной компетенции.",
+      "specific_actions": [
+        "Добавить NLP в список ключевых навыков.",
+        "Уточнить, какие NLP-задачи решались (NER, классификация, тематическое моделирование и т.д.)."
+      ],
+      "example_wording": "Решал задачи NER, тематического моделирования, классификации текстов с использованием современных NLP-подходов.",
+      "business_rationale": "Явное указание NLP-экспертизы повысит релевантность резюме и упростит скрининг."
+    },
+    {
+      "section": "experience",
+      "criticality": "IMPORTANT",
+      "issue_description": "Нет информации об управленческом опыте.",
+      "specific_actions": [
+        "Добавить описание руководства командой (если был опыт).",
+        "Уточнить участие в менторстве, распределении задач, code review."
+      ],
+      "example_wording": "Руководил командой из 3 инженеров, организовывал code review и планирование спринтов.",
+      "business_rationale": "Для Lead-уровня управленческие компетенции критичны для принятия решения."
+    }
+  ],
+  "optional_recommendations": [
+    {
+      "section": "experience",
+      "criticality": "DESIRED",
+      "issue_description": "Не раскрыт опыт взаимодействия с заказчиками и валидации моделей.",
+      "specific_actions": [
+        "Добавить примеры коммуникации с заказчиками (сбор требований, презентация решений).",
+        "Указать опыт организации валидации/тестирования моделей."
+      ],
+      "example_wording": "Взаимодействовал с заказчиками для сбора требований и презентации результатов ML-проектов.",
+      "business_rationale": "Эти навыки важны для комплексного соответствия роли Lead и успешной коммуникации в проектах."
+    }
+  ],
+  "overall_match_percentage": 60,
+  "hiring_recommendation": "ВОЗМОЖНО",
+  "key_strengths": [
+    "Опыт создания production LLM- и RAG-решений.",
+    "Достижения с бизнес-метриками (экономия, рост конверсии, точность поиска).",
+    "Владение LangChain, fine-tuning, prompt engineering."
+  ],
+  "major_gaps": [
+    "Нет опыта с PyTorch.",
+    "Не раскрыта экспертиза в NLP.",
+    "Отсутствует управленческий опыт.",
+    "Нет информации о взаимодействии с заказчиками и валидации моделей.",
+    "Неизвестны локация и зарплатные ожидания."
+  ],
+  "next_steps": [
+    "Уточнить опыт работы с PyTorch (есть ли, на каком уровне).",
+    "Попросить раскрыть NLP-компетенции и конкретные задачи.",
+    "Спросить об управленческом опыте (руководство, менторство, распределение задач).",
+    "Запросить примеры взаимодействия с заказчиками и организации валидации моделей.",
+    "Уточнить локацию кандидата и готовность к офису.",
+    "Запросить зарплатные ожидания и предпочтительный формат занятости."
+  ]
+}

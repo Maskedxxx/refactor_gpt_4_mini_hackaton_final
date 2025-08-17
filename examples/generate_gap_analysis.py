@@ -14,6 +14,7 @@ import argparse
 import asyncio
 import json
 import os
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -87,7 +88,7 @@ class _FakeLLMForGap(LLMClient):
         )
 
 
-async def run_async(resume_json: Path, vacancy_json: Path, *, fake_llm: bool, prompt_version: str) -> int:
+async def run_async(resume_json: Path, vacancy_json: Path, *, fake_llm: bool, prompt_version: str, save_result: bool = False) -> int:
     resume = ResumeInfo(**_read_json(resume_json))
     vacancy = VacancyInfo(**_read_json(vacancy_json))
 
@@ -122,6 +123,24 @@ async def run_async(resume_json: Path, vacancy_json: Path, *, fake_llm: bool, pr
     if result.requirements_analysis:
         first = result.requirements_analysis[0]
         print(f"1st requirement: '{first.requirement_text}' → {first.compliance_status}")
+    
+    # Сохранение результата в тестовые данные
+    if save_result:
+        test_data_dir = Path("tests/data")
+        test_data_dir.mkdir(exist_ok=True)
+        
+        random_id = str(uuid.uuid4())[:8]
+        result_filename = f"gap_analysis_result_{random_id}.json"
+        result_path = test_data_dir / result_filename
+        
+        with result_path.open("w", encoding="utf-8") as f:
+            json.dump(result.model_dump(), f, ensure_ascii=False, indent=2)
+        
+        print("\n=== RESULT SAVED ===")
+        print(f"Saved to: {result_path}")
+        print(f"File ID: {random_id}")
+        print(f"Use for PDF testing: python -m tests.test_pdf_export --result-file {result_filename}")
+    
     print("\n=== FULL RESULT (JSON) ===")
     print(json.dumps(result.model_dump(), ensure_ascii=False, indent=2))
 
@@ -134,9 +153,16 @@ def main() -> int:
     p.add_argument("--vacancy", type=Path, default=Path("tests/data/simple_vacancy.json"), help="Путь к JSON вакансии")
     p.add_argument("--prompt-version", type=str, default="gap_analyzer.v1", help="Версия промпта")
     p.add_argument("--fake-llm", action="store_true", help="Использовать фейковый LLM (офлайн)")
+    p.add_argument("--save-result", action="store_true", help="Сохранить результат в tests/data для использования в тестах")
     args = p.parse_args()
 
-    return asyncio.run(run_async(args.resume, args.vacancy, fake_llm=args.fake_llm, prompt_version=args.prompt_version))
+    return asyncio.run(run_async(
+        args.resume, 
+        args.vacancy, 
+        fake_llm=args.fake_llm, 
+        prompt_version=args.prompt_version,
+        save_result=args.save_result
+    ))
 
 
 if __name__ == "__main__":
