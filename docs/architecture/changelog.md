@@ -1,5 +1,18 @@
 # Changelog
 
+## 2025-08-17 (Sessions persistence for Resume/Vacancy + Features via session_id)
+
+- Добавлена подсистема сессий в WebApp для персистентности `ResumeInfo`/`VacancyInfo` и избежания повторных вызовов LLM/HH API:
+  - Новые таблицы в SQLite: `resume_docs`, `vacancy_docs`, `sessions`.
+  - Новые стораджи: `ResumeStore`, `VacancyStore`, `SessionStore` (см. `src/webapp/storage_docs.py`).
+  - Роуты: `POST /sessions/init_upload` (multipart: `resume_file` + `vacancy_url` + `hr_id`) и `POST /sessions/init_json` (готовые модели).
+  - Дедупликация до внешних вызовов: хэш резюме по извлечённому тексту, хэш вакансии по `vacancy_id`.
+- Расширен универсальный роут фич: `POST /features/{name}/generate` теперь принимает `session_id` для загрузки моделей из БД.
+- Покрытие тестами:
+  - `tests/webapp/test_sessions_and_features.py` — JSON init и генерация по `session_id`.
+  - `tests/webapp/test_sessions_upload.py` — upload‑поток, дедуп, пограничный случай с отсутствием токенов HH.
+- Документация обновлена: `docs/architecture/overview.md`, `docs/architecture/components/webapp.md`, корневой `README.md` с примерами вызовов.
+
 ## 2025-08-17 (LLM Gap Analyzer — второй компонент в LLM Features Framework)
 
 - **Добавлена новая фича llm_gap_analyzer:**

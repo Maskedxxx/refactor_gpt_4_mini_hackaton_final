@@ -22,15 +22,20 @@ from src.models.vacancy_models import VacancyInfo
 from src.llm_features.registry import get_global_registry, FeatureInfo
 from src.llm_features.base.options import BaseLLMOptions
 from src.llm_features.base.errors import FeatureNotFoundError, FeatureRegistrationError
+from src.webapp.storage_docs import ResumeStore, VacancyStore, SessionStore
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/features", tags=["LLM Features"])
+_resume_store = ResumeStore()
+_vacancy_store = VacancyStore()
+_session_store = SessionStore()
 
 
 class FeatureGenerateRequest(BaseModel):
     """Запрос на генерацию для любой LLM-фичи."""
-    resume: ResumeInfo
-    vacancy: VacancyInfo
+    session_id: Optional[str] = Field(default=None, description="Сессия с сохранёнными резюме/вакансией")
+    resume: Optional[ResumeInfo] = Field(default=None, description="Резюме (если нет session_id)")
+    vacancy: Optional[VacancyInfo] = Field(default=None, description="Вакансия (если нет session_id)")
     options: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Опции фичи")
     version: Optional[str] = Field(default=None, description="Версия фичи")
 
@@ -97,18 +102,36 @@ async def generate_feature(
         # Конвертируем options в BaseLLMOptions
         options = BaseLLMOptions(**request.options) if request.options else BaseLLMOptions()
         
+        # Источник данных: session_id или прямые модели из тела
+        resume_model: Optional[ResumeInfo] = None
+        vacancy_model: Optional[VacancyInfo] = None
+
+        if request.session_id:
+            sess = _session_store.get(request.session_id)
+            if not sess:
+                raise HTTPException(status_code=404, detail="Session not found or expired")
+            resume_model = _resume_store.get(sess["resume_id"])  # type: ignore[index]
+            vacancy_model = _vacancy_store.get(sess["vacancy_id"])  # type: ignore[index]
+            if not resume_model or not vacancy_model:
+                raise HTTPException(status_code=404, detail="Session documents not found")
+        else:
+            if not request.resume or not request.vacancy:
+                raise HTTPException(status_code=400, detail="Either provide session_id or both resume and vacancy")
+            resume_model = request.resume
+            vacancy_model = request.vacancy
+
         logger.info(
             "Генерация %s@%s: resume_title=%s, vacancy=%s", 
             feature_name,
             final_version or "default",
-            request.resume.title or "Unknown",
-            request.vacancy.name
+            getattr(resume_model, "title", None) or "Unknown",
+            getattr(vacancy_model, "name", None) or "Unknown",
         )
         
         # Генерируем результат
         result = await generator.generate(
-            resume=request.resume,
-            vacancy=request.vacancy, 
+            resume=resume_model,
+            vacancy=vacancy_model, 
             options=options
         )
         

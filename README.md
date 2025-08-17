@@ -102,6 +102,27 @@ http://localhost:8080/readyz
 ```
 ```
 
+Сессии и персистентность (ускоряет фичи, избегает повторных парсингов):
+
+```bash
+# Инициализация сессии из PDF и URL вакансии (рекомендуется)
+curl -X POST http://localhost:8080/sessions/init_upload \
+  -F hr_id=hr-123 \
+  -F vacancy_url=https://hh.ru/vacancy/123456 \
+  -F reuse_by_hash=true \
+  -F "resume_file=@tests/data/resume.pdf;type=application/pdf"
+
+# Инициализация сессии из готовых моделей (альтернатива)
+curl -X POST http://localhost:8080/sessions/init_json \
+  -H "Content-Type: application/json" \
+  -d '{"hr_id":"hr-123","resume":{...},"vacancy":{...}}'
+
+# Запуск любой LLM-фичи по session_id (без повторного парсинга)
+curl -X POST http://localhost:8080/features/gap_analyzer/generate \
+  -H "Content-Type: application/json" \
+  -d '{"session_id":"<uuid>", "options": {"temperature": 0.2}}'
+```
+
 ### 3. Docker (рекомендуется для деплоя)
 
 Быстрый запуск в Docker:
@@ -191,7 +212,7 @@ python -m src.webapp
 # Получить список всех доступных фич
 curl http://localhost:8080/features
 
-# Генерация сопроводительного письма
+# Генерация сопроводительного письма (с моделями напрямую)
 curl -X POST http://localhost:8080/features/cover_letter/generate \
   -H "Content-Type: application/json" \
   -d '{
@@ -200,12 +221,11 @@ curl -X POST http://localhost:8080/features/cover_letter/generate \
     "options": {"temperature": 0.4, "language": "ru"}
   }'
 
-# GAP-анализ резюме
+# GAP-анализ резюме (через session_id)
 curl -X POST http://localhost:8080/features/gap_analyzer/generate \
   -H "Content-Type: application/json" \
   -d '{
-    "resume": {...},
-    "vacancy": {...},
+    "session_id": "<uuid>",
     "options": {"analysis_depth": "full", "temperature": 0.2}
   }'
 ```

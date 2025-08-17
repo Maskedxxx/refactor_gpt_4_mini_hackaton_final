@@ -9,6 +9,7 @@
 - **Callback Server (`src/callback_server`):** Легковесный сервер на FastAPI, отвечающий за одну задачу: перехват `authorization_code` в процессе OAuth2. Он запускается, ожидает перенаправления пользователя от провайдера аутентификации, сохраняет код во временный файл и завершает работу. Используется для локальных демонстраций.
 
 - **WebApp (`src/webapp`):** Продакшн‑ориентированный FastAPI сервис с роутами `/auth/hh/start`, `/auth/hh/callback`, `/vacancies`. Хранит токены в SQLite (пер‑школа контейнер), обеспечивает защиту `state` и сериализацию обновлений токена для многопользовательского сценария (пер‑HR).
+- **WebApp (`src/webapp`):** Продакшн‑ориентированный FastAPI сервис с роутами `/auth/hh/start`, `/auth/hh/callback`, `/vacancies`, а также подсистемой **сессий** для персистентности `ResumeInfo`/`VacancyInfo` и экономии внешних вызовов. Хранит токены и документы в SQLite; поддерживает дедупликацию и `session_id` для повторного использования.
 
 - **HH Adapter (`src/hh_adapter`):** Комплексный клиент для API HH.ru. Он управляет токенами (обмен кода на токены, их автоматическое обновление) и предоставляет чистый интерфейс для выполнения запросов к API.
 
@@ -84,7 +85,7 @@ graph TB
     end
 ```
 
-### Процесс использования LLM фич:
+### Процесс использования LLM фич
 
 ```mermaid
 sequenceDiagram
@@ -94,7 +95,7 @@ sequenceDiagram
     participant Feature as LLMGenerator
     participant LLM as OpenAI
 
-    Client->>WebApp: POST /features/{name}/generate
+    Client->>WebApp: POST /features/{name}/generate (session_id | resume+vacancy)
     WebApp->>Registry: get_generator(name)
     Registry-->>WebApp: LLMGenerator instance
     WebApp->>Feature: generate(resume, vacancy, options)
@@ -104,4 +105,35 @@ sequenceDiagram
     Feature->>Feature: validate() [optional]
     Feature-->>WebApp: Result
     WebApp-->>Client: JSON Response
+```
+
+### Сессии и персистентность
+
+Добавлена лёгкая подсистема сессий для одного «первого касания», после которого все фичи вызываются только с `session_id`:
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant WebApp
+  participant DB as SQLite
+  participant HH as HH API
+  participant LLM as OpenAI
+
+  Client->>WebApp: POST /sessions/init_upload (pdf + url)
+  alt найдено по хэшам
+    WebApp->>DB: load ResumeInfo/VacancyInfo
+  else
+    WebApp->>LLM: parse resume(pdf)
+    WebApp->>HH: load vacancy(url)
+    LLM-->>WebApp: ResumeInfo
+    HH-->>WebApp: VacancyInfo
+    WebApp->>DB: save docs
+  end
+  WebApp->>DB: create session
+  WebApp-->>Client: session_id
+
+  Client->>WebApp: POST /features/{name}/generate {session_id}
+  WebApp->>DB: fetch session -> docs
+  WebApp->>LLM: generate feature
+  WebApp-->>Client: Result
 ```

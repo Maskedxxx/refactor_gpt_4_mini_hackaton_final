@@ -113,3 +113,16 @@ sequenceDiagram
   - `await LLMResumeParser().parse("/path/to/resume.pdf")`
 - Вакансия:
   - `await HHVacancyParser().parse_by_url("https://hh.ru/vacancy/123456", client)`
+
+## Интеграция с WebApp (сессии)
+
+В режиме инициализации сессии из сырого ввода (upload) вызовы парсеров выполняются из `WebApp` (см. `src/webapp/sessions.py`):
+
+- `POST /sessions/init_upload` принимает `resume_file` (PDF) и `vacancy_url` и реализует следующий поток:
+  - Извлечение текста из PDF (`PdfPlumberExtractor`) и подсчёт хэша по тексту; если резюме уже есть в БД — парсинг LLM пропускается.
+  - Извлечение `vacancy_id` из URL и подсчёт хэша; если вакансия уже есть в БД — запрос к HH API пропускается.
+  - При отсутствии в БД: вызывается `LLMResumeParser.parse(bytes)` и `HHVacancyParser.parse_by_url(url, HHApiClient)`.
+  - Оба результата сохраняются в SQLite (`resume_docs`, `vacancy_docs`) и связываются в `sessions`.
+- Повторные фичи в рамках одной сессии используют `session_id` и не триггерят парсеры повторно.
+
+Это позволяет экономить вызовы LLM и HH API, обеспечивая contract-first подход: внешний клиент передаёт сырой файл и ссылку, а WebApp берёт на себя дедупликацию и персистентность.
