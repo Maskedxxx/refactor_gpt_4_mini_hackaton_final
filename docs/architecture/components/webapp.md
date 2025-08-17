@@ -24,6 +24,11 @@
 - **Новые LLM Features роуты:**
   - `GET /features` — список всех доступных LLM-фич
   - `POST /features/{feature_name}/generate` — генерация через любую зарегистрированную фичу
+    - Тело запроса: либо `{ session_id, options, version? }`, либо `{ resume, vacancy, options, version? }`
+    - Рекомендованный путь — через `session_id` (см. ниже "Сессии")
+- **Сессии и персистентность:**
+  - `POST /sessions/init_upload` — инициализация сессии из сырого ввода (PDF + vacancy URL)
+  - `POST /sessions/init_json` — инициализация сессии из готовых моделей (`ResumeInfo` + `VacancyInfo`)
 - Технические: `GET /healthz`, `GET /readyz`.
 
 ## 3. Архитектура
@@ -45,8 +50,10 @@ graph TD
 - `storage.py` — SQLite‑хранилища: `TokenStorage` и `OAuthStateStore` (с TTL), путь задаётся `WEBAPP_DB_PATH`.
 - `service.py` — `PersistentTokenManager` (обёртка над `HHTokenManager`), сериализует refresh через `asyncio.Lock` per‑HR, сохраняет обновлённые токены.
 - **`features.py`** — унифицированные роуты для LLM-фич через `FeatureRegistry`.
+- **`sessions.py`** — роуты инициализации сессий (`/sessions/init_upload`, `/sessions/init_json`).
 - Использует `HHSettings`, `HHApiClient`, `HHTokenManager` из `hh_adapter`.
 - Использует `FeatureRegistry`, `ILLMGenerator` из `llm_features`.
+ - **`storage_docs.py`** — SQLite‑хранилища резюме/вакансий/сессий: `ResumeStore`, `VacancyStore`, `SessionStore`.
 
 ## 4. Поток аутентификации
 
@@ -76,6 +83,49 @@ sequenceDiagram
 - Таблица `tokens` хранит `hr_id`, `access_token`, `refresh_token`, `expires_at`.
 - Таблица `oauth_state` хранит одноразовый `state` с TTL (по умолчанию 10 минут).
 - Для предотвращения гонок при параллельных запросах одного HR применяется `asyncio.Lock` per‑HR в `PersistentTokenManager` (refresh выполняется ровно один раз).
+
+### Сессии и персистентность резюме/вакансий
+
+- Таблица `resume_docs`: `{ id, hr_id, source_hash, title, data_json, created_at }`
+- Таблица `vacancy_docs`: `{ id, hr_id, source_url, source_hash, name, data_json, created_at }`
+- Таблица `sessions`: `{ id, hr_id, resume_id, vacancy_id, created_at, expires_at? }`
+
+Поведение:
+- При первичной инициализации по `init_upload` или `init_json` документы сохраняются, создаётся `session_id`.
+- Повторные вызовы с тем же содержанием при `reuse_by_hash=true` переиспользуют записи (без LLM/HH API).
+- Все фичи затем вызываются только с `session_id`, что исключает повторный парсинг исходных данных.
+
+Диаграмма:
+
+```mermaid
+sequenceDiagram
+  participant FE as Клиент
+  participant WA as WebApp
+  participant DB as SQLite
+  participant HH as HH API
+  participant LLM as OpenAI
+
+  FE->>WA: POST /sessions/init_upload (hr_id, pdf, url)
+  WA->>WA: hash(pdf_text), extract vacancy_id
+  alt not found in DB
+    WA->>LLM: parse resume -> ResumeInfo
+    WA->>HH: GET vacancy -> VacancyInfo
+    LLM-->>WA: ResumeInfo
+    HH-->>WA: VacancyInfo
+    WA->>DB: save resume_docs, vacancy_docs
+  else reuse
+    WA->>DB: load resume_docs, vacancy_docs
+  end
+  WA->>DB: create session
+  WA-->>FE: {session_id, ...}
+
+  FE->>WA: POST /features/{name}/generate {session_id, options}
+  WA->>DB: get session -> resume_id, vacancy_id
+  WA->>DB: load resume_docs, vacancy_docs
+  WA->>LLM: feature.generate(resume, vacancy)
+  LLM-->>WA: Result
+  WA-->>FE: Result
+```
 
 ## 6. Безопасность
 
@@ -114,4 +164,30 @@ WEBAPP_DB_PATH=/data/app.sqlite3
 
 - Юнит‑тесты адаптера — в `tests/hh_adapter/`.
 - Для WebApp рекомендуется добавить интеграционные тесты роутов с `httpx.AsyncClient` (по отдельному запросу).
+- Сценарии сессий покрыты тестами: `tests/webapp/test_sessions_and_features.py`, `tests/webapp/test_sessions_upload.py`.
 
+## 10. Примеры вызовов
+
+Инициализация сессии (сырой ввод):
+```bash
+curl -X POST http://localhost:8080/sessions/init_upload \
+  -F hr_id=hr-123 \
+  -F vacancy_url=https://hh.ru/vacancy/123456 \
+  -F reuse_by_hash=true \
+  -F ttl_sec=3600 \
+  -F "resume_file=@tests/data/resume.pdf;type=application/pdf"
+```
+
+Инициализация сессии (готовые модели):
+```bash
+curl -X POST http://localhost:8080/sessions/init_json \
+  -H "Content-Type: application/json" \
+  -d '{"hr_id":"hr-123","resume":{...},"vacancy":{...},"reuse_by_hash":true}'
+```
+
+Запуск фичи по session_id:
+```bash
+curl -X POST http://localhost:8080/features/gap_analyzer/generate \
+  -H "Content-Type: application/json" \
+  -d '{"session_id":"<uuid>", "options":{"temperature":0.2}}'
+```
