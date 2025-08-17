@@ -18,6 +18,8 @@
 
 - **LLM Cover Letter (`src/llm_cover_letter`):** Первая фича в новой архитектуре. Генерация персонализированных сопроводительных писем из `ResumeInfo` и `VacancyInfo` с использованием LLM и версионируемой системы промптов. См. `docs/architecture/components/llm_cover_letter.md`.
 
+- **LLM Gap Analyzer (`src/llm_gap_analyzer`):** Вторая фича в LLM Features Framework. Детальный GAP-анализ соответствия резюме вакансии с использованием профессиональной HR методологии (6 этапов: скрининг, анализ требований, оценка качества, рекомендации). Генерирует структурированный анализ с процентом соответствия и рекомендацией по найму. См. `docs/architecture/components/llm_gap_analyzer.md`.
+
 ## Процесс аутентификации
 
 Диаграмма ниже иллюстрирует полный процесс аутентификации через WebApp:
@@ -49,7 +51,7 @@ sequenceDiagram
 graph TB
     API["/features/{name}/generate"] --> Registry[FeatureRegistry]
     Registry --> CoverLetter[LLMCoverLetterGenerator]
-    Registry --> GapAnalyzer[LLMGapAnalyzer]
+    Registry --> GapAnalyzer[LLMGapAnalyzerGenerator]
     Registry --> Future[Future Features...]
     
     CoverLetter --> Base[AbstractLLMGenerator]
@@ -60,10 +62,11 @@ graph TB
     Base --> Prompt[Prompt Builder]
     Base --> Validator[Quality Validator]
     
-    subgraph "Plugin System"
+    subgraph "Implemented Features"
         CoverLetter
-        GapAnalyzer 
-        Future
+        GapAnalyzer
+        CoverLetter -.-> CL_Model[EnhancedCoverLetter]
+        GapAnalyzer -.-> GA_Model[EnhancedResumeTailoringAnalysis]
     end
     
     subgraph "Base Framework"
@@ -72,6 +75,12 @@ graph TB
         LLM
         Prompt
         Validator
+    end
+    
+    subgraph "Future Features"
+        Future
+        Interview[Interview Checklist]
+        Simulation[Interview Simulation]
     end
 ```
 
@@ -85,14 +94,14 @@ sequenceDiagram
     participant Feature as LLMGenerator
     participant LLM as OpenAI
 
-    Client->>WebApp: POST /features/cover_letter/generate
-    WebApp->>Registry: get_generator("cover_letter")
-    Registry-->>WebApp: LLMCoverLetterGenerator instance
+    Client->>WebApp: POST /features/{name}/generate
+    WebApp->>Registry: get_generator(name)
+    Registry-->>WebApp: LLMGenerator instance
     WebApp->>Feature: generate(resume, vacancy, options)
     Feature->>Feature: _build_prompt()
     Feature->>LLM: generate_structured()
-    LLM-->>Feature: EnhancedCoverLetter
-    Feature->>Feature: validate()
+    LLM-->>Feature: Structured Result
+    Feature->>Feature: validate() [optional]
     Feature-->>WebApp: Result
     WebApp-->>Client: JSON Response
 ```

@@ -199,6 +199,15 @@ curl -X POST http://localhost:8080/features/cover_letter/generate \
     "vacancy": {...},
     "options": {"temperature": 0.4, "language": "ru"}
   }'
+
+# GAP-анализ резюме
+curl -X POST http://localhost:8080/features/gap_analyzer/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resume": {...},
+    "vacancy": {...},
+    "options": {"analysis_depth": "full", "temperature": 0.2}
+  }'
 ```
 
 #### B. Через legacy примеры
@@ -212,6 +221,13 @@ python -m examples.generate_cover_letter --vacancy tests/data/vacancy.json --fak
 # Реальный вызов LLM (нужен ключ OpenAI)
 export OPENAI_API_KEY=...
 python -m examples.generate_cover_letter --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json
+
+# GAP-анализ резюме
+python -m examples.generate_gap_analysis --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json
+
+# Показать промпты
+python -m examples.show_full_prompt --feature cover_letter
+python -m examples.show_full_gap_prompt --prompt-version gap_analyzer.v1
 ```
 
 #### C. Добавление новых фич
@@ -247,6 +263,7 @@ pytest
   - `docs/architecture/components/callback_server.md`
   - `docs/architecture/components/parser.md`
   - `docs/architecture/components/llm_cover_letter.md`
+  - `docs/architecture/components/llm_gap_analyzer.md`
   - **LLM Features Framework**: `src/llm_features/README.md`
   - Деплой: `docs/architecture/components/docker.md`
 

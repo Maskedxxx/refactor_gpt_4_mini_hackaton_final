@@ -1,5 +1,34 @@
 # Changelog
 
+## 2025-08-17 (LLM Gap Analyzer — второй компонент в LLM Features Framework)
+
+- **Добавлена новая фича llm_gap_analyzer:**
+  - Создан полноценный GAP-анализатор резюме с использованием единой архитектуры LLM Features Framework.
+  - Реализован `LLMGapAnalyzerGenerator` наследующий от `AbstractLLMGenerator[EnhancedResumeTailoringAnalysis]`.
+  - Автоматическая регистрация в `FeatureRegistry` при импорте модуля.
+  - Доступ через универсальное API: `POST /features/gap_analyzer/generate`.
+
+- **Комплексная модель данных для HR анализа:**
+  - Создана модель `EnhancedResumeTailoringAnalysis` в `src/models/gap_analysis_models.py`.
+  - Поддержка первичного скрининга, детального анализа требований, оценки качества резюме.
+  - Структурированные рекомендации по критичности (CRITICAL/IMPORTANT/DESIRED).
+  - Расчётный процент соответствия и рекомендация по найму.
+
+- **Система промптов и форматирования:**
+  - Версионируемый промпт `gap_analyzer.v1` с HR методологией в 6 этапов.
+  - Форматтеры для резюме и вакансий, динамические блоки для требований.
+  - Интеграция анализа совпадений навыков из существующих компонентов.
+
+- **Унификация контрактов фич:**
+  - Добавлена поддержка `extra_context` в `GapAnalyzerOptions` для единообразия с `cover_letter`.
+  - Интеграция `extra_context_block` в шаблоны промптов для пользовательских указаний.
+  - Удалены неиспользуемые функции `build_enum_guidance` для очистки кодовой базы.
+
+- **Примеры и демонстрация:**
+  - `examples/generate_gap_analysis.py` — полный пример использования с настройками.
+  - `examples/show_full_gap_prompt.py` — демонстрация сборки промптов.
+  - Обновлён `.env.example` с переменными для настройки GAP-анализатора.
+
 ## 2025-08-15 (Tests: LLM Features API, Registry, Integration)
 
 - Добавлены тесты для нового фреймворка LLM‑фич:
