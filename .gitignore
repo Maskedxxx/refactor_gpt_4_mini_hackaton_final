@@ -67,3 +67,6 @@ app.sqlite3
 *.db-journal
 /data/*.sqlite3
 /data/*.db
+ 
+# Local PDF outputs
+output/

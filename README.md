@@ -228,6 +228,23 @@ curl -X POST http://localhost:8080/features/gap_analyzer/generate \
     "session_id": "<uuid>",
     "options": {"analysis_depth": "full", "temperature": 0.2}
   }'
+
+# Interview Checklist (через session_id или напрямую)
+curl -X POST "http://localhost:8080/features/interview_checklist/generate?version=v1" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "<uuid>",
+    "options": {"temperature": 0.3, "language": "ru"}
+  }'
+
+# либо без session_id (с прямыми моделями)
+curl -X POST "http://localhost:8080/features/interview_checklist/generate?version=v1" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resume": { /* ResumeInfo */ },
+    "vacancy": { /* VacancyInfo */ },
+    "options": {"temperature": 0.3, "language": "ru"}
+  }'
 ```
 
 #### B. Через legacy примеры

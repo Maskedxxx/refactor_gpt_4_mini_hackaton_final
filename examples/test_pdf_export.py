@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.pdf_export.service import PDFExportService
-from src.pdf_export.formatters import GapAnalyzerPDFFormatter, CoverLetterPDFFormatter
+from src.pdf_export.formatters import GapAnalyzerPDFFormatter, CoverLetterPDFFormatter, InterviewChecklistPDFFormatter
 from src.utils import get_logger
 
 log = get_logger("examples.test_pdf_export")
@@ -37,6 +37,8 @@ async def run_async(result_file: str, feature_name: str = "gap_analyzer") -> int
             print("   python -m examples.generate_gap_analysis --fake-llm --save-result")
         elif feature_name == "cover_letter":
             print("   python -m examples.generate_cover_letter --fake-llm --save-result")
+        elif feature_name == "interview_checklist":
+            print("   python -m examples.generate_interview_checklist --fake-llm --save-result")
         return 1
     
     with result_path.open("r", encoding="utf-8") as f:
@@ -56,6 +58,7 @@ async def run_async(result_file: str, feature_name: str = "gap_analyzer") -> int
     formatters = {
         "gap_analyzer": GapAnalyzerPDFFormatter(),
         "cover_letter": CoverLetterPDFFormatter(),
+        "interview_checklist": InterviewChecklistPDFFormatter(),
     }
     
     formatter = formatters.get(feature_name)
@@ -96,6 +99,9 @@ async def run_async(result_file: str, feature_name: str = "gap_analyzer") -> int
     elif feature_name == "cover_letter":
         quality_scores = feature_result.get('personalization_score', 'N/A')
         print(f"🎯 Персонализация: {quality_scores}/10")
+    elif feature_name == "interview_checklist":
+        total_time = feature_result.get('time_estimates', {}).get('total_time_needed', 'N/A')
+        print(f"⏳ Общее время подготовки: {total_time}")
     
     return 0
 
@@ -103,7 +109,7 @@ async def run_async(result_file: str, feature_name: str = "gap_analyzer") -> int
 def main() -> int:
     p = argparse.ArgumentParser(description="Тестирование PDF экспорта LLM фич")
     p.add_argument("--result-file", type=str, help="Имя файла с результатом в tests/data/")
-    p.add_argument("--feature", type=str, choices=["gap_analyzer", "cover_letter"], 
+    p.add_argument("--feature", type=str, choices=["gap_analyzer", "cover_letter", "interview_checklist"], 
                    default="gap_analyzer", help="Тип фичи для PDF экспорта")
     args = p.parse_args()
     
@@ -120,6 +126,8 @@ def main() -> int:
                 print("   python -m examples.generate_gap_analysis --fake-llm --save-result")
             elif args.feature == "cover_letter":
                 print("   python -m examples.generate_cover_letter --fake-llm --save-result")
+            elif args.feature == "interview_checklist":
+                print("   python -m examples.generate_interview_checklist --fake-llm --save-result")
             return 1
         
         # Берем последний по времени создания

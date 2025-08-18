@@ -12,5 +12,6 @@
 from .base import AbstractPDFFormatter
 from .gap_analyzer import GapAnalyzerPDFFormatter
 from .cover_letter import CoverLetterPDFFormatter
+from .interview_checklist import InterviewChecklistPDFFormatter
 
-__all__ = ["AbstractPDFFormatter", "GapAnalyzerPDFFormatter", "CoverLetterPDFFormatter"]
+__all__ = ["AbstractPDFFormatter", "GapAnalyzerPDFFormatter", "CoverLetterPDFFormatter", "InterviewChecklistPDFFormatter"]

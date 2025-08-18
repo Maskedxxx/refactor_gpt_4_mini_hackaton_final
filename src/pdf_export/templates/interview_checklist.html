@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        /* Небольшие inline-фиксы для печати; основные стили из CSS */
+    </style>
+    <!-- Основные стили подключаются через WeasyPrint в сервисе -->
+    <!-- base.css + interview_checklist.css -->
+    
+    <!-- Шапка и мета-информация -->
+</head>
+<body>
+    <header class="report-header">
+        <h1>{{ title }}</h1>
+        <div class="meta-info">
+            <div class="generated-date">Сгенерировано: {{ generated_at }}</div>
+            <div class="version">Версия: {{ feature_version }}</div>
+            <div class="company">Компания: {{ company_name }}</div>
+        </div>
+    </header>
+
+    <!-- Персонализация и сводка -->
+    <section class="summary-section">
+        <h2>Ключевая информация</h2>
+        <div class="grid-container">
+            <div class="grid-item"><strong>Уровень кандидата:</strong> {{ personalization.candidate_level }}</div>
+            <div class="grid-item"><strong>Тип вакансии:</strong> {{ personalization.vacancy_type }}</div>
+            <div class="grid-item"><strong>Формат компании:</strong> {{ personalization.company_format }}</div>
+        </div>
+
+        {% if time_panel %}
+        <div class="time-panel">
+            <div class="time-item"><span class="label">Общее время:</span> <span class="value">{{ time_panel.total }}</span></div>
+            <div class="time-item"><span class="label">Критичные задачи:</span> <span class="value">{{ time_panel.critical }}</span></div>
+            <div class="time-item"><span class="label">Важные задачи:</span> <span class="value">{{ time_panel.important }}</span></div>
+            <div class="time-item"><span class="label">Опциональные задачи:</span> <span class="value">{{ time_panel.optional }}</span></div>
+            <div class="time-item"><span class="label">Распорядок:</span> <span class="value">{{ time_panel.daily }}</span></div>
+        </div>
+        {% endif %}
+
+        {% if executive_summary %}
+        <div class="executive-summary card">
+            <h3>Executive Summary</h3>
+            <p>{{ executive_summary }}</p>
+        </div>
+        {% endif %}
+
+        {% if preparation_strategy %}
+        <div class="strategy-summary card">
+            <h3>Стратегия подготовки</h3>
+            <p>{{ preparation_strategy }}</p>
+        </div>
+        {% endif %}
+
+        <div class="personalization-lists grid-3">
+            {% if personalization.key_gaps_identified %}
+            <div class="card">
+                <h3>Ключевые пробелы</h3>
+                <ul>
+                    {% for gap in personalization.key_gaps_identified %}
+                    <li>{{ gap }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if personalization.candidate_strengths %}
+            <div class="card">
+                <h3>Сильные стороны</h3>
+                <ul>
+                    {% for s in personalization.candidate_strengths %}
+                    <li>{{ s }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if personalization.critical_focus_areas %}
+            <div class="card">
+                <h3>Критические фокусы</h3>
+                <ul>
+                    {% for a in personalization.critical_focus_areas %}
+                    <li>{{ a }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <div class="legend card">
+        <strong>Легенда:</strong>
+        <span class="badge priority-critical">КРИТИЧНО</span>
+        <span class="badge priority-important">ВАЖНО</span>
+        <span class="badge priority-desired">ЖЕЛАТЕЛЬНО</span>
+        <span class="badge difficulty-basic">Базовый</span>
+        <span class="badge difficulty-medium">Средний</span>
+        <span class="badge difficulty-advanced">Продвинутый</span>
+    </div>
+
+    <!-- Блок 1: Техническая подготовка -->
+    {% if technical_preparation %}
+    <section class="preparation-block">
+        <h2>Блок 1: Техническая подготовка (hard skills)</h2>
+
+        {% for category, items in technical_by_category.items() %}
+        <h3 class="category-title">Категория: {{ category }}</h3>
+        {% for item in items %}
+        <div class="task-item {{ get_priority_class(item.priority.value if item.priority else '') }}">
+            <div class="task-header">
+                <span class="priority badge {{ get_priority_class(item.priority.value if item.priority else '') }}">{{ t_priority(item.priority.value if item.priority else 'N/A') }}</span>
+                <h3 class="task-title">{{ item.task_title }}</h3>
+            </div>
+            <p class="task-description">{{ item.description }}</p>
+            <div class="task-meta">
+                <span class="meta"><strong>Время:</strong> {{ item.estimated_time }}</span>
+            </div>
+            {% if item.specific_resources %}
+            <div class="resources">
+                <strong>Ресурсы:</strong>
+                <ul>
+                    {% for resource in item.specific_resources %}
+                    <li>{{ resource }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% if item.success_criteria %}
+            <div class="success-criteria">
+                <strong>Критерии успеха:</strong> {{ item.success_criteria }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Блок 2: Поведенческая подготовка -->
+    {% if behavioral_preparation %}
+    <section class="preparation-block page-break-avoid">
+        <h2>Блок 2: Поведенческая подготовка (soft skills)</h2>
+        {% for item in behavioral_preparation %}
+        <div class="task-item">
+            <div class="task-header">
+                <h3 class="task-title">{{ item.task_title }}</h3>
+            </div>
+            <p class="task-description">{{ item.description }}</p>
+            {% if item.example_questions %}
+            <div class="resources">
+                <strong>Примеры вопросов:</strong>
+                <ul>
+                    {% for q in item.example_questions %}
+                    <li>{{ q }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% if item.star_method_guidance %}
+            <div class="success-criteria">
+                <strong>STAR метод:</strong> {{ item.star_method_guidance }}
+            </div>
+            {% endif %}
+            {% if item.practice_tips %}
+            <div class="success-criteria">
+                <strong>Советы по отработке:</strong> {{ item.practice_tips }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Блок 3: Исследование компании -->
+    {% if company_research %}
+    <section class="preparation-block">
+        <h2>Блок 3: Изучение компании и продукта</h2>
+        {% for item in company_research %}
+        <div class="task-item {{ get_priority_class(item.priority.value if item.priority else '') }}">
+            <div class="task-header">
+                <span class="priority badge {{ get_priority_class(item.priority.value if item.priority else '') }}">{{ t_priority(item.priority.value if item.priority else 'N/A') }}</span>
+                <h3 class="task-title">{{ item.task_title }}</h3>
+            </div>
+            {% if item.specific_actions %}
+            <div class="resources">
+                <strong>Конкретные действия:</strong>
+                <ul>
+                    {% for act in item.specific_actions %}
+                    <li>{{ act }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            <div class="task-meta">
+                <span class="meta"><strong>Время:</strong> {{ item.time_required }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Блок 4: Технический стек и процессы -->
+    {% if technical_stack_study %}
+    <section class="preparation-block">
+        <h2>Блок 4: Изучение технического стека и процессов</h2>
+        {% for item in technical_stack_study %}
+        <div class="task-item">
+            <div class="task-header">
+                <h3 class="task-title">{{ item.task_title }}</h3>
+            </div>
+            <p class="task-description">{{ item.description }}</p>
+            <div class="success-criteria"><strong>Почему важно:</strong> {{ item.relevance_explanation }}</div>
+            <div class="success-criteria"><strong>Как изучать:</strong> {{ item.study_approach }}</div>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Блок 5: Практические упражнения -->
+    {% if practical_exercises %}
+    <section class="preparation-block">
+        <h2>Блок 5: Практические упражнения и кейсы</h2>
+        {% for item in practical_exercises %}
+        <div class="task-item">
+            <div class="task-header">
+                <span class="badge {{ get_difficulty_class(item.difficulty_level) }}">{{ item.difficulty_level|capitalize }}</span>
+                <h3 class="task-title">{{ item.exercise_title }}</h3>
+            </div>
+            <p class="task-description">{{ item.description }}</p>
+            {% if item.practice_resources %}
+            <div class="resources">
+                <strong>Ресурсы для практики:</strong>
+                <ul>
+                    {% for r in item.practice_resources %}
+                    <li>{{ r }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% if item.expected_outcome %}
+            <div class="success-criteria"><strong>Ожидаемый результат:</strong> {{ item.expected_outcome }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Блок 6: Окружение интервью -->
+    {% if interview_setup %}
+    <section class="preparation-block">
+        <h2>Блок 6: Настройка окружения для интервью</h2>
+        {% for item in interview_setup %}
+        <div class="task-item">
+            <div class="task-header">
+                <h3 class="task-title">{{ item.task_title }}</h3>
+            </div>
+            {% if item.checklist_items %}
+            <div class="resources">
+                <strong>Чек‑лист:</strong>
+                <ul>
+                    {% for c in item.checklist_items %}
+                    <li>{{ c }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% if item.importance_explanation %}
+            <div class="success-criteria"><strong>Почему это важно:</strong> {{ item.importance_explanation }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Блок 7: Дополнительные действия -->
+    {% if additional_actions %}
+    <section class="preparation-block">
+        <h2>Блок 7: Дополнительные действия</h2>
+        {% for item in additional_actions %}
+        <div class="task-item {{ get_priority_class(item.urgency.value if item.urgency else '') }}">
+            <div class="task-header">
+                <span class="priority badge {{ get_priority_class(item.urgency.value if item.urgency else '') }}">{{ t_priority(item.urgency.value if item.urgency else 'N/A') }}</span>
+                <h3 class="task-title">{{ item.action_title }}</h3>
+            </div>
+            <p class="task-description">{{ item.description }}</p>
+            {% if item.implementation_steps %}
+            <div class="resources">
+                <strong>Шаги выполнения:</strong>
+                <ol>
+                    {% for step in item.implementation_steps %}
+                    <li>{{ step }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Итоговые разделы -->
+    {% if critical_success_factors %}
+    <section class="summary-section page-break-avoid">
+        <h2>Критические факторы успеха</h2>
+        <ul>
+            {% for f in critical_success_factors %}
+            <li>{{ f }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if common_mistakes_to_avoid %}
+    <section class="summary-section">
+        <h2>Типичные ошибки, которых стоит избегать</h2>
+        <ul>
+            {% for m in common_mistakes_to_avoid %}
+            <li>{{ m }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if last_minute_checklist %}
+    <section class="summary-section">
+        <h2>Last-minute чек‑лист</h2>
+        <ul>
+            {% for i in last_minute_checklist %}
+            <li>{{ i }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if motivation_boost %}
+    <section class="summary-section">
+        <h2>Мотивация</h2>
+        <div class="motivation card">{{ motivation_boost }}</div>
+    </section>
+    {% endif %}
+
+    <footer class="report-footer">
+        <div>Сгенерировано: {{ generated_at }} • Версия: {{ feature_version }}</div>
+    </footer>
+</body>
+</html>

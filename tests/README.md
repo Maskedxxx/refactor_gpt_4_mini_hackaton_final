@@ -11,6 +11,7 @@
   - tests/llm_features/test_features_api.py — универсальные REST‑роуты фич: `GET /features`, `POST /features/{name}/generate` (мок‑реестр, мок‑генератор, проверка 200/404/422/500).
   - tests/llm_features/test_feature_registry.py — реестр фич (`FeatureRegistry`): регистрация, список, версии, ошибки `FeatureNotFoundError`.
   - tests/llm_features/test_cover_letter_integration.py — интеграция `LLMCoverLetterGenerator` в новом API (без сети; моки LLM/конфигурации).
+  - tests/llm_features/test_interview_checklist_integration.py — интеграция `LLMInterviewChecklistGenerator`: генерация через реестр и через REST `/features/interview_checklist/generate`.
 - webapp (интеграционные async‑тесты FastAPI):
   - tests/webapp/test_webapp_auth_and_storage.py — флоу `/auth/hh/start` и `/auth/hh/callback`, создание и одноразовое потребление `state`, сохранение токенов в SQLite, обработка невалидного `state`.
   - tests/webapp/test_webapp_vacancies_concurrency.py — конкурентные запросы к `/vacancies` при истёкшем токене: проверяем, что срабатывает авто‑refresh и он выполняется ровно один раз на HR (per‑HR лок + синхронизация со сторожем).
@@ -24,6 +25,13 @@
 - Только webapp: `pytest -q tests/webapp`
 - Только сценарии сессий: `pytest -q tests/webapp -k "sessions"`
 - Запуск отдельного теста/кейса: `pytest -q tests/webapp/test_webapp_auth_and_storage.py::test_callback_exchanges_tokens_and_redirects`
+
+PDF экспорт
+- Форматтеры покрыты юнит‑ и интеграционными тестами в `tests/pdf_export` для трёх фич: `gap_analyzer`, `cover_letter`, `interview_checklist`.
+- E2E‑сценарии используют новый сервис `PDFExportService.generate_pdf(formatter=..., data=..., metadata=...)` и веб‑роут `POST /features/{feature_name}/export/pdf`.
+- Запуск только PDF‑тестов: `pytest -q tests/pdf_export`
+
+Примечание: контракт обработки ошибок в PDF‑экспорте сейчас «lenient» — форматтеры продолжают рендер с дефолтными значениями при неполных входных данных. Поэтому два теста, ожидавшие исключения на пустых/повреждённых данных, временно помечены `skip` (см. docs/architecture/components/pdf_export.md §8.4).
 
 Изоляция окружения
 - База данных: каждый тест webapp использует временную SQLite‑БД через переменную окружения `WEBAPP_DB_PATH` (см. `tests/webapp/conftest.py`). Это гарантирует отсутствие побочных эффектов между прогонами.

@@ -99,8 +99,13 @@ async def generate_feature(
             version=final_version
         )
         
-        # Конвертируем options в BaseLLMOptions
-        options = BaseLLMOptions(**request.options) if request.options else BaseLLMOptions()
+        # Конвертируем options в специфичный тип, если требуется
+        options: BaseLLMOptions
+        if feature_name == "interview_checklist":
+            from src.llm_interview_checklist.options import InterviewChecklistOptions
+            options = InterviewChecklistOptions(**(request.options or {}))
+        else:
+            options = BaseLLMOptions(**(request.options or {}))
         
         # Источник данных: session_id или прямые модели из тела
         resume_model: Optional[ResumeInfo] = None

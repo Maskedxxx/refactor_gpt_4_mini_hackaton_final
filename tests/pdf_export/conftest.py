@@ -16,7 +16,11 @@ from datetime import datetime
 import pytest
 
 from src.pdf_export.service import PDFExportService
-from src.pdf_export.formatters import GapAnalyzerPDFFormatter, CoverLetterPDFFormatter
+from src.pdf_export.formatters import (
+    GapAnalyzerPDFFormatter,
+    CoverLetterPDFFormatter,
+    InterviewChecklistPDFFormatter,
+)
 
 
 @pytest.fixture
@@ -125,6 +129,19 @@ def sample_cover_letter_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
+def sample_interview_checklist_data() -> Dict[str, Any]:
+    """Образец данных интервью-чеклиста для тестов."""
+    import json
+    from pathlib import Path
+
+    # Берем реалистичный сохраненный результат из tests/data
+    data_path = Path("tests/data/interview_checklist_result_6423ab26.json")
+    assert data_path.exists(), "Отсутствуют тестовые данные interview_checklist"
+    with data_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@pytest.fixture
 def sample_metadata() -> Dict[str, Any]:
     """Образец метаданных для тестов."""
     return {
@@ -151,3 +168,9 @@ def gap_analyzer_formatter() -> GapAnalyzerPDFFormatter:
 def cover_letter_formatter() -> CoverLetterPDFFormatter:
     """Фикстура форматтера сопроводительного письма."""
     return CoverLetterPDFFormatter()
+
+
+@pytest.fixture
+def interview_checklist_formatter() -> InterviewChecklistPDFFormatter:
+    """Фикстура форматтера интервью-чеклиста."""
+    return InterviewChecklistPDFFormatter()

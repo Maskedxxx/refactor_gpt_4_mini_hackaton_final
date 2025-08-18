@@ -18,18 +18,6 @@ from src.models.resume_models import ResumeInfo
 from src.models.vacancy_models import VacancyInfo
 from src.llm_cover_letter.formatter import analyze_skills_match
 
-
-def build_enum_guidance() -> str:
-    """Краткая памятка по допустимым enum-значениям для строгого JSON-ответа."""
-    return (
-        "## Допустимые ENUM значения\n"
-        "- RequirementType: MUST_HAVE | NICE_TO_HAVE | ADDITIONAL_BONUS\n"
-        "- ComplianceStatus: FULL_MATCH | PARTIAL_MATCH | MISSING | UNCLEAR\n"
-        "- SkillCategory: HARD_SKILLS | SOFT_SKILLS | EXPERIENCE | EDUCATION\n"
-        "- CriticalityLevel: CRITICAL | IMPORTANT | DESIRED\n"
-    )
-
-
 def extract_requirements_from_vacancy(vacancy: VacancyInfo) -> str:
     """Выделяет требования из вакансии в виде списка для направления LLM."""
     parts: List[str] = []

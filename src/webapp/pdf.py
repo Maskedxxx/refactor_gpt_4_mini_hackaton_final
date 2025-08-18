@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from src.utils import get_logger
 from src.pdf_export.service import PDFExportService
-from src.pdf_export.formatters import GapAnalyzerPDFFormatter, CoverLetterPDFFormatter
+from src.pdf_export.formatters import GapAnalyzerPDFFormatter, CoverLetterPDFFormatter, InterviewChecklistPDFFormatter
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/features", tags=["PDF Export"])
@@ -30,6 +30,7 @@ _pdf_service = PDFExportService()
 _formatters_registry = {
     "gap_analyzer": GapAnalyzerPDFFormatter(),
     "cover_letter": CoverLetterPDFFormatter(),
+    "interview_checklist": InterviewChecklistPDFFormatter(),
 }
 
 
