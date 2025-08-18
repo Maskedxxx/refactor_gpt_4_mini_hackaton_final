@@ -32,6 +32,7 @@ from src.webapp.pdf import router as pdf_router
 # Импортируем модуль для автоматической регистрации фич
 import src.llm_cover_letter  # Автоматически регистрирует cover_letter фичу
 import src.llm_gap_analyzer  # Автоматически регистрирует gap_analyzer фичу
+import src.llm_interview_checklist  # Автоматически регистрирует interview_checklist фичу
 
 
 app = FastAPI(title="HH Adapter WebApp", version="0.1.0")
