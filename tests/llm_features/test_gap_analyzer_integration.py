@@ -20,7 +20,7 @@ from src.llm_features.registry import get_global_registry
 from src.models.resume_models import ResumeInfo
 from src.models.vacancy_models import VacancyInfo
 from src.llm_gap_analyzer.options import GapAnalyzerOptions
-from src.models.gap_analysis_models import (
+from src.llm_gap_analyzer.models import (
     EnhancedResumeTailoringAnalysis,
     PrimaryScreeningResult,
     RequirementAnalysis,

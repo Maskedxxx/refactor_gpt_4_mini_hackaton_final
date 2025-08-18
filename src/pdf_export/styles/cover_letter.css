@@ -1,0 +1,345 @@
+/* Специфичные стили для сопроводительного письма */
+
+/* Заголовок отчета */
+.report-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid #2980b9;
+}
+
+.meta-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 10px;
+    color: #666;
+}
+
+/* Мета-информация */
+.meta-section {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.meta-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #2980b9;
+}
+
+.meta-item .label {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.meta-item .value {
+    color: #34495e;
+}
+
+/* Секция письма */
+.letter-section {
+    margin-bottom: 25px;
+    page-break-inside: avoid;
+}
+
+.letter-content {
+    margin: 12px 0;
+}
+
+.letter-part {
+    margin: 12px 0;
+    padding: 10px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e1e8ed;
+}
+
+.letter-part h3 {
+    color: #2980b9;
+    font-size: 11px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    font-weight: bold;
+    border-bottom: 1px solid #ecf0f1;
+    padding-bottom: 2px;
+}
+
+.letter-part .content {
+    color: #2c3e50;
+    line-height: 1.5;
+    font-size: 11px;
+}
+
+/* Специальные стили для разных частей письма */
+.letter-part.subject {
+    background: #ebf3fd;
+    border-left: 4px solid #2980b9;
+}
+
+.letter-part.opening {
+    background: #f0f8e6;
+    border-left: 4px solid #27ae60;
+}
+
+.letter-part.closing {
+    background: #fef9e7;
+    border-left: 4px solid #f39c12;
+}
+
+/* Полное письмо */
+.full-letter-section {
+    margin-bottom: 25px;
+    page-break-inside: avoid;
+}
+
+.full-letter {
+    background: #ffffff;
+    border: 2px solid #2980b9;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 12px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.letter-header {
+    border-bottom: 1px solid #ecf0f1;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: #2c3e50;
+}
+
+.letter-body p {
+    margin: 8px 0;
+    line-height: 1.6;
+    color: #2c3e50;
+    font-size: 11px;
+}
+
+/* Анализ навыков */
+.skills-section {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.skills-item {
+    padding: 12px;
+    border-radius: 6px;
+    background: #f8f9fa;
+}
+
+.skills-item.matched {
+    background: #d5f4e6;
+    border-left: 4px solid #27ae60;
+}
+
+.skills-item.experience {
+    background: #e8f4f8;
+    border-left: 4px solid #3498db;
+}
+
+.skills-item.achievement {
+    background: #fef5e7;
+    border-left: 4px solid #f39c12;
+}
+
+.skills-item.growth {
+    background: #f4e6ff;
+    border-left: 4px solid #9b59b6;
+}
+
+.skills-item h3 {
+    color: #2c3e50;
+    margin-bottom: 6px;
+    font-size: 11px;
+}
+
+.skills-item ul {
+    margin-left: 16px;
+}
+
+.skills-item li {
+    margin: 3px 0;
+    color: #34495e;
+    font-size: 10px;
+}
+
+.skills-item .content {
+    color: #2c3e50;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+/* Стратегия персонализации */
+.personalization-section {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+}
+
+.personalization-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.personalization-item {
+    padding: 10px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #d5dbdb;
+}
+
+.personalization-item.hook {
+    border-left: 4px solid #e74c3c;
+}
+
+.personalization-item.motivation {
+    border-left: 4px solid #3498db;
+}
+
+.personalization-item.value {
+    border-left: 4px solid #27ae60;
+}
+
+.personalization-item h3 {
+    color: #2c3e50;
+    margin-bottom: 6px;
+    font-size: 11px;
+}
+
+.personalization-item .content {
+    color: #34495e;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+/* Информация о компании */
+.company-section {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+}
+
+.company-item {
+    margin: 10px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #95a5a6;
+}
+
+.company-item h3 {
+    color: #2c3e50;
+    margin-bottom: 6px;
+    font-size: 11px;
+}
+
+.company-item .content {
+    color: #34495e;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+/* Оценка качества */
+.quality-section {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+}
+
+.quality-scores {
+    margin: 12px 0;
+}
+
+.score-item {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.score-label {
+    width: 40%;
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 10px;
+}
+
+.score-bar {
+    width: 50%;
+    height: 14px;
+    background: #ecf0f1;
+    border-radius: 7px;
+    position: relative;
+    margin-right: 8px;
+}
+
+.score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e74c3c 0%, #f39c12 50%, #27ae60 100%);
+    border-radius: 7px;
+    transition: width 0.3s ease;
+}
+
+.score-value {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 9px;
+}
+
+/* Рекомендации по улучшению */
+.improvements-section {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+}
+
+.improvements-list {
+    margin: 12px 0;
+    padding-left: 16px;
+}
+
+.improvement-item {
+    margin: 6px 0;
+    color: #2c3e50;
+    font-size: 10px;
+    line-height: 1.4;
+    padding: 4px 0;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.improvement-item:before {
+    content: "💡 ";
+    margin-right: 4px;
+}
+
+/* Адаптация для печати */
+@media print {
+    .letter-section,
+    .full-letter-section,
+    .skills-section,
+    .personalization-section,
+    .quality-section {
+        page-break-inside: avoid;
+    }
+    
+    .full-letter {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+}

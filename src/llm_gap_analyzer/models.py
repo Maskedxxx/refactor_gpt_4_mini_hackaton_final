@@ -1,4 +1,14 @@
-# src/models/gap_analysis_models.py
+# src/llm_gap_analyzer/models.py
+# --- agent_meta ---
+# role: gap-analyzer-models
+# owner: @backend
+# contract: Pydantic модели для GAP анализа резюме и результатов
+# last_reviewed: 2025-08-17
+# interfaces:
+#   - EnhancedResumeTailoringAnalysis (основная модель результата)
+#   - RequirementAnalysis, PrimaryScreeningResult, DetailedRecommendation
+#   - CriticalityLevel, ComplianceStatus, RequirementType и другие Enum
+# --- /agent_meta ---
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 from enum import Enum

@@ -23,7 +23,7 @@ from src.parsing.llm.client import LLMClient
 from src.models import ResumeInfo, VacancyInfo
 from src.llm_gap_analyzer import LLMGapAnalyzerGenerator, GapAnalyzerOptions
 from src.llm_gap_analyzer.config import GapAnalyzerSettings
-from src.models.gap_analysis_models import EnhancedResumeTailoringAnalysis
+from src.llm_gap_analyzer.models import EnhancedResumeTailoringAnalysis
 
 
 log = get_logger("examples.generate_gap_analysis")
