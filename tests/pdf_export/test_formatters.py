@@ -13,7 +13,11 @@ from typing import Dict, Any
 
 import pytest
 
-from src.pdf_export.formatters import GapAnalyzerPDFFormatter, CoverLetterPDFFormatter
+from src.pdf_export.formatters import (
+    GapAnalyzerPDFFormatter,
+    CoverLetterPDFFormatter,
+    InterviewChecklistPDFFormatter,
+)
 
 
 class TestGapAnalyzerPDFFormatter:
@@ -245,3 +249,73 @@ class TestCoverLetterPDFFormatter:
         bad_date = "invalid-date"
         formatted_bad = cover_letter_formatter._format_datetime(bad_date)
         assert formatted_bad == "invalid-date"
+
+
+class TestInterviewChecklistPDFFormatter:
+    """Unit тесты для форматтера интервью-чеклиста."""
+
+    def test_feature_and_template_names(self, interview_checklist_formatter):
+        assert interview_checklist_formatter.feature_name == "interview_checklist"
+        assert interview_checklist_formatter.template_name == "interview_checklist.html"
+
+    def test_prepare_context_basic_structure(
+        self,
+        interview_checklist_formatter: InterviewChecklistPDFFormatter,
+        sample_interview_checklist_data,
+        sample_metadata,
+    ):
+        context = interview_checklist_formatter.prepare_context(
+            sample_interview_checklist_data, sample_metadata
+        )
+
+        required_keys = [
+            "title",
+            "generated_at",
+            "feature_version",
+            "company_name",
+            "personalization",
+            "time_panel",
+            "technical_preparation",
+            "behavioral_preparation",
+            "company_research",
+            "technical_stack_study",
+            "practical_exercises",
+            "interview_setup",
+            "additional_actions",
+            "critical_success_factors",
+            "common_mistakes_to_avoid",
+            "last_minute_checklist",
+        ]
+        for key in required_keys:
+            assert key in context, f"Отсутствует обязательный ключ: {key}"
+
+        # Проверим локализацию персонализации
+        pers = context["personalization"]
+        assert isinstance(pers["candidate_level"], str)
+        assert isinstance(pers["vacancy_type"], str)
+        assert isinstance(pers["company_format"], str)
+
+        # Проверим агрегаты и хелперы присутствуют
+        assert "tech_priority_counters" in context
+        assert callable(context["get_priority_class"])  # хелпер доступен в шаблон
+
+    def test_helpers_and_translations(self, interview_checklist_formatter):
+        f = interview_checklist_formatter
+
+        # CSS классы для приоритета
+        assert f._get_priority_css_class("КРИТИЧНО") == "priority-critical"
+        assert f._get_priority_css_class("ВАЖНО") == "priority-important"
+        assert f._get_priority_css_class("ЖЕЛАТЕЛЬНО") == "priority-desired"
+        assert f._get_priority_css_class("UNKNOWN") == "priority-default"
+
+        # CSS классы для сложности
+        assert f._get_difficulty_css_class("базовый") == "difficulty-basic"
+        assert f._get_difficulty_css_class("средний") == "difficulty-medium"
+        assert f._get_difficulty_css_class("продвинутый") == "difficulty-advanced"
+        assert f._get_difficulty_css_class(None) == "difficulty-unknown"
+
+        # Переводы enum'ов
+        assert f._t_level("JUNIOR") == "Джуниор"
+        assert f._t_level("LEAD") == "Лид"
+        assert f._t_vacancy_type("DEVOPS") == "DevOps/SRE"
+        assert f._t_company_format("INTERNATIONAL") == "Международная компания"
