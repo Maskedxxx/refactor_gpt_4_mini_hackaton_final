@@ -31,6 +31,8 @@ PDF экспорт
 - E2E‑сценарии используют новый сервис `PDFExportService.generate_pdf(formatter=..., data=..., metadata=...)` и веб‑роут `POST /features/{feature_name}/export/pdf`.
 - Запуск только PDF‑тестов: `pytest -q tests/pdf_export`
 
+Примечание: контракт обработки ошибок в PDF‑экспорте сейчас «lenient» — форматтеры продолжают рендер с дефолтными значениями при неполных входных данных. Поэтому два теста, ожидавшие исключения на пустых/повреждённых данных, временно помечены `skip` (см. docs/architecture/components/pdf_export.md §8.4).
+
 Изоляция окружения
 - База данных: каждый тест webapp использует временную SQLite‑БД через переменную окружения `WEBAPP_DB_PATH` (см. `tests/webapp/conftest.py`). Это гарантирует отсутствие побочных эффектов между прогонами.
 - Сеть: внешние HTTP‑вызовы замоканы (patch на `exchange_code_for_tokens`, `_refresh_token`, `HHApiClient.request`), поэтому доступ в интернет не требуется.

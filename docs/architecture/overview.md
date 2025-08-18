@@ -23,6 +23,8 @@
 
 - **PDF Export (`src/pdf_export`):** Модульная система экспорта результатов LLM-фич в PDF формат. Использует WeasyPrint + Jinja2 для рендеринга HTML шаблонов с профессиональными CSS стилями. Поддерживает все зарегистрированные фичи через систему форматтеров. Интегрирован с WebApp API. См. `docs/architecture/components/pdf_export.md`.
 
+- **LLM Interview Checklist (`src/llm_interview_checklist`):** Третья фича. Генерация профессионального чек-листа подготовки к интервью (технический/поведенческий блоки, исследование компании, приоритеты, ресурсы, критерии успеха). Доступна через универсальное API (`/features/interview_checklist/generate`), поддерживает версионирование и экспорт в PDF.
+
 ## Процесс аутентификации
 
 Диаграмма ниже иллюстрирует полный процесс аутентификации через WebApp:
@@ -57,6 +59,7 @@ graph TB
     
     Registry --> CoverLetter[LLMCoverLetterGenerator]
     Registry --> GapAnalyzer[LLMGapAnalyzerGenerator]
+    Registry --> Interview[LLMInterviewChecklistGenerator]
     Registry --> Future[Future Features...]
     
     CoverLetter --> Base[AbstractLLMGenerator]
@@ -69,6 +72,7 @@ graph TB
     
     PDFService --> GAFormatter[GapAnalyzerPDFFormatter]
     PDFService --> CLFormatter[CoverLetterPDFFormatter]
+    PDFService --> ICFormatter[InterviewChecklistPDFFormatter]
     PDFService --> FutureFormatter[Future Formatters...]
     
     GAFormatter --> Templates[HTML Templates]
@@ -80,12 +84,15 @@ graph TB
         GapAnalyzer
         CoverLetter -.-> CL_Model[EnhancedCoverLetter]
         GapAnalyzer -.-> GA_Model[EnhancedResumeTailoringAnalysis]
+        Interview
+        Interview -.-> IC_Model[ProfessionalInterviewChecklist]
     end
     
     subgraph "PDF Export System"
         PDFService
         GAFormatter
         CLFormatter
+        ICFormatter
         Templates
         WeasyPrint
     end
