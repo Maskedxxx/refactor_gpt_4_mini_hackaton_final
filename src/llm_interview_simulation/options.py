@@ -10,6 +10,13 @@
 
 from __future__ import annotations
 
+# Порядок переопределения (старший → младший):
+# 1) Этот файл (InterviewSimulationOptions) — явные опции рантайма
+# 2) config.yml — внешние шаблоны/настройки (если применимо)
+# 3) config.py (default_settings) — встроенные дефолты/маппинги
+# Примечание: опции управляют поведением генерации (temperature, tokens, личности и т.д.),
+# но не подменяют сами тексты шаблонов; шаблоны берутся из YAML с fallback на код.
+
 from typing import Optional, Literal, List, Callable, Awaitable
 from pydantic import BaseModel, Field
 

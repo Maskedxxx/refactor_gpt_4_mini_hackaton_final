@@ -13,23 +13,14 @@ from __future__ import annotations
 import json
 import asyncio
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, TYPE_CHECKING
 
-from src.models import ResumeInfo, VacancyInfo
-from src.llm_interview_simulation import (
-    LLMInterviewSimulationGenerator,
-    InterviewSimulationOptions,
-    DialogMessage,
-    QuestionType
-)
-from src.llm_interview_simulation.formatter import (
-    format_resume_for_interview_simulation,
-    format_vacancy_for_interview_simulation,
-    format_dialog_history,
-    create_candidate_profile_and_config
-)
-from src.llm_interview_simulation.prompts import InterviewPromptBuilder
-from src.llm_interview_simulation.config import get_question_types_for_round
+if TYPE_CHECKING:
+    # Импорты только для тайпчекеров (не исполняются во время рантайма)
+    from src.models import ResumeInfo, VacancyInfo
+
+# ВАЖНО: импорты модулей симуляции выполняются внутри main() после установки переменной окружения
+# INTERVIEW_SIM_CONFIG (если передан путь к YAML), чтобы конфиг подхватился до инициализации модулей.
 
 
 def load_test_data() -> tuple[ResumeInfo, VacancyInfo]:
@@ -49,6 +40,7 @@ def load_test_data() -> tuple[ResumeInfo, VacancyInfo]:
     except FileNotFoundError:
         vacancy_data = create_sample_vacancy()
     
+    from src.models import ResumeInfo, VacancyInfo
     resume = ResumeInfo(**resume_data)
     vacancy = VacancyInfo(**vacancy_data)
     return resume, vacancy
@@ -99,60 +91,60 @@ def create_sample_vacancy() -> Dict[str, Any]:
     }
 
 
-def create_mock_dialog_history(round_number: int) -> List[DialogMessage]:
-    """Создает макет истории диалога для демонстрации."""
-    
-    mock_dialogs = {
+def create_mock_dialog_history(round_number: int) -> List[Dict[str, Any]]:
+    """Создает макет истории диалога для демонстрации (как словари)."""
+
+    mock_dialogs: Dict[int, List[Dict[str, Any]]] = {
         1: [
-            DialogMessage(
-                speaker="HR",
-                message="Добро пожаловать! Расскажите, пожалуйста, о себе и своём опыте разработки.",
-                round_number=1,
-                question_type=QuestionType.INTRODUCTION
-            ),
-            DialogMessage(
-                speaker="Candidate",
-                message="Привет! Меня зовут Алексей, я Python разработчик с 4-летним опытом. Работаю с Django и FastAPI, есть опыт с PostgreSQL и Docker.",
-                round_number=1,
-                response_quality=4
-            )
+            {
+                "speaker": "HR",
+                "message": "Добро пожаловать! Расскажите, пожалуйста, о себе и своём опыте разработки.",
+                "round_number": 1,
+                "question_type": "introduction",
+            },
+            {
+                "speaker": "Candidate",
+                "message": "Привет! Меня зовут Алексей, я Python разработчик с 4-летним опытом. Работаю с Django и FastAPI, есть опыт с PostgreSQL и Docker.",
+                "round_number": 1,
+                "response_quality": 4,
+            },
         ],
         2: [
-            DialogMessage(
-                speaker="HR",
-                message="Расскажите подробнее о вашем опыте с Django. Какие сложные задачи решали?",
-                round_number=2,
-                question_type=QuestionType.TECHNICAL_SKILLS
-            ),
-            DialogMessage(
-                speaker="Candidate",
-                message="В последнем проекте создавал систему аналитики с Django. Основная сложность была в оптимизации запросов - использовал select_related, prefetch_related, добавил индексы. Производительность выросла в 5 раз.",
-                round_number=2,
-                response_quality=5
-            )
+            {
+                "speaker": "HR",
+                "message": "Расскажите подробнее о вашем опыте с Django. Какие сложные задачи решали?",
+                "round_number": 2,
+                "question_type": "technical_skills",
+            },
+            {
+                "speaker": "Candidate",
+                "message": "В последнем проекте создавал систему аналитики с Django. Основная сложность была в оптимизации запросов - использовал select_related, prefetch_related, добавил индексы. Производительность выросла в 5 раз.",
+                "round_number": 2,
+                "response_quality": 5,
+            },
         ],
         3: [
-            DialogMessage(
-                speaker="HR",
-                message="Опишите ситуацию, когда вам пришлось работать в команде над сложной задачей. Как решали конфликты?",
-                round_number=3,
-                question_type=QuestionType.BEHAVIORAL_STAR
-            ),
-            DialogMessage(
-                speaker="Candidate",
-                message="Был проект интеграции с внешним API. Возник конфликт по архитектуре с коллегой. Организовал встречу, выслушал все точки зрения, предложил создать прототипы обоих подходов. В итоге выбрали гибридное решение.",
-                round_number=3,
-                response_quality=4
-            )
-        ]
+            {
+                "speaker": "HR",
+                "message": "Опишите ситуацию, когда вам пришлось работать в команде над сложной задачей. Как решали конфликты?",
+                "round_number": 3,
+                "question_type": "behavioral",
+            },
+            {
+                "speaker": "Candidate",
+                "message": "Был проект интеграции с внешним API. Возник конфликт по архитектуре с коллегой. Организовал встречу, выслушал все точки зрения, предложил создать прототипы обоих подходов. В итоге выбрали гибридное решение.",
+                "round_number": 3,
+                "response_quality": 4,
+            },
+        ],
     }
-    
+
     # Возвращаем историю до указанного раунда
-    history = []
+    history: List[Dict[str, Any]] = []
     for r in range(1, round_number):
         if r in mock_dialogs:
             history.extend(mock_dialogs[r])
-    
+
     return history
 
 
@@ -172,6 +164,12 @@ async def demonstrate_all_prompts():
     
     # 2. Создаем профиль кандидата и конфигурацию
     print("\n🔍 Анализируем профиль кандидата...")
+    from src.llm_interview_simulation.formatter import (
+        format_resume_for_interview_simulation,
+        format_vacancy_for_interview_simulation,
+        format_dialog_history,
+        create_candidate_profile_and_config,
+    )
     candidate_profile, interview_config = create_candidate_profile_and_config(resume, vacancy)
     
     print(f"   Определенный уровень: {candidate_profile.detected_level.value}")
@@ -184,6 +182,7 @@ async def demonstrate_all_prompts():
     formatted_vacancy = format_vacancy_for_interview_simulation(vacancy)
     
     # 4. Настраиваем опции
+    from src.llm_interview_simulation import InterviewSimulationOptions
     options = InterviewSimulationOptions(
         prompt_version="v1.0",
         target_rounds=interview_config.target_rounds,
@@ -196,6 +195,7 @@ async def demonstrate_all_prompts():
     )
     
     # 5. Создаем строитель промптов
+    from src.llm_interview_simulation.prompts import InterviewPromptBuilder
     prompt_builder = InterviewPromptBuilder()
     
     # 6. Демонстрируем промпты для каждого раунда
@@ -205,10 +205,14 @@ async def demonstrate_all_prompts():
         print("=" * 80)
         
         # Создаем историю диалога до этого раунда
-        dialog_history = create_mock_dialog_history(round_num)
+        history_dicts = create_mock_dialog_history(round_num)
+        from src.llm_interview_simulation.models import DialogMessage
+        dialog_history = [DialogMessage(**d) for d in history_dicts]
         formatted_history = format_dialog_history(dialog_history)
         
         # Определяем тип вопроса для раунда
+        from src.llm_interview_simulation.config import get_question_types_for_round
+        from src.llm_interview_simulation.models import QuestionType
         possible_question_types = get_question_types_for_round(round_num)
         question_type = possible_question_types[0] if possible_question_types else QuestionType.FINAL
         
@@ -325,6 +329,10 @@ async def show_formatted_data_demo():
     
     print("\n📋 ФОРМАТИРОВАННОЕ РЕЗЮМЕ:")
     print("-" * 50)
+    from src.llm_interview_simulation.formatter import (
+        format_resume_for_interview_simulation,
+        format_vacancy_for_interview_simulation,
+    )
     formatted_resume = format_resume_for_interview_simulation(resume)
     print(formatted_resume)
     
@@ -336,7 +344,7 @@ async def show_formatted_data_demo():
 
 def main():
     """Основная функция демонстрации."""
-    import argparse
+    import argparse, os
     
     parser = argparse.ArgumentParser(description="Демонстрация промптов симуляции интервью")
     parser.add_argument(
@@ -349,9 +357,18 @@ def main():
         type=int, 
         help="Показать промпты только для определенного раунда"
     )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        help="Путь к YAML конфигурации (переопределяет встроенный config.yml)"
+    )
     
     args = parser.parse_args()
     
+    # Устанавливаем путь к конфигу до импортов модулей симуляции
+    if args.config:
+        os.environ["INTERVIEW_SIM_CONFIG"] = str(args.config.expanduser())
+
     if args.show_data:
         asyncio.run(show_formatted_data_demo())
     else:

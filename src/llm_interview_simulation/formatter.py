@@ -24,7 +24,7 @@ from .models import (
     CandidateLevel, ITRole, CandidateProfile, InterviewConfiguration, 
     QuestionType, CompetencyArea, DialogMessage
 )
-from .config import default_settings
+from .config import default_settings, get_target_rounds_for_level
 
 logger = get_logger(__name__)
 
@@ -342,7 +342,8 @@ class InterviewConfigurationBuilder:
     def _calculate_target_rounds(self, profile: CandidateProfile) -> int:
         """Вычисляет оптимальное количество раундов."""
         
-        base_rounds = default_settings.level_rounds_mapping.get(profile.detected_level, 5)
+        # Базовое значение берём через конфиг-API, поддерживающий переопределение из YAML
+        base_rounds = get_target_rounds_for_level(profile.detected_level)
         
         # Добавляем раунд для управленцев
         if (profile.management_experience and 

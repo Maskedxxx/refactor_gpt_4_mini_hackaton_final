@@ -23,6 +23,8 @@ from ..models import (
     QuestionType, CandidateLevel, ITRole
 )
 from ..options import InterviewSimulationOptions
+from ..config import app_config
+from .template_engine import render_template
 
 logger = get_logger(__name__)
 
@@ -54,6 +56,11 @@ class HRPromptBuilder(BasePromptBuilder):
     в зависимости от уровня кандидата, типа вопроса и хода интервью.
     """
     
+    def __init__(self):
+        super().__init__()
+        # Конфигурация промптов из YAML (может быть пустой)
+        self._cfg = app_config.get('prompts', {}).get('hr', {})
+
     def build_prompt(self, context: Dict[str, Any]) -> Prompt:
         """Строит промпт для генерации вопроса HR-менеджера.
         
@@ -83,25 +90,77 @@ class HRPromptBuilder(BasePromptBuilder):
         interview_config = context['interview_config']
         options = context.get('options', {})
         
-        # Определяем персону HR в зависимости от уровня кандидата
+        # Если YAML-конфиг доступен — используем его, иначе дефолтная логика ниже
+        if self._cfg:
+            level_value = candidate_profile.detected_level.value
+            role_value = candidate_profile.detected_role.value
+            hr_personality = getattr(options, 'hr_personality', 'neutral')
+
+            personas = self._cfg.get('personas', {})
+            level_approaches = self._cfg.get('level_approaches', {})
+            qinstr_map = self._cfg.get('question_instructions', {})
+            personalities = self._cfg.get('personalities', {})
+            role_guidance_map = self._cfg.get('role_guidance', {})
+            round_instr = self._cfg.get('round_instructions', {})
+
+            hr_persona = personas.get(level_value, "Профессиональный HR-специалист")
+            level_adaptation = level_approaches.get(level_value, "")
+            question_instructions_tpl = qinstr_map.get(question_type.value, "")
+            personality_instructions = personalities.get(hr_personality, "")
+            role_guidance = role_guidance_map.get(role_value, "")
+            round_specific_instruction = (
+                round_instr.get(str(round_number))
+                or round_instr.get('default')
+                or "Задай следующий вопрос, основываясь на предыдущих ответах кандидата."
+            )
+
+            # Рендерим вложенные шаблоны (например, role_value внутри question_instructions)
+            question_instructions = render_template(question_instructions_tpl, {
+                'role_value': role_value,
+                'level_value': level_value,
+            })
+
+            focus_areas = [area.value for area in interview_config.focus_areas[:3]]
+            context_map = {
+                'formatted_resume': formatted_resume,
+                'formatted_vacancy': formatted_vacancy,
+                'formatted_history': formatted_history,
+                'round_number': round_number,
+                'target_rounds': interview_config.target_rounds,
+                'question_type_value': question_type.value,
+                'candidate_profile': candidate_profile,
+                'role_value': role_value,
+                'role_title': role_value.replace('_', ' ').title(),
+                'level_value': level_value,
+                'level_title': level_value.title(),
+                'focus_areas': focus_areas,
+                'focus_areas_str': ', '.join(focus_areas),
+                'hr_persona': hr_persona,
+                'level_adaptation': level_adaptation,
+                'question_instructions': question_instructions,
+                'personality_instructions': personality_instructions,
+                'role_guidance': role_guidance,
+                'round_specific_instruction': round_specific_instruction,
+            }
+
+            system_template = self._cfg.get('system_template', '')
+            system_prompt = render_template(system_template, context_map)
+            user_prompt = self._cfg.get('user_prompt', '') or (
+                "Задай следующий вопрос, основываясь на контексте интервью и предыдущих ответах. Ответь только текстом вопроса без дополнительных комментариев."
+            )
+
+            return Prompt(system=system_prompt, user=user_prompt)
+
+        # --- Fallback: прежняя дефолтная логика, если нет YAML ---
         hr_persona = self._get_hr_persona(candidate_profile.detected_level)
-        
-        # Получаем инструкции для типа вопроса
         question_instructions = self._get_question_type_instructions(
             question_type, candidate_profile
         )
-        
-        # Адаптация под уровень кандидата
         level_adaptation = self._get_level_specific_approach(candidate_profile.detected_level)
-        
-        # Специфичные рекомендации для IT-роли
         role_guidance = self._get_role_specific_guidance(candidate_profile.detected_role)
-        
-        # Настройки стиля HR
         hr_personality = getattr(options, 'hr_personality', 'neutral')
         personality_instructions = self._get_personality_instructions(hr_personality)
-        
-        # Строим основной промпт
+
         system_prompt = f"""# Роль: {hr_persona}
 
 Ты — опытный HR-менеджер IT-компании с 10+ лет опыта проведения технических интервью.
@@ -150,11 +209,8 @@ class HRPromptBuilder(BasePromptBuilder):
 {self._get_round_specific_instruction(round_number)}"""
 
         user_prompt = "Задай следующий вопрос, основываясь на контексте интервью и предыдущих ответах. Ответь только текстом вопроса без дополнительных комментариев."
-        
-        return Prompt(
-            system=system_prompt,
-            user=user_prompt
-        )
+
+        return Prompt(system=system_prompt, user=user_prompt)
     
     def _get_hr_persona(self, level: CandidateLevel) -> str:
         """Возвращает персону HR в зависимости от уровня кандидата."""
@@ -385,6 +441,10 @@ class CandidatePromptBuilder(BasePromptBuilder):
     с учетом уровня кандидата и его профиля.
     """
     
+    def __init__(self):
+        super().__init__()
+        self._cfg = app_config.get('prompts', {}).get('candidate', {})
+
     def build_prompt(self, context: Dict[str, Any]) -> Prompt:
         """Строит промпт для генерации ответа кандидата.
         
@@ -410,16 +470,46 @@ class CandidatePromptBuilder(BasePromptBuilder):
         candidate_profile = context['candidate_profile']
         options = context.get('options', {})
         
-        # Определяем стиль ответа в зависимости от уровня и настроек
+        # Если YAML-конфиг доступен — используем его, иначе fallback
+        if self._cfg:
+            level_value = candidate_profile.detected_level.value
+            role_value = candidate_profile.detected_role.value
+            confidence = getattr(options, 'candidate_confidence', 'medium')
+
+            base_styles = self._cfg.get('base_styles', {})
+            conf_mod = self._cfg.get('confidence_modifiers', {})
+            role_tips = self._cfg.get('role_tips', {})
+
+            response_style = (base_styles.get(level_value, '') + conf_mod.get(confidence, ''))
+            role_specific_tips = role_tips.get(role_value, '')
+
+            context_map = {
+                'formatted_resume': formatted_resume,
+                'formatted_history': formatted_history,
+                'hr_question': hr_question,
+                'role_value': role_value,
+                'role_title': role_value.replace('_', ' ').title(),
+                'level_value': level_value,
+                'level_title': level_value.title(),
+                'response_style': response_style,
+                'role_specific_tips': role_specific_tips,
+            }
+
+            system_template = self._cfg.get('system_template', '')
+            system_prompt = render_template(system_template, context_map)
+            user_prompt = self._cfg.get('user_prompt', '') or (
+                "Ответь на вопрос HR-менеджера как кандидат на позицию. Ответь только текстом ответа без дополнительных комментариев."
+            )
+
+            return Prompt(system=system_prompt, user=user_prompt)
+
+        # --- Fallback: прежняя дефолтная логика, если нет YAML ---
         response_style = self._get_candidate_response_style(
             candidate_profile.detected_level,
             getattr(options, 'candidate_confidence', 'medium')
         )
-        
-        # Специфичные рекомендации для роли
         role_specific_tips = self._get_role_specific_tips(candidate_profile.detected_role)
-        
-        # Строим основной промпт
+
         system_prompt = f"""# Роль: {candidate_profile.detected_level.value.title()} {candidate_profile.detected_role.value.replace('_', ' ').title()}
 
 Ты — IT-специалист уровня {candidate_profile.detected_level.value}, который проходит интервью на позицию, 
@@ -468,11 +558,8 @@ class CandidatePromptBuilder(BasePromptBuilder):
 Ответь профессионально и по существу, основываясь на своем опыте из резюме."""
 
         user_prompt = "Ответь на вопрос HR-менеджера как кандидат на позицию. Ответь только текстом ответа без дополнительных комментариев."
-        
-        return Prompt(
-            system=system_prompt,
-            user=user_prompt
-        )
+
+        return Prompt(system=system_prompt, user=user_prompt)
     
     def _get_candidate_response_style(self, level: CandidateLevel, confidence: str) -> str:
         """Определяет стиль ответов в зависимости от уровня кандидата и уверенности."""

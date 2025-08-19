@@ -21,18 +21,12 @@ import time
 
 from src.utils import get_logger
 from src.parsing.llm.client import LLMClient
+from pydantic import BaseModel
 from src.parsing.resume.parser import LLMResumeParser
 from src.parsing.vacancy.mapper import map_hh_json_to_vacancy
 from src.models import ResumeInfo, VacancyInfo
-from src.llm_interview_simulation import (
-    LLMInterviewSimulationGenerator, 
-    InterviewSimulationOptions,
-    InterviewSimulation,
-    DialogMessage,
-    CandidateLevel,
-    ITRole,
-    QuestionType
-)
+# ВАЖНО: импорты модулей симуляции выполняются внутри main() после установки переменной окружения
+# INTERVIEW_SIM_CONFIG (если передан путь к YAML), чтобы конфиг подхватился до инициализации модулей.
 
 log = get_logger("examples.generate_interview_simulation")
 
@@ -53,7 +47,7 @@ class TracingLLMClient(LLMClient):
         self.traces = []
         self.call_count = 0
     
-    async def generate_structured(self, prompt, response_format, *, model_name=None, temperature=0.0, max_tokens=None):
+    async def generate_structured(self, prompt, schema, *, model_name=None, temperature=0.0, max_tokens=None):
         """Генерирует ответ с трейсингом."""
         self.call_count += 1
         
@@ -67,7 +61,7 @@ class TracingLLMClient(LLMClient):
             "temperature": temperature,
             "max_tokens": max_tokens,
             "prompt": prompt_text,
-            "response_format": str(response_format),
+            "schema": str(schema),
             "response": None,
             "error": None
         }
@@ -75,7 +69,7 @@ class TracingLLMClient(LLMClient):
         try:
             # Генерируем ответ
             response = await self.base_llm.generate_structured(
-                prompt, response_format, 
+                prompt, schema, 
                 model_name=model_name, 
                 temperature=temperature, 
                 max_tokens=max_tokens
@@ -137,7 +131,7 @@ class _FakeLLMForInterview(LLMClient):
             "Да! Какие основные технологические вызовы сейчас стоят перед командой? И как организован процесс code review?"
         ]
     
-    async def generate_structured(self, prompt, response_format, *, model_name=None, temperature=0.0, max_tokens=None):
+    async def generate_structured(self, prompt, schema, *, model_name=None, temperature=0.0, max_tokens=None):
         """Генерирует фейковые ответы для симуляции."""
         # Имитируем задержку API
         await asyncio.sleep(0.5)
@@ -145,7 +139,7 @@ class _FakeLLMForInterview(LLMClient):
         self.call_count += 1
         
         # Если это строка (HR или Candidate ответ)
-        if response_format == str:
+        if schema == str:
             prompt_text = prompt.system.lower() if hasattr(prompt, 'system') else str(prompt).lower()
             
             # Определяем тип промпта
@@ -158,7 +152,19 @@ class _FakeLLMForInterview(LLMClient):
                 answer_index = min(len(self.candidate_answers) - 1, (self.call_count - 2) // 2)
                 return self.candidate_answers[answer_index]
         
-        # Если это структурированный объект (не должно случиться в нашем случае)
+        # Если ожидается Pydantic-модель с текстом, собираем её
+        try:
+            if isinstance(schema, type) and issubclass(schema, BaseModel):
+                prompt_text = prompt.system.lower() if hasattr(prompt, 'system') else str(prompt).lower()
+                if "hr-менеджер" in prompt_text or "опытный hr" in prompt_text:
+                    idx = min(len(self.hr_questions) - 1, (self.call_count - 1) // 2)
+                    return schema.model_validate({"text": self.hr_questions[idx]})
+                else:
+                    idx = min(len(self.candidate_answers) - 1, (self.call_count - 2) // 2)
+                    return schema.model_validate({"text": self.candidate_answers[idx]})
+        except Exception:
+            pass
+        # Fallback
         return "Fake response"
 
 
@@ -268,8 +274,17 @@ async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = 
             if not os.getenv("OPENAI_API_KEY"):
                 log.error("❌ OPENAI_API_KEY не установлен! Используйте --fake-llm для демо")
                 return 1
+            # Конструируем OpenAI SDK клиент и передаем дефолтную модель в адаптер
+            from openai import OpenAI
             from src.parsing.llm.client import OpenAILLMClient
-            base_llm = OpenAILLMClient()
+            # Модель берем из переменной окружения или из YAML/дефолтов модуля
+            try:
+                from src.llm_interview_simulation.config import default_settings as _sim_defaults
+                default_model = os.getenv("OPENAI_MODEL_NAME", _sim_defaults.openai_model_name)
+            except Exception:
+                default_model = os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini-2024-07-18")
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            base_llm = OpenAILLMClient(client, default_model)
         
         # Оборачиваем в трейсинг если нужно
         if trace and trace_file:
@@ -277,6 +292,12 @@ async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = 
         else:
             generator_kwargs["llm"] = base_llm
         
+        # Импорты после возможной установки INTERVIEW_SIM_CONFIG
+        from src.llm_interview_simulation import (
+            LLMInterviewSimulationGenerator,
+            InterviewSimulationOptions,
+        )
+
         generator = LLMInterviewSimulationGenerator(**generator_kwargs)
         
         # 3. Настраиваем опции
@@ -562,6 +583,11 @@ if __name__ == "__main__":
         action="store_true", 
         help="Создать примерные данные для тестирования"
     )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        help="Путь к YAML конфигурации (переопределяет встроенный config.yml)"
+    )
     
     args = parser.parse_args()
     
@@ -578,5 +604,9 @@ if __name__ == "__main__":
         print("  python examples/generate_interview_simulation.py --resume-pdf resume.pdf --vacancy-json vacancy.json --trace")
         exit(1)
     
+    # Устанавливаем путь к конфигу до импортов модулей симуляции
+    if args.config:
+        os.environ["INTERVIEW_SIM_CONFIG"] = str(args.config.expanduser())
+
     exit_code = asyncio.run(main(args.resume_pdf, args.vacancy_json, args.fake_llm, args.trace))
     exit(exit_code)

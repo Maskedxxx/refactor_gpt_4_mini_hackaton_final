@@ -18,6 +18,7 @@ from src.models.resume_models import ResumeInfo
 from src.models.vacancy_models import VacancyInfo
 from src.parsing.llm.client import LLMClient
 from src.parsing.llm.prompt import Prompt
+from pydantic import BaseModel
 from src.llm_features.base.generator import AbstractLLMGenerator
 from src.llm_features.base.interfaces import IFeatureValidator, IFeatureFormatter
 from src.llm_features.base.options import BaseLLMOptions
@@ -400,15 +401,19 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
             if options.log_detailed_prompts:
                 self._log.debug(f"HR промпт (раунд {round_number}):\n{prompt.system[:200]}...")
             
+            # Простая схема для текстового ответа через parse API
+            class _TextOnly(BaseModel):
+                text: str
+
             # Генерируем вопрос с настройками для HR
             result = await self._llm.generate_structured(
                 prompt=prompt,
-                response_format=str,  # Простая строка
+                schema=_TextOnly,
                 temperature=getattr(options, 'temperature_hr', 0.7),
                 max_tokens=getattr(options, 'max_tokens_per_message', 2500)
             )
             
-            question = result.strip() if result else None
+            question = (result.text or "").strip() if result else None
             self._log.debug(f"Сгенерирован вопрос HR длиной {len(question) if question else 0} символов")
             return question
             
@@ -453,15 +458,19 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
             if options.log_detailed_prompts:
                 self._log.debug(f"Candidate промпт:\n{prompt.system[:200]}...")
             
+            # Простая схема для текстового ответа
+            class _TextOnly(BaseModel):
+                text: str
+
             # Генерируем ответ с настройками для кандидата
             result = await self._llm.generate_structured(
                 prompt=prompt,
-                response_format=str,  # Простая строка
+                schema=_TextOnly,
                 temperature=getattr(options, 'temperature_candidate', 0.8),
                 max_tokens=getattr(options, 'max_tokens_per_message', 2500)
             )
             
-            answer = result.strip() if result else None
+            answer = (result.text or "").strip() if result else None
             self._log.debug(f"Сгенерирован ответ кандидата длиной {len(answer) if answer else 0} символов")
             return answer
             

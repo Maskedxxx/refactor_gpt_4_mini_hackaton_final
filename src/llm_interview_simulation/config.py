@@ -10,9 +10,22 @@
 
 from __future__ import annotations
 
+# Порядок переопределения (старший → младший):
+# 1) Опции рантайма (InterviewSimulationOptions, options.py)
+# 2) Внешний YAML (config.yml) — загружается через load_config()/app_config
+# 3) Этот файл (default_settings) — дефолты на Python-стороне
+# 4) Fallback в промпт-билдерах при отсутствии секций YAML
+#
+# Примеры применения:
+# - get_target_rounds_for_level(): учитывает YAML feature_settings.target_rounds_by_level,
+#   затем падает на default_settings.level_rounds_mapping.
+# - OpenAI модель/ключ: читаются из переменных окружения, затем из default_settings.
+
 import os
-from typing import Dict, Any, List
+from pathlib import Path
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
+import yaml
 
 from .models import CompetencyArea, QuestionType, CandidateLevel, ITRole
 from .options import InterviewSimulationOptions
@@ -33,7 +46,7 @@ class InterviewSimulationSettings(BaseModel):
     )
     
     feature_version: str = Field(
-        default="v1.0",
+        default="v1.1-configurable",
         description="Версия фичи"
     )
     
@@ -233,6 +246,44 @@ class InterviewSimulationSettings(BaseModel):
 default_settings = InterviewSimulationSettings()
 
 
+# --- YAML configuration loader ---
+def _resolve_config_path() -> Optional[Path]:
+    """Определяет путь к YAML конфигурации.
+
+    Порядок:
+    1) env INTERVIEW_SIM_CONFIG
+    2) src/llm_interview_simulation/config.yml рядом с модулем
+    """
+    env_path = os.getenv("INTERVIEW_SIM_CONFIG")
+    if env_path:
+        p = Path(env_path).expanduser()
+        if p.exists():
+            return p
+    local = Path(__file__).parent / "config.yml"
+    return local if local.exists() else None
+
+
+def load_config() -> Dict[str, Any]:
+    """Загружает конфигурацию из YAML файла, если доступен.
+
+    Возвращает пустой dict при отсутствии файла или ошибке парсинга.
+    """
+    path = _resolve_config_path()
+    if not path:
+        return {}
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        # Безопасный fallback — работаем без внешнего YAML
+        return {}
+
+
+# Кэш конфигурации для использования по всему модулю
+app_config: Dict[str, Any] = load_config()
+
+
 def get_default_options() -> InterviewSimulationOptions:
     """Получить опции по умолчанию для симуляции интервью.
     
@@ -266,6 +317,16 @@ def get_target_rounds_for_level(level: CandidateLevel) -> int:
     Returns:
         int: Количество раундов интервью
     """
+    # При наличии YAML можно переопределять целевые раунды
+    try:
+        levels = app_config.get("feature_settings", {}).get("target_rounds_by_level", {})
+        if levels:
+            # ключи в YAML — в нижнем регистре строковые значения enum
+            val = levels.get(level.value)
+            if isinstance(val, int) and 3 <= val <= 7:
+                return val
+    except Exception:
+        pass
     return default_settings.level_rounds_mapping.get(level, 5)
 
 
