@@ -1,0 +1,92 @@
+{
+  "first_name": "Иван",
+  "last_name": "Петров",
+  "title": "Python разработчик",
+  "skills": "Опыт разработки веб-приложений на Python с использованием Django и FastAPI. Знание SQL, Git, Docker. Участие в проектах от архитектуры до деплоя.",
+  "skill_set": [
+    "Python",
+    "Django",
+    "FastAPI",
+    "PostgreSQL",
+    "Git",
+    "Docker",
+    "Redis",
+    "REST API"
+  ],
+  "experience": [
+    {
+      "company": "ООО ТехСофт",
+      "position": "Python разработчик",
+      "start": "2022-01",
+      "end": "2024-12",
+      "description": "Разработка и поддержка веб-приложений на Django. Проектирование архитектуры микросервисов. Оптимизация производительности. Код-ревью. Наставничество Junior разработчиков."
+    },
+    {
+      "company": "ИП Сидоров",
+      "position": "Junior Python разработчик",
+      "start": "2021-06",
+      "end": "2021-12",
+      "description": "Разработка REST API на FastAPI. Работа с PostgreSQL. Написание unit-тестов. Изучение Docker и DevOps практик."
+    }
+  ],
+  "education": {
+    "level": {
+      "name": "Высшее"
+    },
+    "primary": [
+      {
+        "name": "МГУ им. Ломоносова, Факультет ВМК",
+        "result": "Бакалавр прикладной математики и информатики",
+        "year": "2021"
+      }
+    ]
+  },
+  "total_experience": 36,
+  "salary": {
+    "amount": 150000
+  },
+  "professional_roles": [
+    {
+      "name": "Backend разработчик"
+    },
+    {
+      "name": "Python Developer"
+    }
+  ],
+  "languages": [
+    {
+      "name": "Русский",
+      "level": {
+        "name": "Родной"
+      }
+    },
+    {
+      "name": "Английский",
+      "level": {
+        "name": "B2 — Выше среднего"
+      }
+    }
+  ],
+  "contact": [
+    {
+      "type": {
+        "name": "Эл. почта"
+      },
+      "value": "ivan.petrov@example.com"
+    }
+  ],
+  "site": [
+    {
+      "type": {
+        "name": "GitHub"
+      },
+      "url": "https://github.com/apetrov"
+    }
+  ],
+  "employments": [
+    "Полная занятость"
+  ],
+  "schedules": [
+    "Полный день"
+  ]
+}
