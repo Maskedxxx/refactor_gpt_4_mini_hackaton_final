@@ -23,10 +23,13 @@ graph TD
     E -->|gap_analyzer| F[GapAnalyzerPDFFormatter]
     E -->|cover_letter| G[CoverLetterPDFFormatter]
     E -->|interview_checklist| IC[InterviewChecklistPDFFormatter]
+    E -->|interview_simulation| IS[InterviewSimulationPDFFormatter]
     E -->|future_feature| H[Future Formatters...]
     
     F --> I[prepare_context]
     G --> I
+    IC --> I
+    IS --> I
     H --> I
     
     I --> J[HTML Template]
@@ -139,13 +142,38 @@ class AbstractPDFFormatter(ABC):
 - Визуальные бейджи приоритетов и сложности
 - Группировка технических задач по категориям
 
+#### InterviewSimulationPDFFormatter (`src/pdf_export/formatters/interview_simulation.py`)
+
+Форматтер для полноценной симуляции интервью между AI HR-менеджером и AI кандидатом.
+
+**Секции PDF:**
+- Заголовок отчета (позиция, дата, версия, компания)
+- Краткая сводка интервью — 3 карточки:
+  - Информация о кандидате (имя, уровень, роль, опыт, управленческий опыт)
+  - Конфигурация интервью (раундов, сложность, типы вопросов, фокус-области)
+  - Статистика интервью (всего сообщений, HR вопросов, ответов кандидата, типов вопросов, ключевых моментов)
+- Детальный профиль кандидата (ключевые технологии, предыдущие компании, образование)
+- Покрытие типов вопросов — визуальная сетка с индикаторами (введение, технические навыки, опыт, поведенческие, решение проблем, мотивация, культурное соответствие, лидерство, финальные)
+- Полный диалог интервью — по раундам с четким разделением HR (синий) vs Candidate (зеленый)
+- Технические метаданные (для troubleshooting)
+
+**Особенности:**
+- Полная локализация всех enum значений (CandidateLevel, ITRole, QuestionType, etc.)
+- Цветовое разделение: HR сообщения (синий #007bff), Candidate сообщения (зеленый #28a745)
+- Группировка диалога по раундам с указанием типа вопроса
+- Визуальные бейджи для уровней, технологий, типов вопросов
+- Обработка ключевых моментов и временных меток
+- Адаптивная верстка для правильных переносов страниц
+
 ## 4. Шаблоны и стили
 
 ### 4.1 HTML шаблоны (`src/pdf_export/templates/`)
 
 Каждая фича имеет свой шаблон:
 - `gap_analyzer.html` — профессиональный анализ с таблицами
-- `cover_letter.html` — структурированное письмо с секциями
+- `cover_letter.html` — структурированное письмо с секциями  
+- `interview_checklist.html` — профессиональный чек-лист подготовки к интервью
+- `interview_simulation.html` — полный отчет симуляции интервью с диалогом
 
 **Структура шаблона:**
 ```html
@@ -177,6 +205,8 @@ class AbstractPDFFormatter(ABC):
 **Фича-специфичные стили:**
 - `gap_analyzer.css` — стили для анализа (таблицы требований, статусы)
 - `cover_letter.css` — стили для письма (секции, прогресс-бары)
+- `interview_checklist.css` — стили для чек-листа (блоки, приоритеты, бейджи)
+- `interview_simulation.css` — стили для симуляции (диалог, раунды, цветовое кодирование HR/Candidate)
 
 **Цветовая схема:**
 - Зеленый (#28a745) — положительные статусы
@@ -286,6 +316,16 @@ python examples/generate_cover_letter.py --save-result --fake-llm
 python examples/test_pdf_export.py --feature cover_letter
 ```
 
+**Interview Simulation:**
+```bash
+# Генерируем и сохраняем результат
+python examples/generate_interview_simulation.py --save-result --fake-llm
+
+# Тестируем PDF генерацию с реальным файлом результата
+python examples/test_pdf_export.py --feature interview_simulation \
+  --result-file interview_simulation_result_20250820_104305.json
+```
+
 ## 7. Расширение под новые фичи
 
 ### 7.1 Добавление нового форматтера
@@ -340,6 +380,8 @@ from .formatters.new_feature import NewFeaturePDFFormatter
 _formatters_registry = {
     "gap_analyzer": GapAnalyzerPDFFormatter(),
     "cover_letter": CoverLetterPDFFormatter(),
+    "interview_checklist": InterviewChecklistPDFFormatter(),
+    "interview_simulation": InterviewSimulationPDFFormatter(),
     "new_feature": NewFeaturePDFFormatter(),  # Добавить здесь
 }
 ```
