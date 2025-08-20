@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.pdf_export.service import PDFExportService
-from src.pdf_export.formatters import GapAnalyzerPDFFormatter, CoverLetterPDFFormatter, InterviewChecklistPDFFormatter
+from src.pdf_export.formatters import GapAnalyzerPDFFormatter, CoverLetterPDFFormatter, InterviewChecklistPDFFormatter, InterviewSimulationPDFFormatter
 from src.utils import get_logger
 
 log = get_logger("examples.test_pdf_export")
@@ -39,6 +39,8 @@ async def run_async(result_file: str, feature_name: str = "gap_analyzer") -> int
             print("   python -m examples.generate_cover_letter --fake-llm --save-result")
         elif feature_name == "interview_checklist":
             print("   python -m examples.generate_interview_checklist --fake-llm --save-result")
+        elif feature_name == "interview_simulation":
+            print("   python -m examples.generate_interview_simulation --fake-llm --save-result")
         return 1
     
     with result_path.open("r", encoding="utf-8") as f:
@@ -59,6 +61,7 @@ async def run_async(result_file: str, feature_name: str = "gap_analyzer") -> int
         "gap_analyzer": GapAnalyzerPDFFormatter(),
         "cover_letter": CoverLetterPDFFormatter(),
         "interview_checklist": InterviewChecklistPDFFormatter(),
+        "interview_simulation": InterviewSimulationPDFFormatter(),
     }
     
     formatter = formatters.get(feature_name)
@@ -102,6 +105,11 @@ async def run_async(result_file: str, feature_name: str = "gap_analyzer") -> int
     elif feature_name == "interview_checklist":
         total_time = feature_result.get('time_estimates', {}).get('total_time_needed', 'N/A')
         print(f"⏳ Общее время подготовки: {total_time}")
+    elif feature_name == "interview_simulation":
+        total_rounds = len(set(msg['round_number'] for msg in feature_result.get('dialog_messages', [])))
+        candidate_level = feature_result.get('candidate_profile', {}).get('detected_level', 'N/A')
+        print(f"💬 Раундов интервью: {total_rounds}")
+        print(f"👤 Уровень кандидата: {candidate_level}")
     
     return 0
 
@@ -109,7 +117,7 @@ async def run_async(result_file: str, feature_name: str = "gap_analyzer") -> int
 def main() -> int:
     p = argparse.ArgumentParser(description="Тестирование PDF экспорта LLM фич")
     p.add_argument("--result-file", type=str, help="Имя файла с результатом в tests/data/")
-    p.add_argument("--feature", type=str, choices=["gap_analyzer", "cover_letter", "interview_checklist"], 
+    p.add_argument("--feature", type=str, choices=["gap_analyzer", "cover_letter", "interview_checklist", "interview_simulation"], 
                    default="gap_analyzer", help="Тип фичи для PDF экспорта")
     args = p.parse_args()
     
@@ -128,6 +136,8 @@ def main() -> int:
                 print("   python -m examples.generate_cover_letter --fake-llm --save-result")
             elif args.feature == "interview_checklist":
                 print("   python -m examples.generate_interview_checklist --fake-llm --save-result")
+            elif args.feature == "interview_simulation":
+                print("   python -m examples.generate_interview_simulation --fake-llm --save-result")
             return 1
         
         # Берем последний по времени создания

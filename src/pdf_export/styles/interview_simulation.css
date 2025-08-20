@@ -1,0 +1,421 @@
+/* src/pdf_export/styles/interview_simulation.css */
+/* Специфичные стили для PDF отчета симуляции интервью */
+
+/* ===== ЗАГОЛОВКИ И МЕТА-ИНФОРМАЦИЯ ===== */
+.report-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 8px;
+}
+
+.report-header h1 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+    font-weight: bold;
+}
+
+.meta-info {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.meta-info > div {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+/* ===== СВОДНЫЕ КАРТОЧКИ ===== */
+.summary-section {
+    margin-bottom: 30px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.summary-card {
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.summary-card .card-header {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.summary-card .card-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #495057;
+}
+
+.summary-card .card-content {
+    padding: 15px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 4px 0;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-row .label {
+    font-weight: 500;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.info-row .value {
+    font-weight: 600;
+    color: #212529;
+    font-size: 14px;
+}
+
+/* ===== УРОВНИ И СТАТУСЫ ===== */
+.level-junior {
+    color: #28a745 !important;
+}
+
+.level-middle {
+    color: #ffc107 !important;
+}
+
+.level-senior {
+    color: #dc3545 !important;
+}
+
+.level-team,
+.level-lead {
+    color: #6f42c1 !important;
+}
+
+.difficulty-easy {
+    color: #28a745 !important;
+}
+
+.difficulty-medium {
+    color: #ffc107 !important;
+}
+
+.difficulty-hard {
+    color: #dc3545 !important;
+}
+
+.badge-success {
+    background: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+/* ===== ПРОФИЛЬ КАНДИДАТА ===== */
+.candidate-profile-section {
+    margin-bottom: 30px;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.profile-card {
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 20px;
+    background: white;
+}
+
+.profile-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #495057;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 8px;
+}
+
+.technologies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tech-badge {
+    background: #007bff;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.company-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.company-list li {
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+/* ===== ПОКРЫТИЕ ТИПОВ ВОПРОСОВ ===== */
+.question-coverage-section {
+    margin-bottom: 30px;
+}
+
+.coverage-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.coverage-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.coverage-item.covered {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.coverage-item.not-covered {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.status-covered {
+    color: #28a745;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.status-not-covered {
+    color: #dc3545;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* ===== ДИАЛОГ ===== */
+.dialog-section {
+    margin-bottom: 30px;
+}
+
+.round-container {
+    margin-bottom: 25px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+}
+
+.round-header {
+    background: #f8f9fa;
+    padding: 12px 20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.round-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #495057;
+}
+
+.question-type-badge {
+    background: #6c757d;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.dialog-messages {
+    padding: 20px;
+}
+
+.message-container {
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.message-container:last-child {
+    margin-bottom: 0;
+}
+
+.hr-message {
+    border-left: 4px solid #007bff;
+    background: #f8f9ff;
+}
+
+.candidate-message {
+    border-left: 4px solid #28a745;
+    background: #f8fff9;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.message-header .speaker {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.hr-message .message-header .speaker {
+    color: #007bff;
+}
+
+.candidate-message .message-header .speaker {
+    color: #28a745;
+}
+
+.message-header .timestamp {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.message-content {
+    padding: 15px;
+}
+
+.message-content p {
+    margin: 0 0 10px 0;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.key-points {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.key-points h4 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.key-points ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.key-points li {
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #495057;
+}
+
+/* ===== МЕТАДАННЫЕ ===== */
+.metadata-section {
+    margin-bottom: 30px;
+}
+
+.metadata-content {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.metadata-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.metadata-table tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.metadata-table td {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    font-size: 13px;
+}
+
+.metadata-key {
+    font-weight: 600;
+    color: #495057;
+    width: 30%;
+}
+
+.metadata-value {
+    color: #212529;
+}
+
+/* ===== ФУТЕР ===== */
+.report-footer {
+    margin-top: 40px;
+    border-top: 2px solid #dee2e6;
+    padding-top: 20px;
+    text-align: center;
+}
+
+.footer-content p {
+    margin: 5px 0;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* ===== АДАПТАЦИЯ ДЛЯ ПЕЧАТИ ===== */
+@media print {
+    .round-container {
+        break-inside: avoid;
+    }
+    
+    .message-container {
+        break-inside: avoid;
+    }
+    
+    .summary-card {
+        break-inside: avoid;
+    }
+    
+    .profile-card {
+        break-inside: avoid;
+    }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Middle Python Developer",
+  "company_name": "IT Solutions Ltd",
+  "description": "\n        <p>Мы ищем опытного Python разработчика для работы над крупными проектами в области финтех.</p>\n        <h3>Требования:</h3>\n        <ul>\n            <li>Опыт коммерческой разработки на Python от 2-х лет</li>\n            <li>Глубокое знание Django или FastAPI</li>\n            <li>Опыт работы с PostgreSQL, знание SQL</li>\n            <li>Понимание принципов REST API</li>\n            <li>Знание Git, понимание Git Flow</li>\n            <li>Опыт написания unit-тестов</li>\n        </ul>\n        <h3>Будет плюсом:</h3>\n        <ul>\n            <li>Опыт с Docker и Kubernetes</li>\n            <li>Знание Redis</li>\n            <li>Опыт с микросервисной архитектурой</li>\n            <li>Знание JavaScript/TypeScript</li>\n        </ul>\n        <h3>Мы предлагаем:</h3>\n        <ul>\n            <li>Работу в команде профессионалов</li>\n            <li>Интересные и сложные задачи</li>\n            <li>Гибкий график работы</li>\n            <li>Возможности для профессионального роста</li>\n        </ul>\n        ",
+  "key_skills": [
+    "Python",
+    "Django",
+    "FastAPI",
+    "PostgreSQL",
+    "REST API",
+    "Git",
+    "Docker"
+  ],
+  "professional_roles": [
+    {
+      "name": "Backend разработчик"
+    }
+  ],
+  "experience": {
+    "id": "between1And3"
+  },
+  "employment": {
+    "id": "full"
+  },
+  "schedule": {
+    "id": "fullDay"
+  }
+}

@@ -1,0 +1,697 @@
+# src/llm_interview_simulation/service.py
+# --- agent_meta ---
+# role: interview-simulation-service
+# owner: @backend
+# contract: Главный генератор симуляции интервью, интегрированный с LLM Features Framework
+# last_reviewed: 2025-08-18
+# interfaces:
+#   - LLMInterviewSimulationGenerator (implements AbstractLLMGenerator[InterviewSimulation])
+# --- /agent_meta ---
+
+from __future__ import annotations
+
+import asyncio
+from typing import Optional, List, Tuple, Dict, Any
+
+from src.utils import get_logger
+from src.models.resume_models import ResumeInfo
+from src.models.vacancy_models import VacancyInfo
+from src.parsing.llm.client import LLMClient
+from src.parsing.llm.prompt import Prompt
+from pydantic import BaseModel
+from src.llm_features.base.generator import AbstractLLMGenerator
+from src.llm_features.base.interfaces import IFeatureValidator, IFeatureFormatter
+from src.llm_features.base.options import BaseLLMOptions
+from src.llm_features.base.errors import BaseLLMError
+
+from .models import (
+    InterviewSimulation, DialogMessage, CandidateProfile, InterviewConfiguration,
+    QuestionType, CandidateLevel
+)
+from .options import InterviewSimulationOptions, ProgressCallbackType
+from .config import default_settings, get_question_types_for_round
+from .formatter import (
+    format_resume_for_interview_simulation,
+    format_vacancy_for_interview_simulation, 
+    format_dialog_history,
+    create_candidate_profile_and_config
+)
+from .prompts import InterviewPromptBuilder
+
+logger = get_logger(__name__)
+
+
+class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation]):
+    """Генератор симуляции интервью, интегрированный с LLM Features Framework.
+    
+    Реализует полный цикл проведения симулированного интервью между AI HR-менеджером
+    и AI кандидатом на основе реального резюме и вакансии.
+    
+    Ключевые возможности:
+    - Адаптивные вопросы в зависимости от уровня кандидата
+    - Структурированная оценка по компетенциям
+    - Интеграция с существующей архитектурой LLM Features
+    - Поддержка различных типов интервью (technical, behavioral, etc.)
+    """
+    
+    def __init__(self, 
+                 *,
+                 llm: Optional[LLMClient] = None,
+                 validator: Optional[IFeatureValidator] = None,
+                 formatter: Optional[IFeatureFormatter] = None,
+                 openai_api_key: Optional[str] = None,
+                 openai_model_name: Optional[str] = None):
+        """Инициализация генератора симуляции интервью.
+        
+        Args:
+            llm: LLM клиент для взаимодействия с языковой моделью
+            validator: Валидатор для проверки качества результатов
+            formatter: Форматтер для вывода результатов
+            openai_api_key: API ключ OpenAI (если не задан llm)
+            openai_model_name: Название модели OpenAI (если не задан llm)
+        """
+        super().__init__(
+            llm=llm,
+            validator=validator,
+            formatter=formatter,
+            openai_api_key=openai_api_key or default_settings.openai_api_key,
+            openai_model_name=openai_model_name or default_settings.openai_model_name
+        )
+        
+        # Инициализируем компоненты для симуляции интервью
+        self.prompt_builder = InterviewPromptBuilder()
+        
+        # Настройки по умолчанию
+        self.settings = default_settings
+        
+        self._log.info("Инициализирован генератор симуляции интервью")
+    
+    async def generate(
+        self, 
+        resume: ResumeInfo, 
+        vacancy: VacancyInfo, 
+        options: InterviewSimulationOptions
+    ) -> InterviewSimulation:
+        """Переопределенный workflow генерации для симуляции интервью.
+        
+        Отличается от базового тем, что передает контекст резюме и вакансии
+        в _call_llm метод через специальные атрибуты в опциях.
+        """
+        try:
+            self._log.info(
+                "Запуск генерации фичи %s, версия=%s", 
+                self.get_feature_name(), 
+                options.prompt_version
+            )
+            
+            # 1. Подготовка опций с дефолтами
+            merged_options = self._merge_with_defaults(options)
+            
+            # 2. Добавляем контекст резюме и вакансии в опции для передачи в _call_llm
+            # Это нужно потому что AbstractLLMGenerator не предусматривает передачу
+            # дополнительных параметров в _call_llm кроме prompt и options
+            merged_options._resume_context = resume
+            merged_options._vacancy_context = vacancy
+            
+            # 3. Сборка промпта (для симуляции это только первый промпт)
+            prompt = await self._build_prompt(resume, vacancy, merged_options)
+            
+            # 4. Вызов LLM (здесь происходит вся логика симуляции)
+            result = await self._call_llm(prompt, merged_options)
+            
+            
+            self._log.info("Генерация фичи %s завершена успешно", self.get_feature_name())
+            return result
+            
+        except Exception as e:
+            self._log.error("Ошибка генерации фичи %s: %s", self.get_feature_name(), str(e))
+            raise BaseLLMError(f"Generation failed for {self.get_feature_name()}: {str(e)}") from e
+    
+    async def _build_prompt(self, 
+                           resume: ResumeInfo, 
+                           vacancy: VacancyInfo, 
+                           options: InterviewSimulationOptions) -> Prompt:
+        """Строит промпт для симуляции интервью.
+        
+        Примечание: Это метод из AbstractLLMGenerator, но для симуляции интервью
+        мы используем более сложную логику с множественными промптами.
+        Здесь мы возвращаем промпт для первого вопроса HR.
+        
+        Args:
+            resume: Информация о резюме
+            vacancy: Информация о вакансии  
+            options: Опции симуляции
+            
+        Returns:
+            Prompt: Промпт для первого вопроса HR
+        """
+        self._log.debug("Строим начальный промпт для симуляции интервью")
+        
+        # Создаем профиль кандидата и конфигурацию
+        candidate_profile, interview_config = create_candidate_profile_and_config(resume, vacancy)
+        
+        # Форматируем данные
+        formatted_resume = format_resume_for_interview_simulation(resume)
+        formatted_vacancy = format_vacancy_for_interview_simulation(vacancy)
+        formatted_history = format_dialog_history([])  # Пустая история для первого вопроса
+        
+        # Определяем тип первого вопроса
+        first_question_types = get_question_types_for_round(1)
+        first_question_type = first_question_types[0] if first_question_types else QuestionType.INTRODUCTION
+        
+        # Строим промпт для первого вопроса HR
+        prompt = self.prompt_builder.build_hr_prompt(
+            formatted_resume=formatted_resume,
+            formatted_vacancy=formatted_vacancy,
+            formatted_history=formatted_history,
+            round_number=1,
+            question_type=first_question_type,
+            candidate_profile=candidate_profile,
+            interview_config=interview_config,
+            options=options
+        )
+        
+        return prompt
+    
+    async def _call_llm(self, prompt: Prompt, options: InterviewSimulationOptions) -> InterviewSimulation:
+        """Выполняет полную симуляцию интервью с использованием LLM.
+        
+        Это основной метод, который координирует весь процесс:
+        1. Анализ профиля кандидата
+        2. Проведение многораундового диалога
+        3. Оценка результатов
+        4. Формирование итогового отчета
+        
+        Args:
+            prompt: Начальный промпт (используется для извлечения контекста)
+            options: Опции симуляции интервью
+            
+        Returns:
+            InterviewSimulation: Результат полной симуляции интервью
+        """
+        self._log.info("Начинаем полную симуляцию интервью")
+        
+        # Примечание: prompt здесь содержит контекст, но мы будем использовать
+        # более сложную логику симуляции с несколькими вызовами LLM
+        
+        # Для начала нам нужны resume и vacancy, но AbstractLLMGenerator их не передает
+        # Поэтому мы сохраним их в контексте через опции
+        if not hasattr(options, '_resume_context') or not hasattr(options, '_vacancy_context'):
+            raise ValueError("Resume и Vacancy контекст должны быть переданы через опции")
+        
+        resume = options._resume_context
+        vacancy = options._vacancy_context
+        
+        # 1. Создаем профиль кандидата и конфигурацию интервью
+        candidate_profile, interview_config = create_candidate_profile_and_config(resume, vacancy)
+        
+        # Применяем настройки из опций
+        interview_config = self._apply_options_to_config(interview_config, options)
+        
+        self._log.info(f"Профиль: {candidate_profile.detected_level.value} {candidate_profile.detected_role.value}")
+        self._log.info(f"Конфигурация: {interview_config.target_rounds} раундов")
+        
+        # 2. Подготавливаем форматированные данные
+        formatted_resume = format_resume_for_interview_simulation(resume)
+        formatted_vacancy = format_vacancy_for_interview_simulation(vacancy)
+        
+        # 3. Проводим многораундовый диалог
+        dialog_messages = await self._conduct_interview_dialog(
+            formatted_resume=formatted_resume,
+            formatted_vacancy=formatted_vacancy,
+            candidate_profile=candidate_profile,
+            interview_config=interview_config,
+            options=options
+        )
+        
+        # 4. Собираем метаданные
+        simulation_metadata = self._create_simulation_metadata(
+            dialog_messages, candidate_profile, interview_config, options
+        )
+        
+        # 5. Создаем итоговый объект симуляции (без оценки)
+        simulation = InterviewSimulation(
+            position_title=getattr(vacancy, 'name', 'IT позиция'),
+            candidate_name=self._extract_candidate_name(resume),
+            company_context=self._create_company_context(vacancy),
+            candidate_profile=candidate_profile,
+            interview_config=interview_config,
+            dialog_messages=dialog_messages,
+            simulation_metadata=simulation_metadata
+        )
+        
+        self._log.info(f"Симуляция интервью завершена: {len(dialog_messages)} сообщений")
+        return simulation
+    
+    async def _conduct_interview_dialog(self,
+                                       formatted_resume: str,
+                                       formatted_vacancy: str,
+                                       candidate_profile: CandidateProfile,
+                                       interview_config: InterviewConfiguration,
+                                       options: InterviewSimulationOptions) -> List[DialogMessage]:
+        """Проводит полный диалог интервью между HR и кандидатом.
+        
+        Args:
+            formatted_resume: Отформатированное резюме
+            formatted_vacancy: Отформатированная вакансия
+            candidate_profile: Профиль кандидата
+            interview_config: Конфигурация интервью
+            options: Опции симуляции
+            
+        Returns:
+            List[DialogMessage]: Список всех сообщений диалога
+        """
+        self._log.info(f"Начинаем диалог интервью на {interview_config.target_rounds} раундов")
+        
+        dialog_messages = []
+        
+        # Проводим раунды диалога
+        for round_num in range(1, interview_config.target_rounds + 1):
+            self._log.debug(f"Начинаем раунд {round_num}/{interview_config.target_rounds}")
+            
+            # Определяем тип вопроса для текущего раунда
+            question_type = self._select_question_type_for_round(
+                round_num, candidate_profile, dialog_messages
+            )
+            
+            # HR задает вопрос
+            hr_question = await self._generate_hr_question(
+                formatted_resume=formatted_resume,
+                formatted_vacancy=formatted_vacancy,
+                dialog_messages=dialog_messages,
+                round_number=round_num,
+                question_type=question_type,
+                candidate_profile=candidate_profile,
+                interview_config=interview_config,
+                options=options
+            )
+            
+            if not hr_question:
+                self._log.warning(f"Не удалось сгенерировать вопрос HR в раунде {round_num}")
+                break
+            
+            # Добавляем вопрос HR в диалог
+            hr_message = DialogMessage(
+                speaker="HR",
+                message=hr_question,
+                round_number=round_num,
+                question_type=question_type
+            )
+            dialog_messages.append(hr_message)
+            self._log.debug(f"HR задал вопрос типа {question_type.value}")
+            
+            # Кандидат отвечает
+            candidate_answer = await self._generate_candidate_answer(
+                formatted_resume=formatted_resume,
+                formatted_vacancy=formatted_vacancy,
+                dialog_messages=dialog_messages,
+                hr_question=hr_question,
+                candidate_profile=candidate_profile,
+                options=options
+            )
+            
+            if not candidate_answer:
+                self._log.warning(f"Не удалось сгенерировать ответ кандидата в раунде {round_num}")
+                break
+            
+            # Добавляем ответ кандидата в диалог
+            candidate_message = DialogMessage(
+                speaker="Candidate",
+                message=candidate_answer,
+                round_number=round_num
+            )
+            dialog_messages.append(candidate_message)
+            self._log.debug("Кандидат ответил")
+            
+            # Небольшая пауза между раундами для более реалистичной симуляции
+            if options.enable_progress_callbacks:
+                await asyncio.sleep(0.1)
+        
+        self._log.info(f"Диалог завершен: {len(dialog_messages)} сообщений в {len(dialog_messages)//2} раундах")
+        return dialog_messages
+    
+    async def _generate_hr_question(self,
+                                   formatted_resume: str,
+                                   formatted_vacancy: str,
+                                   dialog_messages: List[DialogMessage],
+                                   round_number: int,
+                                   question_type: QuestionType,
+                                   candidate_profile: CandidateProfile,
+                                   interview_config: InterviewConfiguration,
+                                   options: InterviewSimulationOptions) -> Optional[str]:
+        """Генерирует вопрос HR-менеджера для текущего раунда.
+        
+        Args:
+            formatted_resume: Отформатированное резюме
+            formatted_vacancy: Отформатированная вакансия
+            dialog_messages: История диалога
+            round_number: Номер раунда
+            question_type: Тип вопроса
+            candidate_profile: Профиль кандидата
+            interview_config: Конфигурация интервью
+            options: Опции симуляции
+            
+        Returns:
+            Optional[str]: Сгенерированный вопрос или None в случае ошибки
+        """
+        try:
+            # Форматируем историю диалога
+            formatted_history = format_dialog_history(dialog_messages)
+            
+            # Строим промпт для HR
+            prompt = self.prompt_builder.build_hr_prompt(
+                formatted_resume=formatted_resume,
+                formatted_vacancy=formatted_vacancy,
+                formatted_history=formatted_history,
+                round_number=round_number,
+                question_type=question_type,
+                candidate_profile=candidate_profile,
+                interview_config=interview_config,
+                options=options
+            )
+            
+            if options.log_detailed_prompts:
+                self._log.debug(f"HR промпт (раунд {round_number}):\n{prompt.system[:200]}...")
+            
+            # Простая схема для текстового ответа через parse API
+            class _TextOnly(BaseModel):
+                text: str
+
+            # Генерируем вопрос с настройками для HR
+            result = await self._llm.generate_structured(
+                prompt=prompt,
+                schema=_TextOnly,
+                temperature=getattr(options, 'temperature_hr', 0.7),
+                max_tokens=getattr(options, 'max_tokens_per_message', 2500)
+            )
+            
+            question = (result.text or "").strip() if result else None
+            self._log.debug(f"Сгенерирован вопрос HR длиной {len(question) if question else 0} символов")
+            return question
+            
+        except Exception as e:
+            self._log.error(f"Ошибка генерации вопроса HR в раунде {round_number}: {e}")
+            return None
+    
+    async def _generate_candidate_answer(self,
+                                        formatted_resume: str,
+                                        formatted_vacancy: str,
+                                        dialog_messages: List[DialogMessage],
+                                        hr_question: str,
+                                        candidate_profile: CandidateProfile,
+                                        options: InterviewSimulationOptions) -> Optional[str]:
+        """Генерирует ответ кандидата на вопрос HR.
+        
+        Args:
+            formatted_resume: Отформатированное резюме
+            formatted_vacancy: Отформатированная вакансия
+            dialog_messages: История диалога (без последнего вопроса HR)
+            hr_question: Вопрос HR, на который нужно ответить
+            candidate_profile: Профиль кандидата
+            options: Опции симуляции
+            
+        Returns:
+            Optional[str]: Сгенерированный ответ или None в случае ошибки
+        """
+        try:
+            # Форматируем историю диалога (исключаем последний вопрос HR)
+            formatted_history = format_dialog_history(dialog_messages[:-1])
+            
+            # Строим промпт для кандидата
+            prompt = self.prompt_builder.build_candidate_prompt(
+                formatted_resume=formatted_resume,
+                formatted_vacancy=formatted_vacancy,
+                formatted_history=formatted_history,
+                hr_question=hr_question,
+                candidate_profile=candidate_profile,
+                options=options
+            )
+            
+            if options.log_detailed_prompts:
+                self._log.debug(f"Candidate промпт:\n{prompt.system[:200]}...")
+            
+            # Простая схема для текстового ответа
+            class _TextOnly(BaseModel):
+                text: str
+
+            # Генерируем ответ с настройками для кандидата
+            result = await self._llm.generate_structured(
+                prompt=prompt,
+                schema=_TextOnly,
+                temperature=getattr(options, 'temperature_candidate', 0.8),
+                max_tokens=getattr(options, 'max_tokens_per_message', 2500)
+            )
+            
+            answer = (result.text or "").strip() if result else None
+            self._log.debug(f"Сгенерирован ответ кандидата длиной {len(answer) if answer else 0} символов")
+            return answer
+            
+        except Exception as e:
+            self._log.error(f"Ошибка генерации ответа кандидата: {e}")
+            return None
+    
+    def _select_question_type_for_round(self,
+                                       round_number: int,
+                                       candidate_profile: CandidateProfile,
+                                       dialog_messages: List[DialogMessage]) -> QuestionType:
+        """Выбирает тип вопроса для текущего раунда.
+        
+        Args:
+            round_number: Номер раунда
+            candidate_profile: Профиль кандидата
+            dialog_messages: История диалога
+            
+        Returns:
+            QuestionType: Выбранный тип вопроса
+        """
+        # Получаем возможные типы для раунда
+        possible_types = get_question_types_for_round(round_number)
+        
+        # Получаем уже использованные типы
+        used_types = {
+            msg.question_type for msg in dialog_messages 
+            if msg.speaker == "HR" and msg.question_type
+        }
+        
+        # Добавляем leadership вопросы для управленцев
+        if (candidate_profile.management_experience and 
+            candidate_profile.detected_level in [candidate_profile.detected_level.SENIOR, candidate_profile.detected_level.LEAD] and
+            QuestionType.LEADERSHIP not in used_types and
+            round_number >= 4):
+            possible_types.append(QuestionType.LEADERSHIP)
+        
+        # Убираем уже использованные типы
+        available_types = [qt for qt in possible_types if qt not in used_types]
+        
+        if not available_types:
+            return QuestionType.FINAL
+        
+        # Выбираем первый доступный (в будущем можно добавить более умную логику)
+        selected_type = available_types[0]
+        self._log.debug(f"Выбран тип вопроса для раунда {round_number}: {selected_type.value}")
+        return selected_type
+    
+    # Оценка и обратная связь отключены в данной версии
+    
+    def _apply_options_to_config(self,
+                                config: InterviewConfiguration,
+                                options: InterviewSimulationOptions) -> InterviewConfiguration:
+        """Применяет настройки из опций к конфигурации интервью.
+        
+        Args:
+            config: Базовая конфигурация
+            options: Опции с пользовательскими настройками
+            
+        Returns:
+            InterviewConfiguration: Обновленная конфигурация
+        """
+        # Переопределяем параметры из опций
+        if options.target_rounds != 5:  # Если отличается от дефолта
+            config.target_rounds = options.target_rounds
+        
+        if options.difficulty_level != "medium":
+            config.difficulty_level = options.difficulty_level
+        
+        if options.focus_areas:
+            config.focus_areas = options.focus_areas
+        
+        config.include_behavioral = options.include_behavioral
+        config.include_technical = options.include_technical
+        
+        self._log.debug(f"Конфигурация обновлена: {config.target_rounds} раундов, {config.difficulty_level}")
+        return config
+    
+    # Оценка отключена — базовые генераторы оценок удалены
+    
+    def _create_simulation_metadata(self,
+                                   dialog_messages: List[DialogMessage],
+                                   candidate_profile: CandidateProfile,
+                                   interview_config: InterviewConfiguration,
+                                   options: InterviewSimulationOptions) -> Dict[str, Any]:
+        """Создает метаданные симуляции.
+        
+        Args:
+            dialog_messages: История диалога
+            candidate_profile: Профиль кандидата
+            interview_config: Конфигурация интервью
+            options: Опции симуляции
+            
+        Returns:
+            Dict[str, Any]: Метаданные симуляции
+        """
+        return {
+            'rounds_completed': len(dialog_messages) // 2,
+            'total_rounds_planned': interview_config.target_rounds,
+            'model_used': self._llm.default_model if hasattr(self._llm, 'default_model') else 'unknown',
+            'candidate_level': candidate_profile.detected_level.value,
+            'candidate_role': candidate_profile.detected_role.value,
+            'difficulty_level': interview_config.difficulty_level,
+            'question_types_covered': [
+                msg.question_type.value for msg in dialog_messages 
+                if msg.speaker == "HR" and msg.question_type
+            ],
+            'feature_version': self.get_supported_versions()[0],
+            'assessment_enabled': False
+        }
+    
+    def _extract_candidate_name(self, resume: ResumeInfo) -> str:
+        """Извлекает имя кандидата из резюме.
+        
+        Args:
+            resume: Информация о резюме
+            
+        Returns:
+            str: Имя кандидата
+        """
+        first_name = getattr(resume, 'first_name', '')
+        last_name = getattr(resume, 'last_name', '')
+        name = f"{first_name} {last_name}".strip()
+        return name if name else "Кандидат"
+    
+    def _create_company_context(self, vacancy: VacancyInfo) -> str:
+        """Создает контекст компании для симуляции.
+        
+        Args:
+            vacancy: Информация о вакансии
+            
+        Returns:
+            str: Контекст компании
+        """
+        position = getattr(vacancy, 'name', 'IT позиция')
+        employer = getattr(vacancy, 'employer', 'Компания')
+        
+        if hasattr(employer, 'name'):
+            employer_name = employer.name
+        else:
+            employer_name = str(employer) if employer else 'Компания'
+        
+        return f"Интервью на позицию {position} в компании {employer_name}"
+    
+    def _convert_resume_to_dict(self, resume: ResumeInfo) -> Dict[str, Any]:
+        """Конвертирует ResumeInfo в словарь для Assessment Engine.
+        
+        Args:
+            resume: Информация о резюме
+            
+        Returns:
+            Dict[str, Any]: Словарь с данными резюме
+        """
+        # Простая конвертация через model_dump если доступно
+        if hasattr(resume, 'model_dump'):
+            return resume.model_dump()
+        elif hasattr(resume, 'dict'):
+            return resume.dict()
+        else:
+            # Ручная конвертация основных полей
+            return {
+                'first_name': getattr(resume, 'first_name', ''),
+                'last_name': getattr(resume, 'last_name', ''),
+                'title': getattr(resume, 'title', ''),
+                'skills': getattr(resume, 'skills', ''),
+                'skill_set': getattr(resume, 'skill_set', []),
+                'experience': getattr(resume, 'experience', []),
+                'education': getattr(resume, 'education', {}),
+                'salary': getattr(resume, 'salary', {}),
+                'total_experience': getattr(resume, 'total_experience', {})
+            }
+    
+    def _convert_vacancy_to_dict(self, vacancy: VacancyInfo) -> Dict[str, Any]:
+        """Конвертирует VacancyInfo в словарь для Assessment Engine.
+        
+        Args:
+            vacancy: Информация о вакансии
+            
+        Returns:
+            Dict[str, Any]: Словарь с данными вакансии
+        """
+        # Простая конвертация через model_dump если доступно
+        if hasattr(vacancy, 'model_dump'):
+            return vacancy.model_dump()
+        elif hasattr(vacancy, 'dict'):
+            return vacancy.dict()
+        else:
+            # Ручная конвертация основных полей
+            return {
+                'name': getattr(vacancy, 'name', ''),
+                'description': getattr(vacancy, 'description', ''),
+                'employer': getattr(vacancy, 'employer', {}),
+                'key_skills': getattr(vacancy, 'key_skills', []),
+                'experience': getattr(vacancy, 'experience', {}),
+                'employment': getattr(vacancy, 'employment', {}),
+                'schedule': getattr(vacancy, 'schedule', {}),
+                'salary': getattr(vacancy, 'salary', '')
+            }
+    
+    def _merge_with_defaults(self, options: InterviewSimulationOptions) -> InterviewSimulationOptions:
+        """Заполняет пустые поля дефолтными значениями.
+        
+        Args:
+            options: Пользовательские опции InterviewSimulationOptions
+            
+        Returns:
+            InterviewSimulationOptions: Опции с заполненными дефолтами
+        """
+        default_options = self.settings.default_options
+        
+        # Копируем опции и заполняем пустые поля
+        merged_data = options.model_dump()
+        for field_name, field_value in default_options.model_dump().items():
+            if field_name not in merged_data or merged_data[field_name] is None:
+                merged_data[field_name] = field_value
+        
+        merged_options = InterviewSimulationOptions(**merged_data)
+        self._log.debug(f"Опции объединены: {merged_options.target_rounds} раундов, сложность {merged_options.difficulty_level}")
+        return merged_options
+    
+    def get_feature_name(self) -> str:
+        """Возвращает название фичи."""
+        return self.settings.feature_name
+    
+    def get_supported_versions(self) -> list[str]:
+        """Возвращает поддерживаемые версии фичи."""
+        return [self.settings.feature_version]
+    
+    def format_for_output(self, result: InterviewSimulation) -> str:
+        """Форматирует результат для текстового вывода.
+        
+        Args:
+            result: Результат симуляции интервью
+            
+        Returns:
+            str: Отформатированный текст
+        """
+        return f"""=== СИМУЛЯЦИЯ ИНТЕРВЬЮ ===
+
+Позиция: {result.position_title}
+Кандидат: {result.candidate_name}
+Уровень: {result.candidate_profile.detected_level.value}
+Роль: {result.candidate_profile.detected_role.value}
+
+=== РЕЗУЛЬТАТ ===
+Раундов проведено: {result.total_rounds_completed}
+"""
+
+
+# Создание экземпляра Assessment Engine адаптированного для нашей архитектуры
+class ProfessionalAssessmentEngine:
+    pass
