@@ -62,24 +62,14 @@ class InterviewSimulationOptions(BaseLLMOptions):
         description="Включать вопросы на лидерство (None=автоопределение)"
     )
     
-    # === Фокус оценки ===
+    # === Фокус интервью ===
     
     focus_areas: Optional[List[CompetencyArea]] = Field(
         default=None,
         description="Приоритетные области для оценки (None=автоопределение)"
     )
     
-    # === Качество и валидация ===
-    
-    enable_assessment: bool = Field(
-        default=True,
-        description="Включить детальную оценку результатов интервью"
-    )
-    
-    strict_star_validation: bool = Field(
-        default=False,
-        description="Строгая проверка STAR структуры в поведенческих ответах"
-    )
+    # === Качество логирования ===
     
     # === Настройки генерации ===
     
@@ -159,7 +149,6 @@ class InterviewSimulationOptions(BaseLLMOptions):
                 "difficulty_level": "medium",
                 "include_behavioral": True,
                 "include_technical": True,
-                "enable_assessment": True,
                 "hr_personality": "neutral",
                 "candidate_confidence": "medium",
                 "temperature_hr": 0.7,
@@ -189,8 +178,8 @@ class InterviewProgressCallback(BaseModel):
         "analyzing_profile", 
         "generating_question", 
         "generating_answer", 
-        "assessing_response",
-        "final_assessment"
+        "generating_question",
+        "generating_answer"
     ] = Field(
         ...,
         description="Текущая стадия обработки"

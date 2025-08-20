@@ -8,7 +8,6 @@
 #   - InterviewSimulation (основной результат генерации)
 #   - DialogMessage (сообщение в диалоге)
 #   - CandidateProfile (профиль кандидата)
-#   - InterviewAssessment (детальная оценка)
 # --- /agent_meta ---
 
 from __future__ import annotations
@@ -89,12 +88,6 @@ class DialogMessage(BaseModel):
         None, 
         description="Тип вопроса (только для HR-сообщений)"
     )
-    response_quality: Optional[int] = Field(
-        None, 
-        ge=1, 
-        le=5, 
-        description="Оценка качества ответа 1-5 (только для кандидата)"
-    )
     key_points: List[str] = Field(
         default_factory=list, 
         description="Ключевые моменты из ответа для анализа"
@@ -105,70 +98,7 @@ class DialogMessage(BaseModel):
     )
 
 
-class CompetencyScore(BaseModel):
-    """Оценка по конкретной компетенции с доказательствами.
-    
-    Детальная оценка одной области компетенций на основе ответов кандидата.
-    """
-    area: CompetencyArea = Field(
-        ..., 
-        description="Область компетенции для оценки"
-    )
-    score: int = Field(
-        ..., 
-        ge=1, 
-        le=5, 
-        description="Оценка от 1 (неудовлетворительно) до 5 (превосходно)"
-    )
-    evidence: List[str] = Field(
-        default_factory=list, 
-        description="Конкретные доказательства/цитаты из ответов кандидата"
-    )
-    improvement_notes: str = Field(
-        "", 
-        description="Рекомендации по улучшению данной компетенции"
-    )
-
-
-class InterviewAssessment(BaseModel):
-    """Детальная профессиональная оценка результатов интервью.
-    
-    Всесторонняя оценка кандидата включающая анализ компетенций,
-    выявление сильных/слабых сторон и итоговые рекомендации.
-    """
-    overall_recommendation: Literal["hire", "conditional_hire", "reject"] = Field(
-        ..., 
-        description="Общая рекомендация по найму"
-    )
-    competency_scores: List[CompetencyScore] = Field(
-        ..., 
-        description="Детальные оценки по каждой компетенции"
-    )
-    strengths: List[str] = Field(
-        ..., 
-        description="Выявленные сильные стороны кандидата"
-    )
-    weaknesses: List[str] = Field(
-        ..., 
-        description="Выявленные слабые стороны кандидата"
-    )
-    red_flags: List[str] = Field(
-        default_factory=list, 
-        description="Красные флаги (критические проблемы)"
-    )
-    cultural_fit_score: int = Field(
-        ..., 
-        ge=1, 
-        le=5, 
-        description="Оценка соответствия культуре компании 1-5"
-    )
-    
-    @property
-    def average_competency_score(self) -> float:
-        """Средняя оценка по всем компетенциям."""
-        if not self.competency_scores:
-            return 0.0
-        return sum(cs.score for cs in self.competency_scores) / len(self.competency_scores)
+# Оценочные модели удалены: оценка интервью отключена в текущей версии
 
 
 class CandidateProfile(BaseModel):
@@ -273,26 +203,6 @@ class InterviewSimulation(BaseModel):
         description="Полный диалог в хронологическом порядке"
     )
     
-    # Результаты профессиональной оценки
-    assessment: InterviewAssessment = Field(
-        ..., 
-        description="Детальная оценка результатов интервью"
-    )
-    
-    # Текстовые рекомендации (для совместимости с existing системами)
-    hr_assessment: str = Field(
-        ..., 
-        description="Итоговая текстовая оценка от HR-менеджера"
-    )
-    candidate_performance_analysis: str = Field(
-        ..., 
-        description="Детальный анализ выступления кандидата"
-    )
-    improvement_recommendations: str = Field(
-        ..., 
-        description="Конкретные рекомендации кандидату по улучшению"
-    )
-    
     # Метаданные симуляции
     simulation_metadata: Dict[str, Any] = Field(
         default_factory=dict, 
@@ -305,15 +215,6 @@ class InterviewSimulation(BaseModel):
         if not self.dialog_messages:
             return 0
         return max((msg.round_number for msg in self.dialog_messages), default=0)
-    
-    @property
-    def average_response_quality(self) -> float:
-        """Средняя оценка качества ответов кандидата."""
-        candidate_scores = [
-            msg.response_quality for msg in self.dialog_messages 
-            if msg.speaker == "Candidate" and msg.response_quality is not None
-        ]
-        return sum(candidate_scores) / len(candidate_scores) if candidate_scores else 0.0
     
     @property
     def covered_question_types(self) -> List[QuestionType]:
@@ -351,8 +252,7 @@ class InterviewSimulation(BaseModel):
                     {
                         "speaker": "Candidate", 
                         "message": "Я разработчик с 3-летним опытом...",
-                        "round_number": 1,
-                        "response_quality": 4
+                        "round_number": 1
                     }
                 ]
             }

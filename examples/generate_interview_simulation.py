@@ -307,7 +307,6 @@ async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = 
             difficulty_level="medium",
             include_behavioral=True,
             include_technical=True,
-            enable_assessment=True,
             hr_personality="neutral",
             candidate_confidence="medium",
             temperature_hr=0.7,
@@ -341,49 +340,18 @@ async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = 
         
         print(f"\n🎯 СТАТИСТИКА ИНТЕРВЬЮ:")
         print(f"   Раундов проведено: {result.total_rounds_completed}")
-        print(f"   Средняя оценка ответов: {result.average_response_quality:.1f}/5")
         print(f"   Типы вопросов: {', '.join([qt.value for qt in result.covered_question_types])}")
         
         print(f"\n💬 ДИАЛОГ ИНТЕРВЬЮ:")
         for i, msg in enumerate(result.dialog_messages, 1):
             speaker_icon = "👤 HR" if msg.speaker == "HR" else "🤵 Кандидат"
-            quality_info = f" (оценка: {msg.response_quality}/5)" if msg.response_quality else ""
+            quality_info = ""
             question_type_info = f" [{msg.question_type.value}]" if msg.question_type else ""
             
             print(f"\n   {i}. {speaker_icon} (раунд {msg.round_number}){question_type_info}{quality_info}:")
             print(f"      {msg.message}")
         
-        print(f"\n📊 ОЦЕНКА РЕЗУЛЬТАТОВ:")
-        print(f"   Общая рекомендация: {result.assessment.overall_recommendation}")
-        print(f"   Культурное соответствие: {result.assessment.cultural_fit_score}/5")
-        
-        print(f"\n🎯 КОМПЕТЕНЦИИ:")
-        for comp in result.assessment.competency_scores:
-            print(f"   • {comp.area.value}: {comp.score}/5")
-            if comp.evidence:
-                print(f"     Доказательства: {comp.evidence[0][:100]}...")
-        
-        print(f"\n💪 СИЛЬНЫЕ СТОРОНЫ:")
-        for strength in result.assessment.strengths:
-            print(f"   + {strength}")
-        
-        print(f"\n📈 ОБЛАСТИ РАЗВИТИЯ:")
-        for weakness in result.assessment.weaknesses:
-            print(f"   - {weakness}")
-        
-        if result.assessment.red_flags:
-            print(f"\n🚩 КРАСНЫЕ ФЛАГИ:")
-            for flag in result.assessment.red_flags:
-                print(f"   ⚠️  {flag}")
-        
-        print(f"\n🎭 HR ОЦЕНКА:")
-        print(f"   {result.hr_assessment}")
-        
-        print(f"\n📝 АНАЛИЗ ВЫСТУПЛЕНИЯ:")
-        print(f"   {result.candidate_performance_analysis}")
-        
-        print(f"\n💡 РЕКОМЕНДАЦИИ ПО УЛУЧШЕНИЮ:")
-        print(f"   {result.improvement_recommendations}")
+        # Блок оценки удален в этой версии
         
         # 6. Сохраняем результат и полный пайплайн
         output_dir = Path("output")

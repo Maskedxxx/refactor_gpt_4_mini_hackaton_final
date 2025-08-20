@@ -27,7 +27,7 @@
     
     generator = LLMInterviewSimulationGenerator()
     result = await generator.generate(resume, vacancy, options)
-    print(result.hr_assessment)
+    # print(result)  # оценочные поля удалены
 
 Автоматическая регистрация:
     При импорте этого модуля фича автоматически регистрируется в LLM Features Framework
@@ -40,8 +40,6 @@ from .models import (
     DialogMessage, 
     CandidateProfile,
     InterviewConfiguration,
-    InterviewAssessment,
-    CompetencyScore,
     CandidateLevel,
     ITRole,
     QuestionType,
@@ -72,8 +70,6 @@ __all__ = [
     "DialogMessage",
     "CandidateProfile",
     "InterviewConfiguration",
-    "InterviewAssessment", 
-    "CompetencyScore",
     
     # === Перечисления ===
     "CandidateLevel",
@@ -111,7 +107,6 @@ SUPPORTED_VERSIONS = [FEATURE_VERSION]
 DEFAULT_CONFIG = {
     "target_rounds": default_settings.default_options.target_rounds,
     "difficulty_level": default_settings.default_options.difficulty_level,
-    "enable_assessment": default_settings.default_options.enable_assessment,
     "hr_personality": default_settings.default_options.hr_personality
 }
 

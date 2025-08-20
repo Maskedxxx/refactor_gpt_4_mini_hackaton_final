@@ -84,7 +84,6 @@ def _create_default_config() -> Dict[str, Any]:
         "difficulty_level": default_options.difficulty_level,
         "include_behavioral": default_options.include_behavioral,
         "include_technical": default_options.include_technical,
-        "enable_assessment": default_options.enable_assessment,
         
         # === Настройки генерации ===
         "hr_personality": default_options.hr_personality,

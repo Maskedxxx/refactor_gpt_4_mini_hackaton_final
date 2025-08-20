@@ -76,7 +76,6 @@ class InterviewSimulationSettings(BaseModel):
             difficulty_level="medium",
             include_behavioral=True,
             include_technical=True,
-            enable_assessment=True,
             hr_personality="neutral",
             candidate_confidence="medium",
             temperature_hr=0.7,
@@ -206,21 +205,7 @@ class InterviewSimulationSettings(BaseModel):
         description="Основные компетенции для оценки по уровням"
     )
     
-    # === Настройки Assessment Engine ===
-    
-    assessment_settings: Dict[str, Any] = Field(
-        default_factory=lambda: {
-            "min_evidence_items": 2,  # Минимум доказательств для оценки
-            "red_flag_threshold": 3,  # Максимум красных флагов для conditional_hire
-            "cultural_fit_weight": 0.2,  # Вес культурного соответствия
-            "technical_expertise_weight": 0.3,  # Вес технической экспертизы
-            "hire_threshold": 3.5,  # Минимальный средний балл для hire
-            "conditional_hire_threshold": 2.5,  # Минимальный балл для conditional_hire
-            "enable_detailed_feedback": True,  # Генерировать детальную обратную связь
-            "max_improvement_recommendations": 5  # Максимум рекомендаций по улучшению
-        },
-        description="Настройки системы оценки"
-    )
+    # Оценка отключена в текущей версии — соответствующие настройки удалены
     
     # === Промпт настройки ===
     

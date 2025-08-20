@@ -26,7 +26,7 @@ from src.llm_features.base.errors import BaseLLMError
 
 from .models import (
     InterviewSimulation, DialogMessage, CandidateProfile, InterviewConfiguration,
-    QuestionType, InterviewAssessment, CompetencyScore, CompetencyArea, CandidateLevel
+    QuestionType, CandidateLevel
 )
 from .options import InterviewSimulationOptions, ProgressCallbackType
 from .config import default_settings, get_question_types_for_round
@@ -37,7 +37,6 @@ from .formatter import (
     create_candidate_profile_and_config
 )
 from .prompts import InterviewPromptBuilder
-from .assessment_engine import ProfessionalAssessmentEngine
 
 logger = get_logger(__name__)
 
@@ -81,7 +80,6 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
         
         # Инициализируем компоненты для симуляции интервью
         self.prompt_builder = InterviewPromptBuilder()
-        self.assessment_engine = ProfessionalAssessmentEngine()
         
         # Настройки по умолчанию
         self.settings = default_settings
@@ -230,24 +228,12 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
             options=options
         )
         
-        # 4. Генерируем профессиональную оценку
-        assessment = await self._generate_assessment(
-            resume=resume,
-            vacancy=vacancy,
-            dialog_messages=dialog_messages,
-            candidate_profile=candidate_profile,
-            options=options
-        )
-        
-        # 5. Генерируем текстовые рекомендации
-        feedback = await self._generate_feedback(assessment, candidate_profile)
-        
-        # 6. Собираем метаданные
+        # 4. Собираем метаданные
         simulation_metadata = self._create_simulation_metadata(
             dialog_messages, candidate_profile, interview_config, options
         )
         
-        # 7. Создаем итоговый объект симуляции
+        # 5. Создаем итоговый объект симуляции (без оценки)
         simulation = InterviewSimulation(
             position_title=getattr(vacancy, 'name', 'IT позиция'),
             candidate_name=self._extract_candidate_name(resume),
@@ -255,14 +241,10 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
             candidate_profile=candidate_profile,
             interview_config=interview_config,
             dialog_messages=dialog_messages,
-            assessment=assessment,
-            hr_assessment=feedback['hr_assessment'],
-            candidate_performance_analysis=feedback['performance_analysis'],
-            improvement_recommendations=feedback['improvement_recommendations'],
             simulation_metadata=simulation_metadata
         )
         
-        self._log.info(f"Симуляция интервью завершена: {len(dialog_messages)} сообщений, рекомендация: {assessment.overall_recommendation}")
+        self._log.info(f"Симуляция интервью завершена: {len(dialog_messages)} сообщений")
         return simulation
     
     async def _conduct_interview_dialog(self,
@@ -336,20 +318,14 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
                 self._log.warning(f"Не удалось сгенерировать ответ кандидата в раунде {round_num}")
                 break
             
-            # Оцениваем качество ответа
-            response_quality = self._evaluate_response_quality(
-                candidate_answer, question_type, candidate_profile
-            )
-            
             # Добавляем ответ кандидата в диалог
             candidate_message = DialogMessage(
                 speaker="Candidate",
                 message=candidate_answer,
-                round_number=round_num,
-                response_quality=response_quality
+                round_number=round_num
             )
             dialog_messages.append(candidate_message)
-            self._log.debug(f"Кандидат ответил (качество: {response_quality}/5)")
+            self._log.debug("Кандидат ответил")
             
             # Небольшая пауза между раундами для более реалистичной симуляции
             if options.enable_progress_callbacks:
@@ -519,116 +495,7 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
         self._log.debug(f"Выбран тип вопроса для раунда {round_number}: {selected_type.value}")
         return selected_type
     
-    def _evaluate_response_quality(self,
-                                  answer: str,
-                                  question_type: QuestionType,
-                                  candidate_profile: CandidateProfile) -> int:
-        """Оценивает качество ответа кандидата.
-        
-        Args:
-            answer: Ответ кандидата
-            question_type: Тип заданного вопроса
-            candidate_profile: Профиль кандидата
-            
-        Returns:
-            int: Оценка от 1 до 5
-        """
-        if not answer:
-            return 1
-        
-        score = 3  # Базовая оценка
-        
-        # Оценка по длине ответа
-        if len(answer) < 50:
-            score -= 1  # Слишком короткий
-        elif len(answer) > 200:
-            score += 1  # Детальный ответ
-        
-        # Бонусы за конкретику
-        concrete_keywords = ['например', 'конкретно', 'проект', 'результат', 'опыт', 'решил', 'сделал']
-        if any(keyword in answer.lower() for keyword in concrete_keywords):
-            score += 1
-        
-        # Проверка STAR структуры для поведенческих вопросов
-        if question_type == QuestionType.BEHAVIORAL_STAR:
-            star_keywords = ['ситуация', 'задача', 'действие', 'результат', 'проблема', 'решение']
-            star_matches = sum(1 for kw in star_keywords if kw in answer.lower())
-            if star_matches >= 3:
-                score += 1
-        
-        # Корректировка по уровню кандидата
-        if candidate_profile.detected_level == CandidateLevel.JUNIOR:
-            score += 0.5  # Более мягкая оценка для junior
-        elif candidate_profile.detected_level == CandidateLevel.LEAD:
-            score -= 0.5  # Более строгая оценка для lead
-        
-        final_score = max(1, min(5, round(score)))
-        self._log.debug(f"Оценка ответа: {final_score}/5 (длина: {len(answer)}, тип: {question_type.value})")
-        return final_score
-    
-    async def _generate_assessment(self,
-                                  resume: ResumeInfo,
-                                  vacancy: VacancyInfo,
-                                  dialog_messages: List[DialogMessage],
-                                  candidate_profile: CandidateProfile,
-                                  options: InterviewSimulationOptions) -> InterviewAssessment:
-        """Генерирует профессиональную оценку результатов интервью.
-        
-        Args:
-            resume: Исходная информация о резюме
-            vacancy: Исходная информация о вакансии
-            dialog_messages: Полная история диалога
-            candidate_profile: Профиль кандидата
-            options: Опции симуляции
-            
-        Returns:
-            InterviewAssessment: Детальная оценка интервью
-        """
-        self._log.info("Генерируем профессиональную оценку интервью")
-        
-        if not options.enable_assessment:
-            # Создаем базовую оценку без LLM анализа
-            return self._create_basic_assessment(dialog_messages, candidate_profile)
-        
-        try:
-            # Используем Assessment Engine для детальной оценки
-            assessment = await self.assessment_engine.generate_comprehensive_assessment(
-                resume_data=self._convert_resume_to_dict(resume),
-                vacancy_data=self._convert_vacancy_to_dict(vacancy),
-                dialog_messages=dialog_messages,
-                candidate_profile=candidate_profile
-            )
-            
-            self._log.info(f"Оценка сгенерирована: {assessment.overall_recommendation}")
-            return assessment
-            
-        except Exception as e:
-            self._log.error(f"Ошибка генерации оценки: {e}")
-            # Возвращаем базовую оценку в случае ошибки
-            return self._create_basic_assessment(dialog_messages, candidate_profile)
-    
-    async def _generate_feedback(self,
-                                assessment: InterviewAssessment,
-                                candidate_profile: CandidateProfile) -> Dict[str, str]:
-        """Генерирует текстовые рекомендации на основе оценки.
-        
-        Args:
-            assessment: Детальная оценка интервью
-            candidate_profile: Профиль кандидата
-            
-        Returns:
-            Dict[str, str]: Словарь с текстовыми рекомендациями
-        """
-        try:
-            feedback = await self.assessment_engine.generate_detailed_feedback(
-                assessment, candidate_profile
-            )
-            return feedback
-            
-        except Exception as e:
-            self._log.error(f"Ошибка генерации обратной связи: {e}")
-            # Создаем базовую обратную связь
-            return self._create_basic_feedback(assessment, candidate_profile)
+    # Оценка и обратная связь отключены в данной версии
     
     def _apply_options_to_config(self,
                                 config: InterviewConfiguration,
@@ -658,85 +525,7 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
         self._log.debug(f"Конфигурация обновлена: {config.target_rounds} раундов, {config.difficulty_level}")
         return config
     
-    def _create_basic_assessment(self,
-                                dialog_messages: List[DialogMessage],
-                                candidate_profile: CandidateProfile) -> InterviewAssessment:
-        """Создает базовую оценку без использования LLM.
-        
-        Args:
-            dialog_messages: История диалога
-            candidate_profile: Профиль кандидата
-            
-        Returns:
-            InterviewAssessment: Базовая оценка
-        """
-        # Вычисляем среднее качество ответов
-        candidate_scores = [
-            msg.response_quality for msg in dialog_messages
-            if msg.speaker == "Candidate" and msg.response_quality is not None
-        ]
-        avg_quality = sum(candidate_scores) / len(candidate_scores) if candidate_scores else 3.0
-        
-        # Определяем рекомендацию
-        if avg_quality >= 4.0:
-            recommendation = "hire"
-        elif avg_quality >= 3.0:
-            recommendation = "conditional_hire"
-        else:
-            recommendation = "reject"
-        
-        # Создаем базовые оценки компетенций
-        competency_scores = [
-            CompetencyScore(
-                area=CompetencyArea.TECHNICAL_EXPERTISE,
-                score=max(1, min(5, round(avg_quality))),
-                evidence=["Базовая оценка на основе качества ответов"],
-                improvement_notes="Требуется детальная оценка"
-            ),
-            CompetencyScore(
-                area=CompetencyArea.COMMUNICATION,
-                score=max(1, min(5, round(avg_quality))),
-                evidence=["Базовая оценка на основе качества ответов"],
-                improvement_notes="Требуется детальная оценка"
-            )
-        ]
-        
-        return InterviewAssessment(
-            overall_recommendation=recommendation,
-            competency_scores=competency_scores,
-            strengths=["Участие в интервью", "Готовность отвечать на вопросы"],
-            weaknesses=["Требуется детальная оценка"],
-            red_flags=[],
-            cultural_fit_score=3
-        )
-    
-    def _create_basic_feedback(self,
-                              assessment: InterviewAssessment,
-                              candidate_profile: CandidateProfile) -> Dict[str, str]:
-        """Создает базовую обратную связь.
-        
-        Args:
-            assessment: Оценка интервью
-            candidate_profile: Профиль кандидата
-            
-        Returns:
-            Dict[str, str]: Базовая обратная связь
-        """
-        avg_score = assessment.average_competency_score
-        
-        hr_assessment = f"Кандидат уровня {candidate_profile.detected_level.value} показал результат {avg_score:.1f}/5. Рекомендация: {assessment.overall_recommendation}."
-        
-        performance_analysis = f"Сильные стороны: {', '.join(assessment.strengths[:2])}. "
-        if assessment.weaknesses:
-            performance_analysis += f"Области для развития: {', '.join(assessment.weaknesses[:2])}."
-        
-        improvement_recommendations = "Продолжайте развивать профессиональные навыки. Готовьтесь к техническим интервью более детально."
-        
-        return {
-            'hr_assessment': hr_assessment,
-            'performance_analysis': performance_analysis,
-            'improvement_recommendations': improvement_recommendations
-        }
+    # Оценка отключена — базовые генераторы оценок удалены
     
     def _create_simulation_metadata(self,
                                    dialog_messages: List[DialogMessage],
@@ -765,15 +554,8 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
                 msg.question_type.value for msg in dialog_messages 
                 if msg.speaker == "HR" and msg.question_type
             ],
-            'average_response_quality': sum(
-                msg.response_quality for msg in dialog_messages
-                if msg.speaker == "Candidate" and msg.response_quality is not None
-            ) / max(1, len([
-                msg for msg in dialog_messages 
-                if msg.speaker == "Candidate" and msg.response_quality is not None
-            ])),
             'feature_version': self.get_supported_versions()[0],
-            'assessment_enabled': options.enable_assessment
+            'assessment_enabled': False
         }
     
     def _extract_candidate_name(self, resume: ResumeInfo) -> str:
@@ -922,260 +704,9 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
 
 === РЕЗУЛЬТАТ ===
 Раундов проведено: {result.total_rounds_completed}
-Средняя оценка ответов: {result.average_response_quality:.1f}/5
-Рекомендация: {result.assessment.overall_recommendation}
-
-=== ОЦЕНКА HR ===
-{result.hr_assessment}
-
-=== АНАЛИЗ ВЫСТУПЛЕНИЯ ===
-{result.candidate_performance_analysis}
-
-=== РЕКОМЕНДАЦИИ ===
-{result.improvement_recommendations}
 """
 
 
 # Создание экземпляра Assessment Engine адаптированного для нашей архитектуры
 class ProfessionalAssessmentEngine:
-    """Адаптированная система профессиональной оценки для LLM Features Framework."""
-    
-    def __init__(self):
-        """Инициализация системы оценки."""
-        self.logger = logger.getChild("AssessmentEngine")
-    
-    async def generate_comprehensive_assessment(self,
-                                              resume_data: Dict[str, Any],
-                                              vacancy_data: Dict[str, Any],
-                                              dialog_messages: List[DialogMessage],
-                                              candidate_profile: CandidateProfile) -> InterviewAssessment:
-        """Генерирует всестороннюю оценку интервью.
-        
-        Примечание: Это упрощенная версия для первой итерации.
-        В будущем здесь будет полная интеграция с оригинальным Assessment Engine.
-        
-        Args:
-            resume_data: Данные резюме в формате словаря
-            vacancy_data: Данные вакансии в формате словаря
-            dialog_messages: История диалога
-            candidate_profile: Профиль кандидата
-            
-        Returns:
-            InterviewAssessment: Детальная оценка
-        """
-        self.logger.info("Генерируем комплексную оценку интервью")
-        
-        # Базовая оценка на основе качества ответов
-        candidate_responses = [
-            msg for msg in dialog_messages 
-            if msg.speaker == "Candidate" and msg.response_quality is not None
-        ]
-        
-        if not candidate_responses:
-            # Если нет ответов для оценки
-            return self._create_default_assessment()
-        
-        avg_quality = sum(msg.response_quality for msg in candidate_responses) / len(candidate_responses)
-        
-        # Создаем оценки компетенций
-        competency_scores = self._assess_competencies(dialog_messages, candidate_profile, avg_quality)
-        
-        # Определяем общую рекомендацию
-        recommendation = self._determine_recommendation(competency_scores, avg_quality)
-        
-        # Анализируем сильные и слабые стороны
-        strengths, weaknesses = self._analyze_strengths_weaknesses(dialog_messages, candidate_profile)
-        
-        # Ищем красные флаги
-        red_flags = self._detect_red_flags(dialog_messages)
-        
-        # Оцениваем культурное соответствие
-        cultural_fit = self._assess_cultural_fit(dialog_messages, avg_quality)
-        
-        assessment = InterviewAssessment(
-            overall_recommendation=recommendation,
-            competency_scores=competency_scores,
-            strengths=strengths,
-            weaknesses=weaknesses,
-            red_flags=red_flags,
-            cultural_fit_score=cultural_fit
-        )
-        
-        self.logger.info(f"Оценка создана: {recommendation}, средний балл: {assessment.average_competency_score:.1f}")
-        return assessment
-    
-    async def generate_detailed_feedback(self,
-                                        assessment: InterviewAssessment,
-                                        candidate_profile: CandidateProfile) -> Dict[str, str]:
-        """Генерирует детальную обратную связь.
-        
-        Args:
-            assessment: Оценка интервью
-            candidate_profile: Профиль кандидата
-            
-        Returns:
-            Dict[str, str]: Обратная связь
-        """
-        avg_score = assessment.average_competency_score
-        
-        # HR Assessment
-        hr_assessment = f"Кандидат уровня {candidate_profile.detected_level.value} в роли {candidate_profile.detected_role.value.replace('_', ' ')} "
-        hr_assessment += f"показал {'отличный' if avg_score >= 4.5 else 'хороший' if avg_score >= 3.5 else 'удовлетворительный' if avg_score >= 2.5 else 'слабый'} результат. "
-        hr_assessment += f"Рекомендация: {assessment.overall_recommendation}."
-        
-        # Performance Analysis
-        performance_analysis = f"Во время интервью кандидат продемонстрировал следующие сильные стороны: {', '.join(assessment.strengths[:3])}. "
-        if assessment.weaknesses:
-            performance_analysis += f"Области требующие развития: {', '.join(assessment.weaknesses[:2])}. "
-        performance_analysis += f"Культурное соответствие оценено в {assessment.cultural_fit_score}/5 баллов."
-        
-        # Improvement Recommendations
-        recommendations = []
-        if avg_score < 4.0:
-            recommendations.append("Улучшите навыки презентации своего опыта с конкретными примерами")
-        if any('technical' in cs.area.value for cs in assessment.competency_scores if cs.score < 4):
-            recommendations.append("Углубите технические знания в ключевых областях")
-        if any('communication' in cs.area.value for cs in assessment.competency_scores if cs.score < 4):
-            recommendations.append("Развивайте навыки структурированного изложения мыслей")
-        if not recommendations:
-            recommendations.append("Продолжайте развивать лидерские качества и экспертизу")
-        
-        improvement_recommendations = ". ".join(recommendations) + "."
-        
-        return {
-            'hr_assessment': hr_assessment,
-            'performance_analysis': performance_analysis,
-            'improvement_recommendations': improvement_recommendations
-        }
-    
-    def _assess_competencies(self,
-                            dialog_messages: List[DialogMessage],
-                            candidate_profile: CandidateProfile,
-                            avg_quality: float) -> List[CompetencyScore]:
-        """Оценивает компетенции на основе диалога."""
-        
-        competencies = default_settings.level_competencies.get(
-            candidate_profile.detected_level,
-            [CompetencyArea.TECHNICAL_EXPERTISE, CompetencyArea.COMMUNICATION]
-        )
-        
-        scores = []
-        for competency in competencies:
-            # Базовая оценка на основе средней качества ответов
-            base_score = max(1, min(5, round(avg_quality)))
-            
-            # Модификация по типу компетенции
-            if competency == CompetencyArea.TECHNICAL_EXPERTISE:
-                # Ищем технические вопросы
-                tech_responses = [
-                    msg for msg in dialog_messages
-                    if msg.speaker == "Candidate" and any(
-                        prev_msg.question_type == QuestionType.TECHNICAL_SKILLS
-                        for prev_msg in dialog_messages[max(0, dialog_messages.index(msg)-1):dialog_messages.index(msg)]
-                        if prev_msg.speaker == "HR"
-                    )
-                ]
-                if tech_responses:
-                    tech_avg = sum(msg.response_quality or 3 for msg in tech_responses) / len(tech_responses)
-                    base_score = max(1, min(5, round(tech_avg)))
-            
-            scores.append(CompetencyScore(
-                area=competency,
-                score=base_score,
-                evidence=[f"Анализ ответов кандидата в интервью"],
-                improvement_notes=f"Продолжайте развивать навыки в области {competency.value}"
-            ))
-        
-        return scores
-    
-    def _determine_recommendation(self, competency_scores: List[CompetencyScore], avg_quality: float) -> str:
-        """Определяет общую рекомендацию."""
-        avg_competency = sum(cs.score for cs in competency_scores) / len(competency_scores) if competency_scores else avg_quality
-        
-        if avg_competency >= 4.0:
-            return "hire"
-        elif avg_competency >= 3.0:
-            return "conditional_hire"
-        else:
-            return "reject"
-    
-    def _analyze_strengths_weaknesses(self, dialog_messages: List[DialogMessage], candidate_profile: CandidateProfile) -> Tuple[List[str], List[str]]:
-        """Анализирует сильные и слабые стороны."""
-        
-        candidate_responses = [msg for msg in dialog_messages if msg.speaker == "Candidate"]
-        avg_quality = sum(msg.response_quality or 3 for msg in candidate_responses) / len(candidate_responses) if candidate_responses else 3
-        
-        strengths = ["Готовность к диалогу", "Профессиональная коммуникация"]
-        weaknesses = []
-        
-        if avg_quality >= 4.0:
-            strengths.extend(["Детальные ответы", "Хорошее понимание вопросов"])
-        elif avg_quality < 3.0:
-            weaknesses.extend(["Краткие ответы", "Недостаток конкретных примеров"])
-        
-        if candidate_profile.years_of_experience and candidate_profile.years_of_experience > 3:
-            strengths.append("Богатый профессиональный опыт")
-        
-        if not weaknesses:
-            weaknesses.append("Возможности для дальнейшего развития")
-        
-        return strengths, weaknesses
-    
-    def _detect_red_flags(self, dialog_messages: List[DialogMessage]) -> List[str]:
-        """Выявляет красные флаги."""
-        
-        red_flags = []
-        candidate_responses = [msg for msg in dialog_messages if msg.speaker == "Candidate"]
-        
-        # Проверяем слишком короткие ответы
-        short_responses = [msg for msg in candidate_responses if len(msg.message) < 50]
-        if len(short_responses) >= len(candidate_responses) * 0.5:
-            red_flags.append("Большинство ответов слишком краткие")
-        
-        # Проверяем качество ответов
-        low_quality_responses = [msg for msg in candidate_responses if (msg.response_quality or 3) <= 2]
-        if len(low_quality_responses) >= len(candidate_responses) * 0.4:
-            red_flags.append("Низкое качество ответов")
-        
-        return red_flags
-    
-    def _assess_cultural_fit(self, dialog_messages: List[DialogMessage], avg_quality: float) -> int:
-        """Оценивает культурное соответствие."""
-        
-        # Базовая оценка на основе качества коммуникации
-        base_score = max(1, min(5, round(avg_quality)))
-        
-        # Ищем вопросы о культуре и мотивации
-        culture_responses = [
-            msg for msg in dialog_messages
-            if msg.speaker == "Candidate" and any(
-                prev_msg.question_type in [QuestionType.MOTIVATION, QuestionType.CULTURE_FIT]
-                for prev_msg in dialog_messages[max(0, dialog_messages.index(msg)-1):dialog_messages.index(msg)]
-                if prev_msg.speaker == "HR"
-            )
-        ]
-        
-        if culture_responses:
-            culture_avg = sum(msg.response_quality or 3 for msg in culture_responses) / len(culture_responses)
-            base_score = max(1, min(5, round(culture_avg)))
-        
-        return base_score
-    
-    def _create_default_assessment(self) -> InterviewAssessment:
-        """Создает дефолтную оценку."""
-        
-        return InterviewAssessment(
-            overall_recommendation="conditional_hire",
-            competency_scores=[
-                CompetencyScore(
-                    area=CompetencyArea.COMMUNICATION,
-                    score=3,
-                    evidence=["Участие в интервью"],
-                    improvement_notes="Требуется дополнительная оценка"
-                )
-            ],
-            strengths=["Готовность к интервью"],
-            weaknesses=["Недостаточно данных для полной оценки"],
-            red_flags=[],
-            cultural_fit_score=3
-        )
+    pass
