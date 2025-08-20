@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        /* CSS стили подключаются через WeasyPrint в PDFExportService */
+        /* base.css + interview_simulation.css */
+    </style>
+</head>
+<body>
+    <!-- Заголовок отчета -->
+    <header class="report-header">
+        <h1>{{ title }}</h1>
+        <div class="meta-info">
+            <div class="generated-date">Дата генерации: {{ generated_at }}</div>
+            <div class="version">Версия: {{ feature_version }}</div>
+            <div class="company">{{ company_context }}</div>
+        </div>
+    </header>
+
+    <!-- Краткая сводка -->
+    <section class="summary-section">
+        <h2>Краткая сводка интервью</h2>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="card-header">
+                    <h3>Информация о кандидате</h3>
+                </div>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="label">Имя:</span>
+                        <span class="value">{{ candidate_info.name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Уровень:</span>
+                        <span class="value level-{{ candidate_info.level|lower }}">{{ candidate_info.level }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Роль:</span>
+                        <span class="value">{{ candidate_info.role }}</span>
+                    </div>
+                    {% if candidate_info.experience_years %}
+                    <div class="info-row">
+                        <span class="label">Опыт:</span>
+                        <span class="value">{{ candidate_info.experience_years }} лет</span>
+                    </div>
+                    {% endif %}
+                    {% if candidate_info.management_experience %}
+                    <div class="info-row">
+                        <span class="label">Управленческий опыт:</span>
+                        <span class="value badge-success">Есть</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="card-header">
+                    <h3>Конфигурация интервью</h3>
+                </div>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="label">Раундов:</span>
+                        <span class="value">{{ interview_stats.total_rounds }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Сложность:</span>
+                        <span class="value difficulty-{{ interview_config.difficulty_level }}">{{ interview_config.difficulty_level|title }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Поведенческие:</span>
+                        <span class="value">{{ "Да" if interview_config.include_behavioral else "Нет" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Технические:</span>
+                        <span class="value">{{ "Да" if interview_config.include_technical else "Нет" }}</span>
+                    </div>
+                    {% if interview_config.focus_areas_localized %}
+                    <div class="info-row">
+                        <span class="label">Фокус-области:</span>
+                        <span class="value">{{ interview_config.focus_areas_localized|join(', ') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="card-header">
+                    <h3>Статистика интервью</h3>
+                </div>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="label">Всего сообщений:</span>
+                        <span class="value">{{ interview_stats.total_messages }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Вопросов HR:</span>
+                        <span class="value">{{ interview_stats.hr_questions }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Ответов кандидата:</span>
+                        <span class="value">{{ interview_stats.candidate_answers }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Типов вопросов:</span>
+                        <span class="value">{{ interview_stats.question_types_covered }}</span>
+                    </div>
+                    {% if interview_stats.total_key_points > 0 %}
+                    <div class="info-row">
+                        <span class="label">Ключевых моментов:</span>
+                        <span class="value">{{ interview_stats.total_key_points }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Профиль кандидата -->
+    {% if candidate_info.key_technologies or candidate_info.previous_companies %}
+    <section class="candidate-profile-section">
+        <h2>Детальный профиль кандидата</h2>
+        <div class="profile-grid">
+            {% if candidate_info.key_technologies %}
+            <div class="profile-card">
+                <h3>Ключевые технологии</h3>
+                <div class="technologies">
+                    {% for tech in candidate_info.key_technologies %}
+                    <span class="tech-badge">{{ tech }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if candidate_info.previous_companies %}
+            <div class="profile-card">
+                <h3>Предыдущие компании</h3>
+                <ul class="company-list">
+                    {% for company in candidate_info.previous_companies %}
+                    <li>{{ company }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if candidate_info.education_level %}
+            <div class="profile-card">
+                <h3>Образование</h3>
+                <p>{{ candidate_info.education_level }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Покрытие типов вопросов -->
+    <section class="question-coverage-section">
+        <h2>Покрытие типов вопросов</h2>
+        <div class="coverage-grid">
+            {% for coverage in question_coverage %}
+            <div class="coverage-item {{ coverage.css_class }}">
+                <span class="coverage-type">{{ coverage.type_localized }}</span>
+                <span class="coverage-status">
+                    {% if coverage.covered %}
+                    <span class="status-covered">✓</span>
+                    {% else %}
+                    <span class="status-not-covered">—</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Полный диалог -->
+    <section class="dialog-section">
+        <h2>Полный диалог интервью</h2>
+        
+        {% for round_num, messages in dialog_by_rounds.items() %}
+        <div class="round-container">
+            <div class="round-header">
+                <h3>Раунд {{ round_num }}</h3>
+                {% set hr_question_type = messages | selectattr('is_hr') | selectattr('question_type') | first %}
+                {% if hr_question_type %}
+                <span class="question-type-badge">{{ hr_question_type.question_type }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="dialog-messages">
+                {% for message in messages %}
+                <div class="message-container {{ 'hr-message' if message.is_hr else 'candidate-message' }}">
+                    <div class="message-header">
+                        <span class="speaker">{{ message.speaker }}</span>
+                        <span class="timestamp">{{ message.timestamp }}</span>
+                    </div>
+                    <div class="message-content">
+                        <p>{{ message.message }}</p>
+                        {% if message.key_points %}
+                        <div class="key-points">
+                            <h4>Ключевые моменты:</h4>
+                            <ul>
+                                {% for point in message.key_points %}
+                                <li>{{ point }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+
+    <!-- Технические метаданные -->
+    {% if simulation_metadata %}
+    <section class="metadata-section">
+        <h2>Технические метаданные</h2>
+        <div class="metadata-content">
+            <table class="metadata-table">
+                {% for key, value in simulation_metadata.items() %}
+                <tr>
+                    <td class="metadata-key">{{ key|replace('_', ' ')|title }}</td>
+                    <td class="metadata-value">{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Футер -->
+    <footer class="report-footer">
+        <div class="footer-content">
+            <p>Отчет сгенерирован системой LLM Interview Simulation {{ feature_version }}</p>
+            <p>Дата и время: {{ generated_at }}</p>
+        </div>
+    </footer>
+</body>
+</html>

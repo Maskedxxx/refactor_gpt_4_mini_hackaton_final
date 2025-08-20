@@ -95,7 +95,6 @@ def _create_default_config() -> Dict[str, Any]:
         "prompt_version": default_options.prompt_version,
         "temperature": default_options.temperature,
         "max_tokens": default_options.max_tokens,
-        "quality_checks": default_options.quality_checks,
         
         # === Метаданные фичи ===
         "feature_name": default_settings.feature_name,

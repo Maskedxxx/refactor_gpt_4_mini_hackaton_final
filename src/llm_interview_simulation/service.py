@@ -90,7 +90,7 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
         self, 
         resume: ResumeInfo, 
         vacancy: VacancyInfo, 
-        options: BaseLLMOptions
+        options: InterviewSimulationOptions
     ) -> InterviewSimulation:
         """Переопределенный workflow генерации для симуляции интервью.
         
@@ -119,10 +119,6 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
             # 4. Вызов LLM (здесь происходит вся логика симуляции)
             result = await self._call_llm(prompt, merged_options)
             
-            # 5. Валидация
-            if merged_options.quality_checks and self._validator:
-                # Для симуляции интервью валидация пока не реализована
-                self._log.debug("Валидация результатов симуляции интервью пропущена")
             
             self._log.info("Генерация фичи %s завершена успешно", self.get_feature_name())
             return result
@@ -646,35 +642,24 @@ class LLMInterviewSimulationGenerator(AbstractLLMGenerator[InterviewSimulation])
                 'salary': getattr(vacancy, 'salary', '')
             }
     
-    def _merge_with_defaults(self, options: BaseLLMOptions) -> InterviewSimulationOptions:
-        """Сливает пользовательские опции с настройками по умолчанию.
+    def _merge_with_defaults(self, options: InterviewSimulationOptions) -> InterviewSimulationOptions:
+        """Заполняет пустые поля дефолтными значениями.
         
         Args:
-            options: Пользовательские опции
+            options: Пользовательские опции InterviewSimulationOptions
             
         Returns:
-            InterviewSimulationOptions: Объединенные опции
+            InterviewSimulationOptions: Опции с заполненными дефолтами
         """
-        # Конвертируем BaseLLMOptions в InterviewSimulationOptions если нужно
-        if isinstance(options, InterviewSimulationOptions):
-            merged_options = options
-        else:
-            # Создаем InterviewSimulationOptions из базовых опций
-            merged_options = InterviewSimulationOptions(
-                prompt_version=options.prompt_version,
-                temperature=options.temperature,
-                max_tokens=options.max_tokens,
-                quality_checks=options.quality_checks
-            )
-        
-        # Объединяем с настройками по умолчанию
         default_options = self.settings.default_options
         
-        # Обновляем только те поля, которые не были заданы пользователем
-        for field_name, field_value in default_options.dict().items():
-            if not hasattr(merged_options, field_name) or getattr(merged_options, field_name) is None:
-                setattr(merged_options, field_name, field_value)
+        # Копируем опции и заполняем пустые поля
+        merged_data = options.model_dump()
+        for field_name, field_value in default_options.model_dump().items():
+            if field_name not in merged_data or merged_data[field_name] is None:
+                merged_data[field_name] = field_value
         
+        merged_options = InterviewSimulationOptions(**merged_data)
         self._log.debug(f"Опции объединены: {merged_options.target_rounds} раундов, сложность {merged_options.difficulty_level}")
         return merged_options
     

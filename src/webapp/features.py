@@ -104,6 +104,9 @@ async def generate_feature(
         if feature_name == "interview_checklist":
             from src.llm_interview_checklist.options import InterviewChecklistOptions
             options = InterviewChecklistOptions(**(request.options or {}))
+        elif feature_name == "interview_simulation":
+            from src.llm_interview_simulation.options import InterviewSimulationOptions
+            options = InterviewSimulationOptions(**(request.options or {}))
         else:
             options = BaseLLMOptions(**(request.options or {}))
         

@@ -18,6 +18,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 import time
+from datetime import datetime
 
 from src.utils import get_logger
 from src.parsing.llm.client import LLMClient
@@ -220,7 +221,7 @@ async def _load_resume(resume_pdf: Path | None, fake_llm: bool) -> ResumeInfo:
         return await parser.parse(resume_pdf)
 
 
-async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = False, trace: bool = False) -> int:
+async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = False, trace: bool = False, save_result: bool = False) -> int:
     """Основная функция для генерации симуляции интервью.
     
     Args:
@@ -311,7 +312,6 @@ async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = 
             candidate_confidence="medium",
             temperature_hr=0.7,
             temperature_candidate=0.8,
-            quality_checks=True,
             log_detailed_prompts=True  # Включаем детальное логирование промптов
         )
         
@@ -331,18 +331,18 @@ async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = 
         print("🎭 РЕЗУЛЬТАТЫ СИМУЛЯЦИИ ИНТЕРВЬЮ")
         print("=" * 80)
         
-        print(f"\n📋 БАЗОВАЯ ИНФОРМАЦИЯ:")
+        print("\n📋 БАЗОВАЯ ИНФОРМАЦИЯ:")
         print(f"   Позиция: {result.position_title}")
         print(f"   Кандидат: {result.candidate_name}")
         print(f"   Уровень: {result.candidate_profile.detected_level.value}")
         print(f"   Роль: {result.candidate_profile.detected_role.value}")
         print(f"   Опыт: {result.candidate_profile.years_of_experience} лет")
         
-        print(f"\n🎯 СТАТИСТИКА ИНТЕРВЬЮ:")
+        print("\n🎯 СТАТИСТИКА ИНТЕРВЬЮ:")
         print(f"   Раундов проведено: {result.total_rounds_completed}")
         print(f"   Типы вопросов: {', '.join([qt.value for qt in result.covered_question_types])}")
         
-        print(f"\n💬 ДИАЛОГ ИНТЕРВЬЮ:")
+        print("\n💬 ДИАЛОГ ИНТЕРВЬЮ:")
         for i, msg in enumerate(result.dialog_messages, 1):
             speaker_icon = "👤 HR" if msg.speaker == "HR" else "🤵 Кандидат"
             quality_info = ""
@@ -353,7 +353,27 @@ async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = 
         
         # Блок оценки удален в этой версии
         
-        # 6. Сохраняем результат и полный пайплайн
+        # 6. Сохраняем результат для PDF экспорта (если запрошено)
+        if save_result:
+            tests_data_dir = Path("tests/data")
+            tests_data_dir.mkdir(exist_ok=True)
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            test_result_file = tests_data_dir / f"interview_simulation_result_{timestamp}.json"
+            
+            # Конвертируем в JSON-сериализуемый формат
+            result_dict = result.model_dump() if hasattr(result, 'model_dump') else result.dict()
+            
+            with test_result_file.open("w", encoding="utf-8") as f:
+                json.dump(result_dict, f, ensure_ascii=False, indent=2)
+            
+            print("\n💾 Результат сохранен для PDF экспорта:")
+            print(f"   📁 {test_result_file}")
+            print(f"   📦 Для PDF генерации: python examples/test_pdf_export.py --feature interview_simulation --result-file {test_result_file.name}")
+            print("=" * 80)
+            return 0
+        
+        # Обычное сохранение в output/
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
         
@@ -393,7 +413,7 @@ async def main(resume_source: Path | None, vacancy_json: Path, fake_llm: bool = 
             with pipeline_file.open("w", encoding="utf-8") as f:
                 json.dump(pipeline_data, f, ensure_ascii=False, indent=2)
             
-            print(f"\n📊 ПОЛНЫЙ ПАЙПЛАЙН СОХРАНЕН:")
+            print("\n📊 ПОЛНЫЙ ПАЙПЛАЙН СОХРАНЕН:")
             print(f"   Результат: {result_file}")
             print(f"   Трейс промптов: {trace_file}")
             print(f"   Полный пайплайн: {pipeline_file}")
@@ -517,7 +537,7 @@ def create_sample_data():
     with vacancy_file.open("w", encoding="utf-8") as f:
         json.dump(sample_vacancy, f, ensure_ascii=False, indent=2)
     
-    print(f"📝 Примерные данные созданы:")
+    print("📝 Примерные данные созданы:")
     print(f"   Резюме: {resume_file}")
     print(f"   Вакансия: {vacancy_file}")
     
@@ -556,6 +576,11 @@ if __name__ == "__main__":
         type=Path,
         help="Путь к YAML конфигурации (переопределяет встроенный config.yml)"
     )
+    parser.add_argument(
+        "--save-result",
+        action="store_true",
+        help="Сохранить результат в tests/data/ для PDF экспорта"
+    )
     
     args = parser.parse_args()
     
@@ -576,5 +601,5 @@ if __name__ == "__main__":
     if args.config:
         os.environ["INTERVIEW_SIM_CONFIG"] = str(args.config.expanduser())
 
-    exit_code = asyncio.run(main(args.resume_pdf, args.vacancy_json, args.fake_llm, args.trace))
+    exit_code = asyncio.run(main(args.resume_pdf, args.vacancy_json, args.fake_llm, args.trace, getattr(args, 'save_result', False)))
     exit(exit_code)

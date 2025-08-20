@@ -80,7 +80,6 @@ class InterviewSimulationSettings(BaseModel):
             candidate_confidence="medium",
             temperature_hr=0.7,
             temperature_candidate=0.8,
-            quality_checks=True
         ),
         description="Опции по умолчанию"
     )

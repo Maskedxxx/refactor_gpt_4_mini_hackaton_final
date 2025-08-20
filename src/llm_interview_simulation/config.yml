@@ -17,16 +17,6 @@ feature_settings:
     senior: 6
     lead: 7
 
-assessment_settings:
-  hire_threshold: 3.5
-  conditional_hire_threshold: 2.5
-  min_evidence_items: 2
-  red_flag_threshold: 3
-  cultural_fit_weight: 0.2
-  technical_expertise_weight: 0.3
-  enable_detailed_feedback: true
-  max_improvement_recommendations: 5
-
 prompt_settings:
   max_context_length: 80000
   resume_summary_length: 3500
@@ -104,7 +94,7 @@ prompts:
       6. **Адаптивность**: Корректируй сложность в зависимости от ответов кандидата
 
       ## Требования к вопросу:
-      - ОДИН конкретный вопрос (2-3 предложения максимум)
+      - ОДИН конкретный вопрос (4-5 предложения максимум)
       - Соответствует уровню кандидата и типу раунда
       - Профессиональный, но дружелюбный тон
       - На русском языке

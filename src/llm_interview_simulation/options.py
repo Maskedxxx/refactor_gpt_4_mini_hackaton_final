@@ -57,7 +57,7 @@ class InterviewSimulationOptions(BaseLLMOptions):
         description="Включать технические вопросы"
     )
     
-    include_leadership: bool = Field(
+    include_leadership: Optional[bool] = Field(
         default=None,  # Автоматически определяется по уровню кандидата
         description="Включать вопросы на лидерство (None=автоопределение)"
     )
@@ -131,12 +131,6 @@ class InterviewSimulationOptions(BaseLLMOptions):
         description="Основной max_tokens (переопределяет базовый)"
     )
     
-    # Для интервью качество важнее скорости
-    quality_checks: bool = Field(
-        default=True,
-        description="Включить проверки качества (переопределяет базовое)"
-    )
-    
     class Config:
         """Конфигурация Pydantic модели."""
         extra = "forbid"
@@ -153,7 +147,6 @@ class InterviewSimulationOptions(BaseLLMOptions):
                 "candidate_confidence": "medium",
                 "temperature_hr": 0.7,
                 "temperature_candidate": 0.8,
-                "quality_checks": True
             }
         }
 
