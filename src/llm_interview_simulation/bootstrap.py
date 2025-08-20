@@ -72,85 +72,21 @@ def register_interview_simulation_feature() -> None:
 def _create_default_config() -> Dict[str, Any]:
     """Создает конфигурацию по умолчанию для фичи.
     
-    Returns:
-        Dict[str, Any]: Словарь с настройками по умолчанию
-    """
-    # Конвертируем настройки по умолчанию в словарь
-    default_options = default_settings.default_options
+    Возвращает только параметры, которые действительно нужны для инициализации
+    LLMInterviewSimulationGenerator (openai_api_key, openai_model_name, etc.).
+    Параметры опций (target_rounds, difficulty_level, etc.) передаются через
+    метод generate(), а не через конструктор.
     
+    Returns:
+        Dict[str, Any]: Словарь с настройками по умолчанию для конструктора
+    """
     config = {
-        # === Основные параметры симуляции ===
-        "target_rounds": default_options.target_rounds,
-        "difficulty_level": default_options.difficulty_level,
-        "include_behavioral": default_options.include_behavioral,
-        "include_technical": default_options.include_technical,
+        # === Параметры для конструктора LLMInterviewSimulationGenerator ===
+        # Все параметры опций убираются, т.к. они передаются через generate()
         
-        # === Настройки генерации ===
-        "hr_personality": default_options.hr_personality,
-        "candidate_confidence": default_options.candidate_confidence,
-        "temperature_hr": default_options.temperature_hr,
-        "temperature_candidate": default_options.temperature_candidate,
-        
-        # === Базовые LLM настройки ===
-        "prompt_version": default_options.prompt_version,
-        "temperature": default_options.temperature,
-        "max_tokens": default_options.max_tokens,
-        
-        # === Метаданные фичи ===
-        "feature_name": default_settings.feature_name,
-        "feature_version": default_settings.feature_version,
-        "feature_description": default_settings.feature_description,
-        
-        # === Дополнительные настройки ===
-        "max_tokens_per_message": default_options.max_tokens_per_message,
-        "enable_progress_callbacks": default_options.enable_progress_callbacks,
-        "log_detailed_prompts": default_options.log_detailed_prompts,
-        
-        # === Информация о поддерживаемых возможностях ===
-        "supported_question_types": [qt.value for qt in default_settings.round_question_mapping[1]] + 
-                                   [qt.value for qt in default_settings.round_question_mapping[2]] +
-                                   [qt.value for qt in default_settings.round_question_mapping[3]],
-        "supported_competency_areas": [ca.value for ca in default_settings.level_competencies[list(default_settings.level_competencies.keys())[0]]],
-        "supported_candidate_levels": [level.value for level in default_settings.level_rounds_mapping.keys()],
-        "supported_it_roles": [role.value for role in default_settings.role_keywords.keys()],
-        
-        # === Ограничения и лимиты ===
-        "min_rounds": 3,
-        "max_rounds": 7,
-        "supported_languages": ["ru"],  # Пока только русский
-        "requires_resume": True,
-        "requires_vacancy": True,
-        
-        # === Примеры использования ===
-        "usage_examples": [
-            {
-                "name": "Стандартное интервью",
-                "description": "Обычное интервью для middle разработчика",
-                "options": {
-                    "target_rounds": 5,
-                    "difficulty_level": "medium",
-                    "hr_personality": "neutral"
-                }
-            },
-            {
-                "name": "Интервью для junior",
-                "description": "Поддерживающее интервью для начинающего специалиста",
-                "options": {
-                    "target_rounds": 4,
-                    "difficulty_level": "easy", 
-                    "hr_personality": "supportive"
-                }
-            },
-            {
-                "name": "Строгое интервью для senior",
-                "description": "Сложное интервью для опытного специалиста",
-                "options": {
-                    "target_rounds": 6,
-                    "difficulty_level": "hard",
-                    "hr_personality": "challenging"
-                }
-            }
-        ]
+        # Конструктор LLMInterviewSimulationGenerator принимает только:
+        # llm, validator, formatter, openai_api_key, openai_model_name
+        # Все остальные параметры (опции) передаются через generate()
     }
     
     logger.debug(f"Создана конфигурация по умолчанию с {len(config)} параметрами")
