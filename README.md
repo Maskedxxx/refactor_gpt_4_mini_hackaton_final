@@ -5,6 +5,8 @@
 ## Ключевые возможности
 
 -   **Модульная архитектура**: Четкое разделение на `hh_adapter` (клиент HH API), `webapp` (FastAPI‑сервис с OAuth2 флоу и персистентным хранением токенов) и `callback_server` (демо для локального получения кода).
+-   **4 LLM-фичи для HR процессов**: Cover Letter, GAP-анализ резюме, Interview Checklist, многораундовая Interview Simulation с AI HR-менеджером.
+-   **Комплексная PDF Export система**: Профессиональные отчеты для всех LLM-фич с HTML шаблонами и CSS стилизацией.
 -   **Plugin-система LLM фич**: Новая архитектура `llm_features` позволяет легко добавлять и удалять LLM-функции без изменения основного кода.
 -   **Унифицированное API для LLM**: Универсальные роуты `/features/{name}/generate` для всех LLM-фич с автоматической регистрацией.
 -   **Полный цикл OAuth2**: Реализован полный поток авторизации "Authorization Code Grant".
@@ -237,6 +239,14 @@ curl -X POST "http://localhost:8080/features/interview_checklist/generate?versio
     "options": {"temperature": 0.3, "language": "ru"}
   }'
 
+# Interview Simulation (многораундовая симуляция интервью)
+curl -X POST http://localhost:8080/features/interview_simulation/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "<uuid>",
+    "options": {"rounds": 5, "difficulty": "middle", "include_behavioral": true}
+  }'
+
 # либо без session_id (с прямыми моделями)
 curl -X POST "http://localhost:8080/features/interview_checklist/generate?version=v1" \
   -H "Content-Type: application/json" \
@@ -244,6 +254,39 @@ curl -X POST "http://localhost:8080/features/interview_checklist/generate?versio
     "resume": { /* ResumeInfo */ },
     "vacancy": { /* VacancyInfo */ },
     "options": {"temperature": 0.3, "language": "ru"}
+  }'
+```
+
+### 8. PDF Export (экспорт отчетов)
+
+Все LLM-фичи поддерживают экспорт в PDF формат с профессиональным оформлением:
+
+```bash
+# Экспорт результата любой фичи в PDF
+curl -X POST http://localhost:8080/pdf/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "feature_name": "interview_simulation",
+    "result": {...},
+    "format_options": {"language": "ru"}
+  }'
+
+# Экспорт GAP-анализа
+curl -X POST http://localhost:8080/pdf/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "feature_name": "gap_analyzer", 
+    "result": {"screening": {...}, "requirements_analysis": {...}},
+    "format_options": {"language": "ru"}
+  }'
+
+# Экспорт сопроводительного письма
+curl -X POST http://localhost:8080/pdf/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "feature_name": "cover_letter",
+    "result": {"letter_text": "...", "personalization": {...}},
+    "format_options": {"language": "ru"}
   }'
 ```
 
@@ -261,6 +304,12 @@ python -m examples.generate_cover_letter --resume-pdf tests/data/resume.pdf --va
 
 # GAP-анализ резюме
 python -m examples.generate_gap_analysis --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json
+
+# Interview Checklist
+python -m examples.generate_interview_checklist --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json
+
+# Interview Simulation с сохранением результата
+python -m examples.generate_interview_simulation --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json --save-result
 
 # Показать промпты
 python -m examples.show_full_prompt --feature cover_letter
@@ -301,6 +350,9 @@ pytest
   - `docs/architecture/components/parser.md`
   - `docs/architecture/components/llm_cover_letter.md`
   - `docs/architecture/components/llm_gap_analyzer.md`
+  - `docs/architecture/components/llm_interview_checklist.md`
+  - `docs/architecture/components/llm_interview_simulation.md`
+  - `docs/architecture/components/pdf_export.md`
   - **LLM Features Framework**: `src/llm_features/README.md`
   - Деплой: `docs/architecture/components/docker.md`
 
