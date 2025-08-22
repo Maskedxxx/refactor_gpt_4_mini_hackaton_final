@@ -17,12 +17,15 @@
   - tests/webapp/test_webapp_vacancies_concurrency.py — конкурентные запросы к `/vacancies` при истёкшем токене: проверяем, что срабатывает авто‑refresh и он выполняется ровно один раз на HR (per‑HR лок + синхронизация со сторожем).
   - tests/webapp/test_sessions_and_features.py — JSON‑инициализация сессии (`/sessions/init_json`), дедуп по хэшам, запуск фич по `session_id`.
   - tests/webapp/test_sessions_upload.py — multipart‑инициализация (`/sessions/init_upload`) из PDF+URL; дедуп до внешних вызовов; 401 при отсутствии токенов HH.
+\n+- auth (интеграционные тесты авторизации):
+  - tests/test_auth.py — покрывает `/auth/signup` (авто‑логин), повторный signup (409), `/auth/login`, `/auth/logout`, `/me`, `/orgs`. Тесты изолированы через временную SQLite‑БД (`WEBAPP_DB_PATH`) и in‑memory ASGI‑клиент httpx.
 
 Как запускать
 - Установка зависимостей: `pip install -r requirements.txt`
 - Запуск всех тестов: `pytest -q`
 - Только llm_features: `pytest -q tests/llm_features`
 - Только webapp: `pytest -q tests/webapp`
+- Только auth: `pytest -q tests/auth/test_auth.py`
 - Только сценарии сессий: `pytest -q tests/webapp -k "sessions"`
 - Запуск отдельного теста/кейса: `pytest -q tests/webapp/test_webapp_auth_and_storage.py::test_callback_exchanges_tokens_and_redirects`
 
