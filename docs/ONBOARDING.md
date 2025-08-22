@@ -40,6 +40,7 @@
 
 - `callback_server` — локальный callback-сервер для OAuth2 кода.
 - `hh_adapter` — клиент HH API (OAuth2, токены, вызовы API).
+- `auth` — аутентификация приложения (email+пароль, cookie‑сессии, `auth_sessions`).
 - `webapp` (+ `webapp_llm_features`) — FastAPI-приложение, маршруты и интеграция LLM-фич.
 - `llm_*` — фичи LLM: cover_letter, gap_analyzer, interview_checklist, interview_simulation.
 - `parsing` — парсинг резюме/вакансий и подсистема LLM-промптов для парсинга.
@@ -51,6 +52,7 @@
 
 - CLI/демо: `examples/` — скрипты для запуска отдельных сценариев (генерация писем, GAP-анализа, чек-листов, интервью и т.д.).
 - Приложение: `src/webapp/__main__.py`, `src/webapp/app.py` — FastAPI.
+- Авторизация: модуль `src/auth` подключается к WebApp через `include_router` (роуты `/auth/*`, `/me`, `/orgs`).
 - Адаптер HH: `src/hh_adapter/` — OAuth2, управление токенами, клиент HH.
 - Callback: `src/callback_server/` — локальный обработчик кода авторизации.
 - PDF: `src/pdf_export/` — шаблоны, стили, форматтеры и сервис печати.
@@ -96,4 +98,3 @@
 - Для точечных задач начните с `docs/architecture/components/<module>.md`, затем смотрите публичные интерфейсы в `src/<module>/`.
 - Используйте `examples/` для воспроизведения сценариев и быстрой проверки гипотез.
 - Если интерфейс изменился — сначала обновите документацию и только потом код (contract-first).
-
