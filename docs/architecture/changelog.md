@@ -1,5 +1,13 @@
 # Changelog
 
+## 2025-08-22 — Auth (MVP) module
+
+- Added application auth module `src/auth` with endpoints `/auth/signup|login|logout`, `/me`, `/orgs`.
+- Introduced `auth_sessions` table (separate from LLM `sessions`).
+- Wired into WebApp via `include_router`.
+- Added example `examples/run_auth_demo.py`.
+- Logging and error handling improvements in auth (structured logs via `src/utils.py`; custom exceptions in `src/auth/exceptions.py`).
+
 ## 2025-08-20 (LLM Interview Simulation - полноценная симуляция интервью + PDF экспорт)
 
 - **Добавлена четвертая фича LLM Interview Simulation:**

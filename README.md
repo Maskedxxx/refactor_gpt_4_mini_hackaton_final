@@ -61,6 +61,10 @@ HH_REDIRECT_URI=http://localhost:8080/auth/hh/callback
 
 # Необязательные параметры для WebApp
 # WEBAPP_DB_PATH=app.sqlite3  # путь к SQLite БД (по умолчанию app.sqlite3 в корне)
+\n+# Параметры Auth (MVP)
+# AUTH_COOKIE_SECURE=false     # для локалки false; в проде true
+# AUTH_COOKIE_SAMESITE=lax     # lax|strict|none
+# AUTH_SESSION_TTL_SEC=604800  # 7 дней
 ```
 
 ---
@@ -200,6 +204,43 @@ python -m examples.parse_parsers --fake-llm --resume tests/data/resume.pdf --vac
 Подробнее о внутренних контрактах и потоках: `docs/architecture/components/parser.md`.
 
 ---
+
+## Auth (MVP)
+
+Встроенная аутентификация приложения (не путать с OAuth2 HH). Простая реализация для старта: email+пароль, серверные cookie‑сессии, 1 организация по умолчанию на пользователя.
+
+- Регистрация (авто‑логин):
+  ```bash
+  curl -i -c cookies.txt \
+    -H "Content-Type: application/json" \
+    -d '{"email":"admin@example.com","password":"secret123","org_name":"Demo School"}' \
+    http://localhost:8080/auth/signup
+  ```
+- Вход:
+  ```bash
+  curl -i -c cookies.txt -H "Content-Type: application/json" \
+    -d '{"email":"admin@example.com","password":"secret123"}' \
+    http://localhost:8080/auth/login
+  ```
+- Профиль:
+  ```bash
+  curl -b cookies.txt http://localhost:8080/me
+  ```
+- Создать организацию:
+  ```bash
+  curl -X POST -b cookies.txt 'http://localhost:8080/orgs?name=Another%20Org'
+  ```
+- Выход:
+  ```bash
+  curl -X POST -b cookies.txt -c cookies.txt http://localhost:8080/auth/logout
+  ```
+
+Демо‑скрипт:
+```bash
+python -m examples.run_auth_demo --base-url http://localhost:8080 --email you@example.com --password secret123
+```
+
+Конфигурация: `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAMESITE`, `AUTH_SESSION_TTL_SEC`. Таблица сессий: `auth_sessions` (не пересекается с LLM `sessions`). Подробнее: `docs/architecture/components/auth.md`.
 
 ### 7. LLM Features (новая модульная система)
 
@@ -344,6 +385,7 @@ pytest
 
 - Общий обзор: `docs/architecture/overview.md`
 - Компоненты:
+  - `docs/architecture/components/auth.md`
   - `docs/architecture/components/webapp.md`
   - `docs/architecture/components/hh_adapter.md`
   - `docs/architecture/components/callback_server.md`
