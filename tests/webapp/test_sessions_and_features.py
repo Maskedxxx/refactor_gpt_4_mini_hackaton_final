@@ -15,7 +15,7 @@ import json
 from typing import Any
 
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, AsyncMock
 
 from tests.webapp.conftest import async_client, app_ctx  # noqa: F401
 
@@ -31,54 +31,136 @@ def _load_test_data() -> tuple[dict[str, Any], dict[str, Any]]:
 
 @pytest.mark.asyncio
 async def test_init_json_creates_session_and_persists_models(async_client):
-    resume, vacancy = _load_test_data()
+    # Создаем пользователя и подключаем HH аккаунт  
+    signup_resp = await async_client.post(
+        "/auth/signup",
+        json={"email": "test@example.com", "password": "password123", "org_name": "Test Org"}
+    )
+    assert signup_resp.status_code == 200
+    
+    # Мокаем HH подключение через dependency override
+    from src.auth.hh_middleware import UserWithHH
+    from src.auth.hh_service import HHAccountInfo
+    
+    mock_hh_account = HHAccountInfo(
+        user_id="test-user",
+        org_id="test-org", 
+        access_token="mock-token",
+        refresh_token="mock-refresh",
+        expires_at=9999999999
+    )
+    
+    mock_user = UserWithHH(
+        user_id="test-user",
+        org_id="test-org",
+        user_email="test@example.com", 
+        user_role="admin",
+        hh_account=mock_hh_account,
+        session_id="test-session-123"
+    )
+    
+    def mock_require_hh_connection():
+        return mock_user
+    
+    # Override зависимости в FastAPI приложении
+    from src.webapp.app import app
+    from src.auth.hh_middleware import require_hh_connection
+    
+    app.dependency_overrides[require_hh_connection] = mock_require_hh_connection
+    
+    try:
+        
+        resume, vacancy = _load_test_data()
+        payload = {
+            "resume": resume,
+            "vacancy": vacancy,
+            # reuse_by_hash по умолчанию True
+        }
 
-    payload = {
-        "hr_id": "hr-1",
-        "resume": resume,
-        "vacancy": vacancy,
-        # reuse_by_hash по умолчанию True
-    }
+        resp = await async_client.post("/sessions/init_json", json=payload)
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
 
-    resp = await async_client.post("/sessions/init_json", json=payload)
-    assert resp.status_code == 200, resp.text
-    data = resp.json()
+        # Базовые проверки ответа
+        assert "session_id" in data and data["session_id"]
+        assert "resume_id" in data and data["resume_id"]
+        assert "vacancy_id" in data and data["vacancy_id"]
+        assert data["reused"] == {"resume": False, "vacancy": False}
 
-    # Базовые проверки ответа
-    assert "session_id" in data and data["session_id"]
-    assert "resume_id" in data and data["resume_id"]
-    assert "vacancy_id" in data and data["vacancy_id"]
-    assert data["reused"] == {"resume": False, "vacancy": False}
-
-    # Схемы вернулись обратно корректно
-    assert data["resume"]["title"] == resume["title"]
-    assert data["vacancy"]["name"] == vacancy["name"]
+        # Схемы вернулись обратно корректно
+        assert data["resume"]["title"] == resume["title"]
+        assert data["vacancy"]["name"] == vacancy["name"]
+    
+    finally:
+        # Очищаем dependency overrides
+        app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
 async def test_init_json_deduplicates_on_second_call(async_client):
-    resume, vacancy = _load_test_data()
-    base_payload = {
-        "hr_id": "hr-2",
-        "resume": resume,
-        "vacancy": vacancy,
-    }
+    # Создаем пользователя с HH подключением
+    await async_client.post(
+        "/auth/signup",
+        json={"email": "test2@example.com", "password": "password123", "org_name": "Test Org"}
+    )
+    
+    # Мокаем HH подключение через dependency override
+    from src.auth.hh_middleware import UserWithHH
+    from src.auth.hh_service import HHAccountInfo
+    
+    mock_hh_account = HHAccountInfo(
+        user_id="test-user-2",
+        org_id="test-org-2", 
+        access_token="mock-token",
+        refresh_token="mock-refresh",
+        expires_at=9999999999
+    )
+    
+    mock_user = UserWithHH(
+        user_id="test-user-2",
+        org_id="test-org-2",
+        user_email="test2@example.com", 
+        user_role="admin",
+        hh_account=mock_hh_account,
+        session_id="test-session-456"
+    )
+    
+    def mock_require_hh_connection():
+        return mock_user
+    
+    # Override зависимости в FastAPI приложении
+    from src.webapp.app import app
+    from src.auth.hh_middleware import require_hh_connection
+    
+    app.dependency_overrides[require_hh_connection] = mock_require_hh_connection
+    
+    try:
+        
+        resume, vacancy = _load_test_data()
+        base_payload = {
+            "resume": resume,
+            "vacancy": vacancy,
+        }
 
-    # Первый вызов — создаёт
-    r1 = await async_client.post("/sessions/init_json", json=base_payload)
-    assert r1.status_code == 200, r1.text
-    d1 = r1.json()
+        # Первый вызов — создаёт
+        r1 = await async_client.post("/sessions/init_json", json=base_payload)
+        assert r1.status_code == 200, r1.text
+        d1 = r1.json()
 
-    # Повторный вызов — должен переиспользовать
-    r2 = await async_client.post("/sessions/init_json", json=base_payload)
-    assert r2.status_code == 200, r2.text
-    d2 = r2.json()
+        # Повторный вызов — должен переиспользовать
+        r2 = await async_client.post("/sessions/init_json", json=base_payload)
+        assert r2.status_code == 200, r2.text
+        d2 = r2.json()
 
-    assert d2["reused"]["resume"] is True
-    assert d2["reused"]["vacancy"] is True
-    # Идентификаторы должны совпасть (reuse)
-    assert d1["resume_id"] == d2["resume_id"]
-    assert d1["vacancy_id"] == d2["vacancy_id"]
+        assert d2["reused"]["resume"] is True
+        assert d2["reused"]["vacancy"] is True
+        # Идентификаторы должны совпасть (reuse)
+        assert d1["resume_id"] == d2["resume_id"]
+        assert d1["vacancy_id"] == d2["vacancy_id"]
+    
+    finally:
+        # Очищаем dependency overrides
+        app.dependency_overrides.clear()
 
 
 class _MockGen:
@@ -88,33 +170,75 @@ class _MockGen:
 
 @pytest.mark.asyncio
 async def test_features_generate_uses_session_models(async_client):
-    resume, vacancy = _load_test_data()
-    init_payload = {
-        "hr_id": "hr-3",
-        "resume": resume,
-        "vacancy": vacancy,
-    }
-    # Создаём сессию
-    init_resp = await async_client.post("/sessions/init_json", json=init_payload)
-    assert init_resp.status_code == 200, init_resp.text
-    session_id = init_resp.json()["session_id"]
+    # Создаем пользователя с HH подключением
+    await async_client.post(
+        "/auth/signup",
+        json={"email": "test3@example.com", "password": "password123", "org_name": "Test Org"}
+    )
+    
+    # Мокаем HH подключение через dependency override
+    from src.auth.hh_middleware import UserWithHH
+    from src.auth.hh_service import HHAccountInfo
+    
+    mock_hh_account = HHAccountInfo(
+        user_id="test-user-3",
+        org_id="test-org-3", 
+        access_token="mock-token",
+        refresh_token="mock-refresh",
+        expires_at=9999999999
+    )
+    
+    mock_user = UserWithHH(
+        user_id="test-user-3",
+        org_id="test-org-3",
+        user_email="test3@example.com", 
+        user_role="admin",
+        hh_account=mock_hh_account,
+        session_id="test-session-789"
+    )
+    
+    def mock_require_hh_connection():
+        return mock_user
+    
+    # Override зависимости в FastAPI приложении
+    from src.webapp.app import app
+    from src.auth.hh_middleware import require_hh_connection
+    
+    app.dependency_overrides[require_hh_connection] = mock_require_hh_connection
+    
+    try:
+        
+        resume, vacancy = _load_test_data()
+        init_payload = {
+            "resume": resume,
+            "vacancy": vacancy,
+        }
+        # Создаём сессию
+        init_resp = await async_client.post("/sessions/init_json", json=init_payload)
+        assert init_resp.status_code == 200, init_resp.text
+        session_id = init_resp.json()["session_id"]
 
-    # Подготовим мок-реестр
-    mock_registry = MagicMock()
-    mock_gen = _MockGen()
-    mock_registry.get_generator.return_value = mock_gen
+        # Подготовим мок-реестр
+        mock_registry = MagicMock()
+        mock_gen = _MockGen()
+        mock_registry.get_generator.return_value = mock_gen
 
-    with patch("src.webapp.features.get_global_registry", return_value=mock_registry):
-        feat_resp = await async_client.post(
-            "/features/test_feature/generate",
-            json={
-                "session_id": session_id,
-                "options": {"temperature": 0.2},
-            },
-        )
+        from unittest.mock import patch
+        with patch("src.webapp.features.get_global_registry", return_value=mock_registry):
+            feat_resp = await async_client.post(
+                "/features/test_feature/generate",
+                json={
+                    "session_id": session_id,
+                    "options": {"temperature": 0.2},
+                },
+            )
 
-    assert feat_resp.status_code == 200, feat_resp.text
-    # Проверяем, что генератор был вызван с моделями (а не None)
-    args, kwargs = mock_gen.generate.call_args
-    # Генерация вызывается с именованными параметрами
-    assert kwargs.get("resume") is not None and kwargs.get("vacancy") is not None
+        assert feat_resp.status_code == 200, feat_resp.text
+        # Проверяем, что генератор был вызван с моделями (а не None)
+        args, kwargs = mock_gen.generate.call_args
+        # Генерация вызывается с именованными параметрами
+        assert kwargs.get("resume") is not None and kwargs.get("vacancy") is not None
+    
+    finally:
+        # Очищаем dependency overrides
+        app.dependency_overrides.clear()
