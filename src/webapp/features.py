@@ -2,8 +2,8 @@
 # --- agent_meta ---
 # role: webapp-features
 # owner: @backend
-# contract: Универсальные роуты для LLM-фич через FeatureRegistry
-# last_reviewed: 2025-08-15
+# contract: Универсальные роуты для LLM-фич с обязательной HH авторизацией
+# last_reviewed: 2025-08-23
 # interfaces:
 #   - POST /features/{feature_name}/generate
 #   - GET /features (список доступных фич)
@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Dict, Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 from src.utils import get_logger
@@ -23,6 +23,7 @@ from src.llm_features.registry import get_global_registry, FeatureInfo
 from src.llm_features.base.options import BaseLLMOptions
 from src.llm_features.base.errors import FeatureNotFoundError, FeatureRegistrationError
 from src.webapp.storage_docs import ResumeStore, VacancyStore, SessionStore
+from src.auth.hh_middleware import require_hh_connection, UserWithHH, get_user_context
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/features", tags=["LLM Features"])
@@ -86,9 +87,14 @@ async def list_features():
 async def generate_feature(
     feature_name: str,
     request: FeatureGenerateRequest,
+    user_context: UserWithHH = Depends(require_hh_connection),
     version: Optional[str] = None  # Query parameter для версии
 ):
-    """Универсальный роут для генерации любой LLM-фичи."""
+    """
+    Универсальный роут для генерации любой LLM-фичи.
+    
+    ТРЕБУЕТ подключенного HH аккаунта для доступа к функциональности.
+    """
     try:
         # Получаем генератор из реестра  
         registry = get_global_registry()
@@ -128,10 +134,13 @@ async def generate_feature(
             resume_model = request.resume
             vacancy_model = request.vacancy
 
+        # Логируем авторизованного пользователя и запуск фичи
         logger.info(
-            "Генерация %s@%s: resume_title=%s, vacancy=%s", 
+            "LLM фича %s@%s запущена пользователем %s (%s): resume_title=%s, vacancy=%s", 
             feature_name,
             final_version or "default",
+            user_context.user_email,
+            user_context.user_id,
             getattr(resume_model, "title", None) or "Unknown",
             getattr(vacancy_model, "name", None) or "Unknown",
         )
