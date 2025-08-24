@@ -1,5 +1,45 @@
 # Changelog
 
+## 2025-08-24 — Database Architecture Migration & Test Infrastructure Fixes
+
+### Database Legacy Cleanup и Migration
+
+- **Завершена полная миграция на архитектуру user_id + org_id:**
+  - Удалены legacy таблицы: `tokens`, `oauth_state` (устарели после внедрения HH OAuth)
+  - Выполнена миграция всех активных таблиц: `resume_docs`, `vacancy_docs`, `sessions`
+  - Добавлены proper foreign key constraints и индексы для производительности
+  - Устранена string concatenation схема `hr_id = f"{user_id}:{org_id}"` в пользу нормализованной архитектуры
+
+- **Storage Layer полностью переработан:**
+  - `ResumeStore`, `VacancyStore`, `SessionStore` обновлены для работы с `(user_id, org_id)` вместо concatenated key
+  - Все методы `save()`, `get()`, `find_by_*()` приведены к единообразному API
+  - Сохранена обратная совместимость через миграционный скрипт с валидацией данных
+
+### Test Infrastructure Improvements
+
+- **Решена проблема авторизации в webapp тестах (13 упавших тестов):**
+  - Обновлена `async_client` фикстура в `tests/webapp/conftest.py` для автоматической настройки mock HH авторизации
+  - Используется FastAPI `dependency_overrides` вместо флагов окружения для чистого разделения test/production кода
+  - Все webapp API тесты теперь проходят: `/features/*/generate`, PDF generation, sessions
+
+- **Решена проблема мокирования HHAccountService unit тестов (2 упавших теста):**
+  - Внедрено минимальное dependency injection в `HHAccountService.__init__()`
+  - Добавлены параметры `token_manager_cls` и `session_factory` с обратно-совместимыми defaults
+  - Заменено сложное mocking через `patch()` на простую инъекцию mock объектов в тестах
+  - Устранены проблемы изоляции тестов при batch запуске (test ordering issues)
+
+- **Технические улучшения тестируемости:**
+  - Рефакторинг `HHAccountService.refresh_hh_tokens()` для использования инъецированных зависимостей
+  - Убран `async with ClientSession()` в пользу явного управления сессией с proper cleanup
+  - Обновлены тесты `test_refresh_hh_tokens_*` для использования DI вместо complex patching
+
+- **Унификация тестовых подходов:**
+  - Удалены дублированные dependency overrides из отдельных тестов
+  - Централизованная mock авторизация через единую фикстуру
+  - Упрощен код тестов за счет автоматической настройки
+
+`★ Technical Insight: ★` Для HH Service использовали минимальное DI вместо сложного мокирования - это оказалось надежнее и проще чем предложение коллеги о полной DI-архитектуре. Публичный API остался неизменным, добавлена только возможность инъекции для тестов.
+
 ## 2025-08-22 — Auth (MVP) module
 
 - Added application auth module `src/auth` with endpoints `/auth/signup|login|logout`, `/me`, `/orgs`.
