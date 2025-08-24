@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from pydantic import BaseModel, Field
@@ -39,8 +39,8 @@ def _sha256(data: str) -> str:
 
 
 class SessionInitJsonRequest(BaseModel):
-    """Запрос на создание сессии с готовыми моделями (без hr_id - используется user context)."""
-    resume: Optional[ResumeInfo] = Field(default=None, description="Готовая модель резюме")
+    """Запрос на создание сессии с готовыми моделями (с новой архитектурой user_id + org_id)."""
+    resume: ResumeInfo = Field(..., description="Готовая модель резюме (обязательно)")
     vacancy: Optional[VacancyInfo] = Field(default=None, description="Готовая модель вакансии")
     vacancy_url: Optional[str] = Field(default=None, description="URL вакансии для загрузки")
     reuse_by_hash: bool = Field(default=True, description="Переиспользовать существующие документы по хешу")
@@ -56,7 +56,7 @@ class SessionInitResponse(BaseModel):
     reused: Dict[str, bool]
 
 
-# Singleton-инстансы стораджей (без legacy TokenStorage)
+# Singleton-инстансы стораджей с новой архитектурой user_id + org_id
 _resume_store = ResumeStore()
 _vacancy_store = VacancyStore()
 _session_store = SessionStore()
@@ -64,11 +64,12 @@ _hh_settings = HHSettings()
 _locks: dict[str, asyncio.Lock] = {}
 
 
-def _get_lock(user_key: str) -> asyncio.Lock:
-    """Получает блокировку для пользователя (user_id + org_id)."""
-    if user_key not in _locks:
-        _locks[user_key] = asyncio.Lock()
-    return _locks[user_key]
+def _get_lock(user_id: str, org_id: str) -> asyncio.Lock:
+    """Получает блокировку для пользователя по user_id + org_id."""
+    lock_key = f"{user_id}:{org_id}"
+    if lock_key not in _locks:
+        _locks[lock_key] = asyncio.Lock()
+    return _locks[lock_key]
 
 
 @router.post("/init_json", response_model=SessionInitResponse) 
@@ -78,32 +79,40 @@ async def init_session_json(
 ):
     """
     Инициализирует сессию на основе уже готовых моделей (JSON вариант).
-    - Если переданы модели, сохраняет их в БД (с дедупликацией по хэшу содержимого при включенном reuse_by_hash).
-    - Возвращает session_id и идентификаторы сохранённых документов.
-
-    Примечание: вариант с загрузкой PDF и разбором вакансии по URL будет в отдельном эндпоинте.
+    
+    Использование:
+    - Тестирование и демонстрация с готовыми тестовыми данными
+    - API-to-API интеграция с внешними системами
+    - Случаи когда ResumeInfo и VacancyInfo уже спаршены
+    
+    Требования:
+    - resume: обязательная готовая модель ResumeInfo
+    - vacancy: опционально, если не передана - используйте vacancy_url
+    
+    Возвращает session_id и идентификаторы сохранённых документов.
+    Для загрузки PDF резюме + парсинга URL вакансии используйте /sessions/init_upload.
     """
-    if not req.resume:
-        raise HTTPException(status_code=400, detail="Field 'resume' is required for init_json")
+    # resume теперь обязательно на уровне Pydantic модели
     if not req.vacancy and not req.vacancy_url:
         raise HTTPException(status_code=400, detail="Either 'vacancy' or 'vacancy_url' must be provided")
 
-    # Получаем user_key для дедупликации и хранения
-    user_key = f"{user_context.user_id}:{user_context.org_id}"
+    # Используем user_id и org_id напрямую без костылей
+    user_id = user_context.user_id
+    org_id = user_context.org_id
     
     # Резюме: пробуем дедуп по хэшу сериализованной модели
     reused_resume = False
     if req.reuse_by_hash:
         r_hash = _sha256(req.resume.model_dump_json())
-        found = _resume_store.find_by_hash(user_key, r_hash)
+        found = _resume_store.find_by_hash(user_id, org_id, r_hash)
         if found:
             resume_id, resume_model = found
             reused_resume = True
         else:
-            resume_id = _resume_store.save(user_key, req.resume, r_hash)
+            resume_id = _resume_store.save(user_id, org_id, req.resume, r_hash)
             resume_model = req.resume
     else:
-        resume_id = _resume_store.save(user_key, req.resume, None)
+        resume_id = _resume_store.save(user_id, org_id, req.resume, None)
         resume_model = req.resume
 
     # Вакансия: либо модель передана, либо пока ошибка (URL парсинг добавим позднее)
@@ -116,19 +125,19 @@ async def init_session_json(
         # Для консистентности считаем хэш по сериализации и используем как source_hash
         v_hash = _sha256(req.vacancy.model_dump_json())
         # source_url неизвестен — используем плейсхолдер
-        lookup = _vacancy_store.find_by_url_or_hash(user_key, url="", source_hash=v_hash)
+        lookup = _vacancy_store.find_by_url_or_hash(user_id, org_id, url="", source_hash=v_hash)
         if lookup:
             vacancy_id, vacancy_model = lookup
             reused_vacancy = True
         else:
-            vacancy_id = _vacancy_store.save(user_key, req.vacancy, source_url="", source_hash=v_hash)
+            vacancy_id = _vacancy_store.save(user_id, org_id, req.vacancy, source_url="", source_hash=v_hash)
             vacancy_model = req.vacancy
     else:
-        vacancy_id = _vacancy_store.save(user_key, req.vacancy, source_url="", source_hash=None)
+        vacancy_id = _vacancy_store.save(user_id, org_id, req.vacancy, source_url="", source_hash=None)
         vacancy_model = req.vacancy
 
-    # Создаем сессию с user_key вместо hr_id
-    session_id = _session_store.create(user_key, resume_id, vacancy_id, req.ttl_sec)
+    # Создаем сессию с новой архитектурой
+    session_id = _session_store.create(user_id, org_id, resume_id, vacancy_id, req.ttl_sec)
 
     return SessionInitResponse(
         session_id=session_id,
@@ -153,8 +162,9 @@ async def init_session_upload(
     Дедупликация по хэшам (резюме по извлечённому тексту, вакансия по vacancy_id).
     При отсутствии в БД — выполняет LLM парсинг резюме и загрузку вакансии из HH API.
     """
-    # Получаем user_key из контекста авторизации
-    user_key = f"{user_context.user_id}:{user_context.org_id}"
+    # Получаем user_id и org_id из контекста авторизации
+    user_id = user_context.user_id
+    org_id = user_context.org_id
     
     # 1) Обработка резюме: читаем bytes, извлекаем текст для хэша
     data = await resume_file.read()
@@ -164,14 +174,14 @@ async def init_session_upload(
     r_hash = _sha256(text)
 
     reused_resume = False
-    found_resume = _resume_store.find_by_hash(user_key, r_hash) if reuse_by_hash else None
+    found_resume = _resume_store.find_by_hash(user_id, org_id, r_hash) if reuse_by_hash else None
     if found_resume:
         resume_id, resume_model = found_resume
         reused_resume = True
     else:
         # Парсинг через LLM
         resume_model = await LLMResumeParser().parse(data)
-        resume_id = _resume_store.save(user_key, resume_model, r_hash if reuse_by_hash else None)
+        resume_id = _resume_store.save(user_id, org_id, resume_model, r_hash if reuse_by_hash else None)
 
     # 2) Обработка вакансии: получаем vacancy_id из URL, считаем хэш
     m = VACANCY_ID_RE.search(vacancy_url)
@@ -180,7 +190,7 @@ async def init_session_upload(
     vacancy_id_norm = m.group(1)
 
     reused_vacancy = False
-    found_vacancy = _vacancy_store.find_by_url_or_hash(user_key, url=vacancy_url, source_hash=vacancy_id_norm) if reuse_by_hash else None
+    found_vacancy = _vacancy_store.find_by_url_or_hash(user_id, org_id, url=vacancy_url, source_hash=vacancy_id_norm) if reuse_by_hash else None
     if found_vacancy:
         vacancy_doc_id, vacancy_model = found_vacancy
         reused_vacancy = True
@@ -203,11 +213,11 @@ async def init_session_upload(
             vacancy_model = await vacancy_parser.parse_by_url(vacancy_url, client)
             
         vacancy_doc_id = _vacancy_store.save(
-            user_key, vacancy_model, source_url=vacancy_url, source_hash=vacancy_id_norm if reuse_by_hash else None
+            user_id, org_id, vacancy_model, source_url=vacancy_url, source_hash=vacancy_id_norm if reuse_by_hash else None
         )
 
-    # 3) Создаём сессию с user_key и возвращаем
-    session_id = _session_store.create(user_key, resume_id, vacancy_doc_id, ttl_sec)
+    # 3) Создаём сессию с новой архитектурой и возвращаем
+    session_id = _session_store.create(user_id, org_id, resume_id, vacancy_doc_id, ttl_sec)
     return SessionInitResponse(
         session_id=session_id,
         resume_id=resume_id,

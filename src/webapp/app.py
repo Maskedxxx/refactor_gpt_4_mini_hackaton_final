@@ -50,5 +50,4 @@ def readyz():
 # - GET /auth/hh/callback (интегрированный с внутренней авторизацией)
 # - GET /auth/hh/status (новый функционал)
 # - POST /auth/hh/disconnect (новый функционал)
-# LEGACY vacancies роут удален - использовал hr_id и старый TokenStorage
-# TODO: При необходимости можно воссоздать с новой архитектурой через auth middleware
+# Все операции теперь работают через новую архитектуру user_id + org_id с HH авторизацией
