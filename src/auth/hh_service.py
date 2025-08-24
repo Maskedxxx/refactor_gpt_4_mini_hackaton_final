@@ -2,14 +2,17 @@
 # --- agent_meta ---
 # role: hh-account-service
 # owner: @backend
-# contract: Управляет привязкой HH аккаунтов к внутренним пользователям
-# last_reviewed: 2025-08-23
+# contract: Управляет привязкой HH аккаунтов к внутренним пользователям с DI для тестируемости
+# last_reviewed: 2025-08-24
 # interfaces:
 #   - connect_hh_account(user_id, org_id, tokens, scopes?, ua_hash?, ip_hash?) -> HHAccountInfo
 #   - get_hh_account(user_id, org_id) -> HHAccountInfo | None
 #   - disconnect_hh_account(user_id, org_id) -> bool
 #   - refresh_hh_tokens(user_id, org_id) -> Awaitable[bool]
 #   - is_hh_connected(user_id, org_id) -> bool
+# dependencies:
+#   - token_manager_cls: Класс для управления HH токенами (по умолчанию: HHTokenManager)
+#   - session_factory: Фабрика для aiohttp сессий (по умолчанию: lambda: aiohttp.ClientSession())
 # --- /agent_meta ---
 
 import time
@@ -60,9 +63,12 @@ class HHAccountService:
     Заменяет legacy подход с hr_id на user_id + org_id модель.
     """
     
-    def __init__(self, storage: AuthStorage) -> None:
+    def __init__(self, storage: AuthStorage, token_manager_cls=None, session_factory=None) -> None:
         self.storage = storage
         self.hh_settings = HHSettings()
+        # Инъекция зависимостей для тестируемости
+        self._token_manager_cls = token_manager_cls or HHTokenManager
+        self._session_factory = session_factory or (lambda: aiohttp.ClientSession())
         logger.info("HHAccountService инициализирован")
 
     def connect_hh_account(
@@ -213,6 +219,7 @@ class HHAccountService:
         Returns:
             True если токены обновлены успешно
         """
+        session = None
         try:
             # Получаем текущий HH аккаунт
             hh_account = self.get_hh_account(user_id, org_id)
@@ -220,38 +227,43 @@ class HHAccountService:
                 logger.warning(f"Нет HH аккаунта для обновления токенов: {user_id}")
                 return False
             
-            # Создаем HHTokenManager для обновления токенов
-            async with aiohttp.ClientSession() as session:
-                token_manager = HHTokenManager(
-                    settings=self.hh_settings,
-                    session=session,
-                    access_token=hh_account.access_token,
-                    refresh_token=hh_account.refresh_token,
-                    expires_in=hh_account.expires_in_seconds
-                )
+            # Создаем ClientSession через инъецированную фабрику
+            session = self._session_factory()
+            
+            token_manager = self._token_manager_cls(
+                settings=self.hh_settings,
+                session=session,
+                access_token=hh_account.access_token,
+                refresh_token=hh_account.refresh_token,
+                expires_in=hh_account.expires_in_seconds
+            )
+            
+            # Принудительно обновляем токены
+            try:
+                new_access_token = await token_manager.get_valid_access_token()
+                logger.info(f"Токены HH успешно обновлены для пользователя {user_id}")
                 
-                # Принудительно обновляем токены
-                try:
-                    new_access_token = await token_manager.get_valid_access_token()
-                    logger.info(f"Токены HH успешно обновлены для пользователя {user_id}")
-                    
-                    # Сохраняем обновленные токены в БД
-                    updated_tokens = {
-                        "access_token": token_manager.access_token,
-                        "refresh_token": token_manager.refresh_token,
-                        "expires_at": token_manager.expires_at
-                    }
-                    self.storage.update_hh_tokens(user_id, org_id, updated_tokens)
-                    
-                    return True
-                    
-                except Exception as refresh_error:
-                    logger.error(f"Ошибка обновления токенов HH для {user_id}: {refresh_error}")
-                    return False
-                    
+                # Сохраняем обновленные токены в БД
+                updated_tokens = {
+                    "access_token": token_manager.access_token,
+                    "refresh_token": token_manager.refresh_token,
+                    "expires_at": token_manager.expires_at
+                }
+                self.storage.update_hh_tokens(user_id, org_id, updated_tokens)
+                
+                return True
+                
+            except Exception as refresh_error:
+                logger.error(f"Ошибка обновления токенов HH для {user_id}: {refresh_error}")
+                return False
+                
         except Exception as e:
             logger.error(f"Критическая ошибка refresh_hh_tokens для {user_id}: {e}")
             return False
+        finally:
+            # Закрываем сессию если она была создана
+            if session and not session.closed:
+                await session.close()
     
     def get_connected_users(self, org_id: Optional[str] = None) -> List[HHAccountInfo]:
         """

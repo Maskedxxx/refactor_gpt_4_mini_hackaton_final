@@ -2,10 +2,9 @@
 # role: test-fixtures
 # owner: @backend
 # contract: Фикстуры для webapp: изолированная БД, окружение для auth + HH, httpx AsyncClient
-# last_reviewed: 2025-08-23
+# last_reviewed: 2025-08-24
 # --- /agent_meta ---
 
-import os
 import importlib
 import sys
 import types
@@ -44,9 +43,43 @@ def app_ctx(tmp_path, monkeypatch) -> Generator[Tuple[types.ModuleType, str], No
 
 @pytest.fixture()
 async def async_client(app_ctx):
-    """AsyncClient для интеграционных тестов webapp."""
+    """AsyncClient для интеграционных тестов webapp с мок-авторизацией."""
     app_module, _ = app_ctx
-    transport = httpx.ASGITransport(app=app_module.app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
-        yield client
+    
+    # Автоматически настраиваем dependency override для HH авторизации
+    from src.auth.hh_middleware import require_hh_connection, UserWithHH
+    from src.auth.hh_service import HHAccountInfo
+    
+    # Создаем mock HH account
+    mock_hh_account = HHAccountInfo(
+        user_id="test-user-webapp",
+        org_id="test-org-webapp", 
+        access_token="mock-access-token",
+        refresh_token="mock-refresh-token",
+        expires_at=9999999999  # Far in the future
+    )
+    
+    # Создаем mock user context
+    mock_user = UserWithHH(
+        user_id="test-user-webapp",
+        org_id="test-org-webapp",
+        user_email="test@webapp.com", 
+        user_role="admin",
+        hh_account=mock_hh_account,
+        session_id="mock-session-webapp"
+    )
+    
+    def mock_require_hh_connection():
+        return mock_user
+    
+    # Override dependency в FastAPI приложении
+    app_module.app.dependency_overrides[require_hh_connection] = mock_require_hh_connection
+    
+    try:
+        transport = httpx.ASGITransport(app=app_module.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            yield client
+    finally:
+        # Очищаем dependency overrides после тестов
+        app_module.app.dependency_overrides.clear()
 

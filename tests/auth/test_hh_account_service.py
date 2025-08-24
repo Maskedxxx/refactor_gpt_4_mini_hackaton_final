@@ -13,7 +13,7 @@
 # --- /agent_meta ---
 
 import time
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, AsyncMock, patch, PropertyMock
 
 import pytest
 
@@ -172,8 +172,8 @@ def test_is_hh_connected_checks_expiry(hh_service, mock_storage):
 
 
 @pytest.mark.asyncio
-async def test_refresh_hh_tokens_updates_storage(hh_service, mock_storage):
-    """Тест обновления токенов через HHTokenManager."""
+async def test_refresh_hh_tokens_updates_storage(mock_storage):
+    """Тест обновления токенов через HHTokenManager с DI."""
     # Мокаем существующий HH аккаунт
     existing_account_data = {
         "user_id": "user123",
@@ -185,21 +185,31 @@ async def test_refresh_hh_tokens_updates_storage(hh_service, mock_storage):
     }
     mock_storage.get_hh_account.return_value = existing_account_data
     
-    # Мокаем HHTokenManager
+    expected_expires_at = time.time() + 3600
+    
+    # Создаем мок токен-менеджера
     mock_token_manager = MagicMock()
     mock_token_manager.get_valid_access_token = AsyncMock(return_value="new_access_token")
     mock_token_manager.access_token = "new_access_token"
-    mock_token_manager.refresh_token = "new_refresh_token"  
-    mock_token_manager.expires_at = time.time() + 3600
+    mock_token_manager.refresh_token = "new_refresh_token"
+    mock_token_manager.expires_at = expected_expires_at
     
-    # Мокаем HHSettings
-    mock_settings = MagicMock()
+    # Мок класса токен-менеджера
+    mock_token_manager_cls = MagicMock(return_value=mock_token_manager)
     
-    with patch("src.auth.hh_service.aiohttp.ClientSession"), \
-         patch("src.auth.hh_service.HHTokenManager", return_value=mock_token_manager), \
-         patch("src.auth.hh_service.HHSettings", return_value=mock_settings):
-        
-        result = await hh_service.refresh_hh_tokens("user123", "org456")
+    # Мок session factory
+    mock_session = AsyncMock()
+    mock_session.closed = False
+    mock_session_factory = MagicMock(return_value=mock_session)
+    
+    # Создаем сервис с инъецированными зависимостями
+    hh_service = HHAccountService(
+        storage=mock_storage,
+        token_manager_cls=mock_token_manager_cls,
+        session_factory=mock_session_factory
+    )
+    
+    result = await hh_service.refresh_hh_tokens("user123", "org456")
     
     assert result is True
     mock_storage.update_hh_tokens.assert_called_once_with(
@@ -208,7 +218,7 @@ async def test_refresh_hh_tokens_updates_storage(hh_service, mock_storage):
         {
             "access_token": "new_access_token",
             "refresh_token": "new_refresh_token", 
-            "expires_at": mock_token_manager.expires_at
+            "expires_at": expected_expires_at
         }
     )
 
@@ -225,8 +235,8 @@ async def test_refresh_hh_tokens_handles_missing_account(hh_service, mock_storag
 
 
 @pytest.mark.asyncio
-async def test_refresh_hh_tokens_handles_token_manager_error(hh_service, mock_storage):
-    """Тест обработки ошибки HHTokenManager при обновлении."""
+async def test_refresh_hh_tokens_handles_token_manager_error(mock_storage):
+    """Тест обработки ошибки HHTokenManager при обновлении с DI."""
     # Мокаем существующий аккаунт
     existing_account_data = {
         "user_id": "user123",
@@ -242,14 +252,22 @@ async def test_refresh_hh_tokens_handles_token_manager_error(hh_service, mock_st
     mock_token_manager = MagicMock()
     mock_token_manager.get_valid_access_token = AsyncMock(side_effect=Exception("Token refresh failed"))
     
-    # Мокаем HHSettings
-    mock_settings = MagicMock()
+    # Мок класса токен-менеджера
+    mock_token_manager_cls = MagicMock(return_value=mock_token_manager)
     
-    with patch("src.auth.hh_service.aiohttp.ClientSession"), \
-         patch("src.auth.hh_service.HHTokenManager", return_value=mock_token_manager), \
-         patch("src.auth.hh_service.HHSettings", return_value=mock_settings):
-        
-        result = await hh_service.refresh_hh_tokens("user123", "org456")
+    # Мок session factory
+    mock_session = AsyncMock()
+    mock_session.closed = False
+    mock_session_factory = MagicMock(return_value=mock_session)
+    
+    # Создаем сервис с инъецированными зависимостями
+    hh_service = HHAccountService(
+        storage=mock_storage,
+        token_manager_cls=mock_token_manager_cls,
+        session_factory=mock_session_factory
+    )
+    
+    result = await hh_service.refresh_hh_tokens("user123", "org456")
     
     assert result is False
     mock_storage.update_hh_tokens.assert_not_called()
