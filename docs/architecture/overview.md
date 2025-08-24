@@ -8,12 +8,14 @@
 
 - **Callback Server (`src/callback_server`):** Легковесный сервер на FastAPI, отвечающий за одну задачу: перехват `authorization_code` в процессе OAuth2. Он запускается, ожидает перенаправления пользователя от провайдера аутентификации, сохраняет код во временный файл и завершает работу. Используется для локальных демонстраций.
 
-- **WebApp (`src/webapp`):** Продакшн‑ориентированный FastAPI сервис с роутами `/auth/hh/start`, `/auth/hh/callback`, `/vacancies`. Хранит токены в SQLite (пер‑школа контейнер), обеспечивает защиту `state` и сериализацию обновлений токена для многопользовательского сценария (пер‑HR).
-- **WebApp (`src/webapp`):** Продакшн‑ориентированный FastAPI сервис с роутами `/auth/hh/start`, `/auth/hh/callback`, `/vacancies`, а также подсистемой **сессий** для персистентности `ResumeInfo`/`VacancyInfo` и экономии внешних вызовов. Хранит токены и документы в SQLite; поддерживает дедупликацию и `session_id` для повторного использования.
+- **WebApp (`src/webapp`):** Продакшн‑ориентированный FastAPI сервис, который предоставляет API для LLM-фич, экспорта в PDF и управления сессиями (`ResumeInfo`/`VacancyInfo`). Непосредственно аутентификацией и управлением токенами HH не занимается.
 
-- **Auth (`src/auth`):** Модуль аутентификации приложения (email+пароль, cookie‑сессии). Эндпоинты `/auth/signup|login|logout`, `/me`, `/orgs`. Сессии хранятся в таблице `auth_sessions` (cookie `sid`). Отдельно от HH OAuth и LLM‑сессий.
+- **Auth (`src/auth`):** Модуль аутентификации и управления пользователями. Отвечает за:
+  - Регистрацию и вход (email+пароль).
+  - Управление сессиями через cookie (`sid`).
+  - **Интеграцию с HH.ru OAuth2**: предоставляет эндпоинты `/auth/hh/connect`, `/auth/hh/callback`, `/auth/hh/status` и управляет жизненным циклом токенов HH, привязывая их к аккаунту пользователя (`user_id`, `org_id`). Для этого использует `HHAccountService`.
 
-- **HH Adapter (`src/hh_adapter`):** Комплексный клиент для API HH.ru. Он управляет токенами (обмен кода на токены, их автоматическое обновление) и предоставляет чистый интерфейс для выполнения запросов к API.
+- **HH Adapter (`src/hh_adapter`):** Клиент для API HH.ru. Используется сервисом `Auth` для выполнения OAuth2 флоу и последующих запросов к API HH. Напрямую из `WebApp` не вызывается.
 
 - **Parsing (`src/parsing`):** Библиотечный модуль без собственного сервиса. Решает две задачи: извлечение информации из резюме (PDF → LLM → `ResumeInfo`) и преобразование вакансий из HH JSON в `VacancyInfo`. Подробности и диаграммы см. в `docs/architecture/components/parser.md`.
  
@@ -36,20 +38,36 @@
 ```mermaid
 sequenceDiagram
     participant User as Пользователь
-    participant App as Основное приложение
     participant WebApp as WebApp (FastAPI)
+    participant Auth as Auth Service
     participant HH as HH.ru API
 
-    App->>User: Открыть браузер с URL для аутентификации
+    User->>WebApp: /me (с cookie sid)
+    WebApp->>Auth: require_user (middleware)
+    Auth-->>WebApp: User(id, org_id)
+
+    User->>WebApp: Клик на "Подключить HH.ru"
+    WebApp->>User: 302 Redirect на /auth/hh/connect
+
+    User->>+Auth: GET /auth/hh/connect
+    Auth->>HH: Сгенерировать Auth URL
+    Auth-->>User: 302 Redirect на HH.ru
+
     User->>+HH: Войти и предоставить доступ
-    HH-->>-User: Перенаправить на https://<app>/auth/hh/callback?code=...&state=...
-    User->>+WebApp: GET /auth/hh/callback?code=...&state=...
-    WebApp->>WebApp: Проверить state, обменять code→tokens, сохранить в SQLite
-    WebApp-->>-User: 302 Redirect (или HTML "Успех")
-    App->>WebApp: GET /vacancies?hr_id=...&query=...
-    WebApp->>HH: Запрос c access токеном (auto refresh)
-    HH-->>WebApp: Вернуть данные
-    WebApp-->>App: JSON данные
+    HH-->>-User: Redirect на /auth/hh/callback?code=...
+
+    User->>+Auth: GET /auth/hh/callback?code=...
+    Auth->>Auth: Проверить state, обменять code на токены
+    Auth->>Auth: Сохранить/обновить HHAccount (привязка к user_id)
+    Auth-->>-User: 302 Redirect на страницу профиля
+
+    User->>WebApp: GET /vacancies?text=Python (с cookie sid)
+    WebApp->>Auth: require_hh_connection (middleware)
+    Auth->>Auth: Загрузить HHAccount для пользователя
+    Auth->>HH: Запрос к API с токеном
+    HH-->>Auth: Данные
+    Auth-->>WebApp: Данные
+    WebApp-->>User: JSON с вакансиями
 ```
 
 ## LLM Features Architecture

@@ -2,8 +2,8 @@
 # --- agent_meta ---
 # role: auth-storage
 # owner: @backend
-# contract: SQLite-хранилище для пользователей, организаций, членств и сессий
-# last_reviewed: 2025-08-21
+# contract: SQLite-хранилище для пользователей, организаций, членств, сессий и HH аккаунтов
+# last_reviewed: 2025-08-23
 # interfaces:
 #   - AuthStorage.create_user(email, password_hash) -> dict
 #   - AuthStorage.get_user_by_email(email) -> dict | None
@@ -14,6 +14,11 @@
 #   - AuthStorage.create_session(user_id, org_id, expires_at, ua_hash, ip_hash) -> dict
 #   - AuthStorage.get_session(session_id) -> dict | None
 #   - AuthStorage.delete_session(session_id) -> None
+#   - AuthStorage.save_hh_account(user_id, org_id, tokens...) -> None
+#   - AuthStorage.get_hh_account(user_id, org_id) -> dict | None
+#   - AuthStorage.delete_hh_account(user_id, org_id) -> None
+#   - AuthStorage.list_hh_accounts(org_id?) -> list[dict]
+#   - AuthStorage.update_hh_tokens(user_id, org_id, tokens...) -> bool
 # --- /agent_meta ---
 
 import os
@@ -91,6 +96,38 @@ class AuthStorage:
                 expires_at REAL NOT NULL,
                 ua_hash TEXT,
                 ip_hash TEXT,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY(org_id) REFERENCES organizations(id) ON DELETE CASCADE
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS oauth_states (
+                state TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                org_id TEXT NOT NULL,
+                session_id TEXT NOT NULL,
+                created_at REAL NOT NULL,
+                ua_hash TEXT,
+                ip_hash TEXT,
+                expires_at REAL NOT NULL
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hh_accounts (
+                user_id TEXT NOT NULL,
+                org_id TEXT NOT NULL,
+                access_token TEXT NOT NULL,
+                refresh_token TEXT NOT NULL,
+                expires_at REAL NOT NULL,
+                scopes TEXT,
+                connected_at REAL NOT NULL,
+                ua_hash TEXT,
+                ip_hash TEXT,
+                PRIMARY KEY(user_id, org_id),
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY(org_id) REFERENCES organizations(id) ON DELETE CASCADE
             )
@@ -208,3 +245,193 @@ class AuthStorage:
     def delete_session(self, session_id: str) -> None:
         self._conn.execute("DELETE FROM auth_sessions WHERE id = ?", (session_id,))
         self._conn.commit()
+
+    # HH Accounts (интеграция с hh_accounts таблицей)
+    def save_hh_account(
+        self,
+        user_id: str,
+        org_id: str,
+        access_token: str,
+        refresh_token: str,
+        expires_at: float,
+        scopes: Optional[str] = None,
+        connected_at: Optional[float] = None,
+        ua_hash: Optional[str] = None,
+        ip_hash: Optional[str] = None,
+    ) -> None:
+        """Сохраняет HH аккаунт пользователя (INSERT OR REPLACE)."""
+        self._conn.execute(
+            """
+            INSERT OR REPLACE INTO hh_accounts 
+            (user_id, org_id, access_token, refresh_token, expires_at, scopes, connected_at, ua_hash, ip_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (user_id, org_id, access_token, refresh_token, expires_at, scopes, connected_at, ua_hash, ip_hash),
+        )
+        self._conn.commit()
+
+    def get_hh_account(self, user_id: str, org_id: str) -> Optional[Dict[str, Any]]:
+        """Получает HH аккаунт пользователя по user_id + org_id."""
+        cur = self._conn.execute(
+            """
+            SELECT user_id, org_id, access_token, refresh_token, expires_at, 
+                   scopes, connected_at, ua_hash, ip_hash 
+            FROM hh_accounts 
+            WHERE user_id = ? AND org_id = ?
+            """,
+            (user_id, org_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+    def delete_hh_account(self, user_id: str, org_id: str) -> None:
+        """Удаляет HH аккаунт пользователя."""
+        self._conn.execute(
+            "DELETE FROM hh_accounts WHERE user_id = ? AND org_id = ?",
+            (user_id, org_id),
+        )
+        self._conn.commit()
+
+    def list_hh_accounts(self, org_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Возвращает список всех HH аккаунтов (с фильтром по организации)."""
+        if org_id:
+            cur = self._conn.execute(
+                """
+                SELECT user_id, org_id, access_token, refresh_token, expires_at,
+                       scopes, connected_at, ua_hash, ip_hash
+                FROM hh_accounts 
+                WHERE org_id = ?
+                ORDER BY connected_at DESC
+                """,
+                (org_id,),
+            )
+        else:
+            cur = self._conn.execute(
+                """
+                SELECT user_id, org_id, access_token, refresh_token, expires_at,
+                       scopes, connected_at, ua_hash, ip_hash
+                FROM hh_accounts 
+                ORDER BY connected_at DESC
+                """
+            )
+        return [dict(row) for row in cur.fetchall()]
+
+    def update_hh_tokens(
+        self, 
+        user_id: str, 
+        org_id: str, 
+        access_token: str, 
+        refresh_token: str, 
+        expires_at: float
+    ) -> bool:
+        """Обновляет токены существующего HH аккаунта."""
+        cursor = self._conn.execute(
+            """
+            UPDATE hh_accounts 
+            SET access_token = ?, refresh_token = ?, expires_at = ?
+            WHERE user_id = ? AND org_id = ?
+            """,
+            (access_token, refresh_token, expires_at, user_id, org_id),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
+
+    # OAuth States
+    def save_oauth_state(
+        self, 
+        state: str, 
+        user_id: str, 
+        org_id: str, 
+        session_id: str,
+        ua_hash: Optional[str] = None,
+        ip_hash: Optional[str] = None,
+        ttl_seconds: int = 600
+    ) -> None:
+        """
+        Сохраняет OAuth state с TTL.
+        
+        Args:
+            state: Уникальный state токен
+            user_id: ID пользователя
+            org_id: ID организации
+            session_id: ID сессии пользователя
+            ua_hash: Хеш User-Agent для безопасности
+            ip_hash: Хеш IP адреса для безопасности
+            ttl_seconds: Время жизни state в секундах (по умолчанию 10 минут)
+        """
+        now = time.time()
+        expires_at = now + ttl_seconds
+        
+        self._conn.execute(
+            """
+            INSERT INTO oauth_states (
+                state, user_id, org_id, session_id, created_at, ua_hash, ip_hash, expires_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (state, user_id, org_id, session_id, now, ua_hash, ip_hash, expires_at)
+        )
+        self._conn.commit()
+
+    def get_oauth_state(self, state: str) -> Optional[Dict[str, Any]]:
+        """
+        Получает данные OAuth state и проверяет TTL.
+        
+        Args:
+            state: State токен для поиска
+            
+        Returns:
+            Словарь с данными state или None если не найден/истек
+        """
+        cursor = self._conn.execute(
+            """
+            SELECT user_id, org_id, session_id, created_at, ua_hash, ip_hash, expires_at
+            FROM oauth_states WHERE state = ?
+            """,
+            (state,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+            
+        # Проверяем TTL
+        now = time.time()
+        if row[6] <= now:  # expires_at
+            # State истек, удаляем его
+            self.delete_oauth_state(state)
+            return None
+            
+        return {
+            "user_id": row[0],
+            "org_id": row[1], 
+            "session_id": row[2],
+            "created_at": row[3],
+            "ua_hash": row[4],
+            "ip_hash": row[5],
+            "expires_at": row[6]
+        }
+
+    def delete_oauth_state(self, state: str) -> bool:
+        """
+        Удаляет OAuth state (consume).
+        
+        Args:
+            state: State токен для удаления
+            
+        Returns:
+            True если state был найден и удален
+        """
+        cursor = self._conn.execute("DELETE FROM oauth_states WHERE state = ?", (state,))
+        self._conn.commit()
+        return cursor.rowcount > 0
+
+    def cleanup_expired_oauth_states(self) -> int:
+        """
+        Очищает истекшие OAuth states.
+        
+        Returns:
+            Количество удаленных записей
+        """
+        now = time.time()
+        cursor = self._conn.execute("DELETE FROM oauth_states WHERE expires_at <= ?", (now,))
+        self._conn.commit()
+        return cursor.rowcount

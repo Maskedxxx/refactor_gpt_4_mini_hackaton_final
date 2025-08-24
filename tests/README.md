@@ -2,62 +2,55 @@
 
 Цель: дать быстрый обзор того, что именно мы проверяем, как запускать тесты и как их расширять.
 
-Состав
-- hh_adapter:
-  - tests/hh_adapter/test_token_manager.py — проверяет жизненный цикл OAuth2‑токенов в HHTokenManager: возврат валидного токена, авто‑refresh истёкшего токена.
-- callback_server:
-  - tests/callback_server/test_code_handler.py — файл‑ориентированная логика: запись/чтение/очистка кода авторизации для демо‑callback сервера.
-- llm_features:
-  - tests/llm_features/test_features_api.py — универсальные REST‑роуты фич: `GET /features`, `POST /features/{name}/generate` (мок‑реестр, мок‑генератор, проверка 200/404/422/500).
-  - tests/llm_features/test_feature_registry.py — реестр фич (`FeatureRegistry`): регистрация, список, версии, ошибки `FeatureNotFoundError`.
-  - tests/llm_features/test_cover_letter_integration.py — интеграция `LLMCoverLetterGenerator` в новом API (без сети; моки LLM/конфигурации).
-  - tests/llm_features/test_interview_checklist_integration.py — интеграция `LLMInterviewChecklistGenerator`: генерация через реестр и через REST `/features/interview_checklist/generate`.
-- webapp (интеграционные async‑тесты FastAPI):
-  - tests/webapp/test_webapp_auth_and_storage.py — флоу `/auth/hh/start` и `/auth/hh/callback`, создание и одноразовое потребление `state`, сохранение токенов в SQLite, обработка невалидного `state`.
-  - tests/webapp/test_webapp_vacancies_concurrency.py — конкурентные запросы к `/vacancies` при истёкшем токене: проверяем, что срабатывает авто‑refresh и он выполняется ровно один раз на HR (per‑HR лок + синхронизация со сторожем).
-  - tests/webapp/test_sessions_and_features.py — JSON‑инициализация сессии (`/sessions/init_json`), дедуп по хэшам, запуск фич по `session_id`.
-  - tests/webapp/test_sessions_upload.py — multipart‑инициализация (`/sessions/init_upload`) из PDF+URL; дедуп до внешних вызовов; 401 при отсутствии токенов HH.
-\n+- auth (интеграционные тесты авторизации):
-  - tests/test_auth.py — покрывает `/auth/signup` (авто‑логин), повторный signup (409), `/auth/login`, `/auth/logout`, `/me`, `/orgs`. Тесты изолированы через временную SQLite‑БД (`WEBAPP_DB_PATH`) и in‑memory ASGI‑клиент httpx.
+## Состав
 
-Как запускать
+- **hh_adapter:**
+  - `tests/hh_adapter/test_token_manager.py` — проверяет жизненный цикл OAuth2‑токенов в `HHTokenManager`: возврат валидного токена, авто‑refresh истёкшего токена.
+- **callback_server:**
+  - `tests/callback_server/test_code_handler.py` — файл‑ориентированная логика: запись/чтение/очистка кода авторизации для демо‑callback сервера.
+- **llm_features:**
+  - `tests/llm_features/test_features_api.py` — универсальные REST‑роуты фич: `GET /features`, `POST /features/{name}/generate`.
+  - `tests/llm_features/test_feature_registry.py` — реестр фич (`FeatureRegistry`): регистрация, список, версии, ошибки.
+  - `tests/llm_features/test_cover_letter_integration.py` — интеграция `LLMCoverLetterGenerator` в новом API.
+  - `tests/llm_features/test_interview_checklist_integration.py` — интеграция `LLMInterviewChecklistGenerator`.
+- **webapp (интеграционные async‑тесты FastAPI):**
+  - `tests/webapp/test_sessions_and_features.py` — JSON‑инициализация сессии (`/sessions/init_json`), дедуп по хэшам, запуск фич по `session_id`.
+  - `tests/webapp/test_sessions_upload.py` — multipart‑инициализация (`/sessions/init_upload`) из PDF+URL; дедуп до внешних вызовов.
+- **auth (интеграционные тесты авторизации и HH OAuth):**
+  - `tests/auth/test_auth.py` — покрывает основной флоу регистрации и логина: `/auth/signup`, `/auth/login`, `/auth/logout`, `/me`, `/orgs`.
+  - `tests/auth/test_hh_account_service.py` — юнит-тесты для `HHAccountService`, проверяющие логику работы с токенами HH в изоляции.
+  - `tests/auth/test_hh_oauth_integration.py` — интеграционные тесты полного цикла HH OAuth: `/auth/hh/connect`, `/auth/hh/callback`, `/auth/hh/status`, `/auth/hh/disconnect`.
+  - `tests/auth/test_oauth_states_storage.py` — тесты для хранилища состояний OAuth, включая проверку TTL.
+
+## Как запускать
+
 - Установка зависимостей: `pip install -r requirements.txt`
 - Запуск всех тестов: `pytest -q`
 - Только llm_features: `pytest -q tests/llm_features`
 - Только webapp: `pytest -q tests/webapp`
-- Только auth: `pytest -q tests/auth/test_auth.py`
-- Только сценарии сессий: `pytest -q tests/webapp -k "sessions"`
-- Запуск отдельного теста/кейса: `pytest -q tests/webapp/test_webapp_auth_and_storage.py::test_callback_exchanges_tokens_and_redirects`
+- Только auth: `pytest -q tests/auth`
+- Запуск отдельного теста/кейса: `pytest -q tests/auth/test_hh_oauth_integration.py::test_full_oauth_flow`
 
-PDF экспорт
-- Форматтеры покрыты юнит‑ и интеграционными тестами в `tests/pdf_export` для трёх фич: `gap_analyzer`, `cover_letter`, `interview_checklist`.
-- E2E‑сценарии используют новый сервис `PDFExportService.generate_pdf(formatter=..., data=..., metadata=...)` и веб‑роут `POST /features/{feature_name}/export/pdf`.
+## PDF экспорт
+
+- Тесты для PDF экспорта находятся в `tests/pdf_export`.
 - Запуск только PDF‑тестов: `pytest -q tests/pdf_export`
 
-Примечание: контракт обработки ошибок в PDF‑экспорте сейчас «lenient» — форматтеры продолжают рендер с дефолтными значениями при неполных входных данных. Поэтому два теста, ожидавшие исключения на пустых/повреждённых данных, временно помечены `skip` (см. docs/architecture/components/pdf_export.md §8.4).
+## Изоляция окружения
 
-Изоляция окружения
-- База данных: каждый тест webapp использует временную SQLite‑БД через переменную окружения `WEBAPP_DB_PATH` (см. `tests/webapp/conftest.py`). Это гарантирует отсутствие побочных эффектов между прогонами.
-- Сеть: внешние HTTP‑вызовы замоканы (patch на `exchange_code_for_tokens`, `_refresh_token`, `HHApiClient.request`), поэтому доступ в интернет не требуется.
-- Upload‑сценарий: LLM‑парсер резюме и HH‑парсер вакансии замоканы в `tests/webapp/test_sessions_upload.py` (патчим `LLMResumeParser.__init__/parse` и `HHVacancyParser.parse_by_url`), поэтому `OPENAI_API_KEY` не нужен.
-- HH‑настройки: фикстура задаёт `HH_CLIENT_ID/HH_CLIENT_SECRET/HH_REDIRECT_URI` для стабильности.
- - LLM‑фичи: тесты `tests/llm_features` используют мок‑реестр и мок‑генераторы, сетевых вызовов нет.
+- **База данных:** каждый тест использует временную SQLite‑БД, что гарантирует отсутствие побочных эффектов.
+- **Сеть:** внешние HTTP‑вызовы замоканы, поэтому доступ в интернет не требуется.
+- **Настройки:** фикстуры задают все необходимые переменные окружения.
 
-Что валидируется (контракты)
-- OAuth state: одноразовость и ограниченный TTL (в коде по умолчанию 600 сек; в тестах проверяем одноразовость и корректность ошибок, TTL‑тест можно добавить отдельно).
-- Хранилище токенов: корректное сохранение/чтение `access_token`, `refresh_token`, `expires_at`.
-- Конкурентность: один refresh при множественных параллельных запросах за счёт per‑HR `asyncio.Lock` и ресинхронизации состояния токенов из персистентного стораджа.
-- Коды ответов: 2xx для успешных путей, 4xx для ошибок валидации (например, невалидный state).
-- Сессии: дедупликация по хэшу контента резюме и vacancy_id; повторные вызовы не провоцируют внешние LLM/HH вызовы.
+## Что валидируется (контракты)
 
-Подсказки и расширение
-- Предупреждение pytest‑asyncio о loop scope можно снять, задав в `pytest.ini`: `asyncio_default_fixture_loop_scope = function`.
-- Дополнительно стоит покрыть:
-  - TTL истечение `state` (перемотка времени/monkeypatch time.time/freezegun).
-  - `/healthz` и `/readyz`.
-  - Ошибки обновления токена (например, 401 от провайдера): маппинг в 401/502 на нашем REST.
-  - Rate limit/backoff у HH API (через моки и ретраи).
-  - TTL у сессий и авто‑очистку протухших записей.
+- **OAuth state:** одноразовость и ограниченный TTL (проверяется в `tests/auth/test_oauth_states_storage.py`).
+- **Хранилище токенов HH:** корректное сохранение, чтение и обновление токенов, привязанных к `user_id` (проверяется в `tests/auth/test_hh_account_service.py`).
+- **Интеграция HH OAuth:** полный цикл от редиректа на HH до получения токенов и проверки статуса.
+- **Коды ответов:** 2xx для успешных путей, 4xx для ошибок валидации.
+- **Сессии:** дедупликация по хэшу контента резюме и `vacancy_id`.
 
-Требования
-- pytest, pytest‑asyncio, httpx (ASGITransport), aiohttp — уже включены в `requirements.txt`.
+## Подсказки и расширение
+
+- Предупреждение `pytest-asyncio` о `loop scope` можно снять, задав в `pytest.ini`: `asyncio_default_fixture_loop_scope = function`.
+- Дополнительно стоит покрыть ошибки обновления токена, rate-limiting и TTL у сессий.

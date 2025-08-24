@@ -15,7 +15,7 @@ import json
 from typing import Any
 
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, AsyncMock
 
 from tests.webapp.conftest import async_client, app_ctx  # noqa: F401
 
@@ -31,10 +31,9 @@ def _load_test_data() -> tuple[dict[str, Any], dict[str, Any]]:
 
 @pytest.mark.asyncio
 async def test_init_json_creates_session_and_persists_models(async_client):
+    # HH подключение теперь автоматически настраивается в async_client фикстуре
     resume, vacancy = _load_test_data()
-
     payload = {
-        "hr_id": "hr-1",
         "resume": resume,
         "vacancy": vacancy,
         # reuse_by_hash по умолчанию True
@@ -57,9 +56,9 @@ async def test_init_json_creates_session_and_persists_models(async_client):
 
 @pytest.mark.asyncio
 async def test_init_json_deduplicates_on_second_call(async_client):
+    # HH подключение теперь автоматически настраивается в async_client фикстуре
     resume, vacancy = _load_test_data()
     base_payload = {
-        "hr_id": "hr-2",
         "resume": resume,
         "vacancy": vacancy,
     }
@@ -88,9 +87,9 @@ class _MockGen:
 
 @pytest.mark.asyncio
 async def test_features_generate_uses_session_models(async_client):
+    # HH подключение теперь автоматически настраивается в async_client фикстуре
     resume, vacancy = _load_test_data()
     init_payload = {
-        "hr_id": "hr-3",
         "resume": resume,
         "vacancy": vacancy,
     }
@@ -104,6 +103,7 @@ async def test_features_generate_uses_session_models(async_client):
     mock_gen = _MockGen()
     mock_registry.get_generator.return_value = mock_gen
 
+    from unittest.mock import patch
     with patch("src.webapp.features.get_global_registry", return_value=mock_registry):
         feat_resp = await async_client.post(
             "/features/test_feature/generate",

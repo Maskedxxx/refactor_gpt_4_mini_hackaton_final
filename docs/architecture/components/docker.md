@@ -62,9 +62,12 @@ curl "http://localhost:8080/vacancies?hr_id=hr-123&text=Python"
 ## 6. Диагностика и обслуживание
 
 - Логи сервиса: выводятся в stdout контейнера (`docker compose logs -f webapp`).
-- Проверка токенов в БД:
-  - Скопировать БД наружу: `docker compose cp webapp:/data/app.sqlite3 ./app.sqlite3`
-  - Посмотреть строки: `sqlite3 ./app.sqlite3 "select hr_id, datetime(expires_at,'unixepoch') from tokens;"`
+- Проверка статуса подключения HH.ru:
+  - Выполните запрос к эндпоинту статуса, используя cookie сессии пользователя:
+    ```bash
+    curl -b cookies.txt http://localhost:8080/auth/hh/status
+    ```
+  - Это покажет, подключен ли аккаунт и базовую информацию о нем. Прямой доступ к токенам в БД не рекомендуется.
 - Остановка:
   - Сохранить данные: `docker compose down`
   - Полная очистка (включая том): `docker compose down -v`

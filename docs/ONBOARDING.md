@@ -50,11 +50,11 @@
 
 ## Entrypoints и полезные директории
 
-- CLI/демо: `examples/` — скрипты для запуска отдельных сценариев (генерация писем, GAP-анализа, чек-листов, интервью и т.д.).
+- CLI/демо: `examples/` — скрипты для запуска отдельных сценариев. **Основной демонстрационный скрипт — `examples/unified_demo.py`**, который показывает полный цикл работы приложения.
 - Приложение: `src/webapp/__main__.py`, `src/webapp/app.py` — FastAPI.
-- Авторизация: модуль `src/auth` подключается к WebApp через `include_router` (роуты `/auth/*`, `/me`, `/orgs`).
+- Авторизация: модуль `src/auth` подключается к WebApp через `include_router`. **Маршруты для OAuth-интеграции с HH.ru (`/auth/hh/*`) теперь находятся здесь (`src/auth/router.py`)**, а не в `webapp`.
 - Адаптер HH: `src/hh_adapter/` — OAuth2, управление токенами, клиент HH.
-- Callback: `src/callback_server/` — локальный обработчик кода авторизации.
+- Callback: `src/callback_server/` — локальный обработчик кода авторизации (используется в `unified_demo`).
 - PDF: `src/pdf_export/` — шаблоны, стили, форматтеры и сервис печати.
 
 ## Local Run

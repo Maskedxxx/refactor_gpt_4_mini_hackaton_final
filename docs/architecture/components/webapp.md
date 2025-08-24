@@ -2,214 +2,122 @@
 
 ## 1. Обзор
 
-`WebApp` — продакшн‑ориентированный FastAPI сервис, который инкапсулирует внешний контракт OAuth2‑аутентификации с HH.ru и предоставляет API для прикладного функционала (например, чтение вакансий). Компонент предназначен для «атомарного» деплоя per‑школа (один контейнер = одна школа), но спроектирован с учётом multi‑tenant‑готовности (привязка токенов к HR, state‑защита, сериализация refresh).
+`WebApp` — продакшн‑ориентированный FastAPI сервис, который предоставляет основной API приложения.
 
 Основные обязанности:
-- Инициировать OAuth2 Authorization Code Flow (`/auth/hh/start`).
-- Обрабатывать callback от HH и обменивать `code` на токены (`/auth/hh/callback`).
-- Хранить токены per‑HR в SQLite с безопасной моделью доступа.
-- Выполнять запросы к HH API от имени HR с авто‑обновлением токена (`/vacancies`).
 - Предоставлять унифицированное API для LLM-фич (`/features/{name}/generate`).
+- Предоставлять API для экспорта результатов в PDF (`/pdf/generate`).
+- Управлять сессиями для работы с документами (резюме и вакансии), чтобы избежать повторной обработки данных.
+- Предоставлять API для получения списка вакансий с HH.ru (требует аутентификации).
+
+**Важно:** `WebApp` больше не управляет OAuth2-аутентификацией с HH.ru. Эта логика полностью перенесена в компонент `Auth`. Запросы, требующие доступа к HH.ru, защищены middleware-зависимостью `require_hh_connection` из модуля `auth`.
 
 ## 2. Контракт (роуты)
 
-- `GET /auth/hh/start?hr_id=<str>&redirect_to=<url>`
-  - Генерирует одноразовый `state` и делает 302 redirect на `https://hh.ru/oauth/authorize`.
-  - Параметры: `response_type=code`, `client_id`, `redirect_uri` (из настроек), `state`.
-- `GET /auth/hh/callback?code=<str>&state=<str>`
-  - Валидирует/«съедает» `state`, меняет `code`→токены, сохраняет в хранилище.
-  - Возвращает HTML «успех» или 302 на `redirect_to` из `state`.
-- `GET /vacancies?hr_id=<str>&text=<str>`
-  - Поднимает токены HR, выполняет запрос к HH API с авто‑refresh, возвращает JSON.
-- **Новые LLM Features роуты:**
-  - `GET /features` — список всех доступных LLM-фич
-  - `POST /features/{feature_name}/generate` — генерация через любую зарегистрированную фичу
-    - Тело запроса: либо `{ session_id, options, version? }`, либо `{ resume, vacancy, options, version? }`
-    - Рекомендованный путь — через `session_id` (см. ниже "Сессии")
+- `GET /vacancies?text=<str>`
+  - Возвращает список вакансий с HH.ru.
+  - **Требует аутентификации пользователя и подключенного аккаунта HH.ru.** Доступ контролируется через cookie сессии и зависимость `require_hh_connection`.
+- **LLM Features роуты:**
+  - `GET /features` — список всех доступных LLM-фич.
+  - `POST /features/{feature_name}/generate` — генерация через любую зарегистрированную фичу.
+    - Тело запроса: либо `{ session_id, options, version? }`, либо `{ resume, vacancy, options, version? }`.
 - **PDF Export роуты:**
-  - `POST /pdf/generate` — генерация PDF отчета из результата любой фичи
-    - Тело запроса: `{ feature_name, data, metadata }`
-    - Возвращает: binary PDF content с заголовком `Content-Type: application/pdf`
+  - `POST /pdf/generate` — генерация PDF отчета из результата любой фичи.
+    - Тело запроса: `{ feature_name, result, format_options }`.
 - **Сессии и персистентность:**
-  - `POST /sessions/init_upload` — инициализация сессии из сырого ввода (PDF + vacancy URL)
-  - `POST /sessions/init_json` — инициализация сессии из готовых моделей (`ResumeInfo` + `VacancyInfo`)
+  - `POST /sessions/init_upload` — инициализация сессии из сырого ввода (PDF + vacancy URL).
+  - `POST /sessions/init_json` — инициализация сессии из готовых моделей (`ResumeInfo` + `VacancyInfo`).
 - Технические: `GET /healthz`, `GET /readyz`.
 
 ## 3. Архитектура
 
 ```mermaid
 graph TD
-    A[Client / Frontend] -->|/auth/hh/start| B[WebApp]
-    B -->|302 to HH| C[HH.ru OAuth2]
-    C -->|redirect with code+state| B
-    B -->|exchange code| C
-    B -->|save tokens| D[(SQLite)]
+    A[Client / Frontend] -->|/features, /pdf, /sessions| B[WebApp]
+    B -->|uses| D[LLM Features Framework]
+    B -->|uses| E[PDF Export Service]
+    B -->|uses| F[(SQLite - app.db)]
+
     A -->|/vacancies| B
-    B -->|API call with token| E[HH API]
-    E --> B --> A
+    B -->|dependency: require_hh_connection| G[Auth Service]
+    G -->|uses hh_adapter| H[HH API]
+    H --> G --> B --> A
 ```
 
 Компоненты:
-- `app.py` — FastAPI приложение (роуты, DI одноразовых сервисов).
-- `storage.py` — SQLite‑хранилища: `TokenStorage` и `OAuthStateStore` (с TTL), путь задаётся `WEBAPP_DB_PATH`.
-- `service.py` — `PersistentTokenManager` (обёртка над `HHTokenManager`), сериализует refresh через `asyncio.Lock` per‑HR, сохраняет обновлённые токены.
-- **`features.py`** — унифицированные роуты для LLM-фич через `FeatureRegistry`.
-- **`pdf.py`** — роуты экспорта результатов фич в PDF через `PDFExportService`.
-- **`sessions.py`** — роуты инициализации сессий (`/sessions/init_upload`, `/sessions/init_json`).
-- Использует `HHSettings`, `HHApiClient`, `HHTokenManager` из `hh_adapter`.
-- Использует `FeatureRegistry`, `ILLMGenerator` из `llm_features`.
-- Использует `PDFExportService` из `pdf_export`.
-- **`storage_docs.py`** — SQLite‑хранилища резюме/вакансий/сессий: `ResumeStore`, `VacancyStore`, `SessionStore`.
+- `app.py` — FastAPI приложение (роуты, DI).
+- `features.py` — унифицированные роуты для LLM-фич.
+- `pdf.py` — роуты экспорта в PDF.
+- `sessions.py` — роуты инициализации сессий.
+- `storage_docs.py` — SQLite‑хранилища резюме/вакансий/сессий.
+- Зависит от: `auth`, `hh_adapter`, `llm_features`, `pdf_export`.
 
-## 4. Поток аутентификации
+## 4. Хранение данных (Сессии)
 
-```mermaid
-sequenceDiagram
-    participant U as HR Пользователь
-    participant FE as Клиент/Фронт
-    participant WA as WebApp
-    participant HH as HH.ru
-    participant DB as SQLite
+`WebApp` управляет хранением документов (резюме, вакансии) и сессий для их совместного использования в разных LLM-фичах.
 
-    FE->>WA: GET /auth/hh/start?hr_id=...
-    WA->>WA: create state(hr_id, redirect_to)
-    WA-->>FE: 302 Location: https://hh.ru/oauth/authorize?...&state=...
-    U->>HH: Login & Consent
-    HH-->>FE: 302 Location: /auth/hh/callback?code=...&state=...
-    FE->>WA: GET /auth/hh/callback?code=...&state=...
-    WA->>WA: validate & consume state
-    WA->>HH: POST /oauth/token (authorization_code)
-    HH-->>WA: access_token, refresh_token, expires_in
-    WA->>DB: save(hr_id, tokens)
-    WA-->>FE: HTML Success or 302 redirect_to
-```
+- Таблица `resume_docs`: `{ id, user_id, org_id, source_hash, title, data_json, created_at }`
+- Таблица `vacancy_docs`: `{ id, user_id, org_id, source_url, source_hash, name, data_json, created_at }`
+- Таблица `sessions`: `{ id, user_id, org_id, resume_id, vacancy_id, created_at, expires_at? }`
 
-## 5. Хранение и конкурентность
+Контекст пользователя (`user_id`, `org_id`) получается из cookie-сессии, управляемой модулем `Auth`. Параметр `hr_id` больше не используется.
 
-- Таблица `tokens` хранит `hr_id`, `access_token`, `refresh_token`, `expires_at`.
-- Таблица `oauth_state` хранит одноразовый `state` с TTL (по умолчанию 10 минут).
-- Для предотвращения гонок при параллельных запросах одного HR применяется `asyncio.Lock` per‑HR в `PersistentTokenManager` (refresh выполняется ровно один раз).
-
-### Сессии и персистентность резюме/вакансий
-
-- Таблица `resume_docs`: `{ id, hr_id, source_hash, title, data_json, created_at }`
-- Таблица `vacancy_docs`: `{ id, hr_id, source_url, source_hash, name, data_json, created_at }`
-- Таблица `sessions`: `{ id, hr_id, resume_id, vacancy_id, created_at, expires_at? }`
-
-Поведение:
-- При первичной инициализации по `init_upload` или `init_json` документы сохраняются, создаётся `session_id`.
-- Повторные вызовы с тем же содержанием при `reuse_by_hash=true` переиспользуют записи (без LLM/HH API).
-- Все фичи затем вызываются только с `session_id`, что исключает повторный парсинг исходных данных.
-
-Диаграмма:
-
+Диаграмма работы с сессиями:
 ```mermaid
 sequenceDiagram
   participant FE as Клиент
   participant WA as WebApp
   participant DB as SQLite
-  participant HH as HH API
-  participant LLM as OpenAI
+  participant Auth as Auth Service
 
-  FE->>WA: POST /sessions/init_upload (hr_id, pdf, url)
-  WA->>WA: hash(pdf_text), extract vacancy_id
-  alt not found in DB
-    WA->>LLM: parse resume -> ResumeInfo
-    WA->>HH: GET vacancy -> VacancyInfo
-    LLM-->>WA: ResumeInfo
-    HH-->>WA: VacancyInfo
-    WA->>DB: save resume_docs, vacancy_docs
+  FE->>WA: POST /sessions/init_upload (с cookie)
+  WA->>Auth: require_user (middleware)
+  Auth-->>WA: User(id, org_id)
+  WA->>WA: hash(pdf_text), ...
+  alt не найдено в DB
+    WA->>...: Парсинг/загрузка
+    WA->>DB: save resume_docs, vacancy_docs (с user_id, org_id)
   else reuse
     WA->>DB: load resume_docs, vacancy_docs
   end
-  WA->>DB: create session
+  WA->>DB: create session (с user_id, org_id)
   WA-->>FE: {session_id, ...}
 
-  FE->>WA: POST /features/{name}/generate {session_id, options}
+  FE->>WA: POST /features/{name}/generate {session_id, options} (с cookie)
+  WA->>Auth: require_user
   WA->>DB: get session -> resume_id, vacancy_id
-  WA->>DB: load resume_docs, vacancy_docs
-  WA->>LLM: feature.generate(resume, vacancy)
-  LLM-->>WA: Result
+  WA->>...: generate feature
   WA-->>FE: Result
 ```
 
-## 6. Безопасность
+## 5. Безопасность
 
-- `state` защищает от CSRF и связывает запрос с `hr_id` и `redirect_to`.
-- Токены не логируются; рекомендуется хранить `refresh_token` шифрованно при переходе на внешнюю БД.
+- Доступ к эндпоинтам, работающим с данными пользователя, контролируется через cookie-сессии модуля `Auth`.
 - HTTPS обеспечивается внешним уровнем (Ingress/Proxy). Секреты — через переменные окружения.
 
-## 7. Конфигурация
+## 6. Конфигурация
 
-Переменные окружения:
-- `HH_CLIENT_ID`, `HH_CLIENT_SECRET`, `HH_REDIRECT_URI` — OAuth2 настройки приложения HH.
 - `WEBAPP_DB_PATH` — путь к SQLite (по умолчанию `app.sqlite3`).
+- Остальные настройки, связанные с HH.ru, теперь находятся в ведении модуля `Auth`.
 
-Пример `.env`:
-```dotenv
-HH_CLIENT_ID=...
-HH_CLIENT_SECRET=...
-HH_REDIRECT_URI=http://localhost:8080/auth/hh/callback
-WEBAPP_DB_PATH=/data/app.sqlite3
-```
+## 7. Примеры вызовов
 
-## 8. Деплой и Docker
+**Важно:** Все примеры предполагают, что пользователь уже залогинен (т.е. в запросе передается cookie `sid`).
 
-Минимальный сценарий деплоя per‑школа:
-- Один контейнер `webapp` с пробросом 8080.
-- Том для БД (`/data/app.sqlite3`) через `WEBAPP_DB_PATH`.
-- Свой `.env` с HH кредами.
-
-Поток работы в Docker:
-1) HR открывает `/auth/hh/start?hr_id=...` на домене школы.
-2) После авторизации HH вызывает `/auth/hh/callback` в контейнере школы.
-3) Сервис сохраняет токены в volume (`/data/app.sqlite3`).
-4) Клиентские запросы к `/vacancies` используют сохранённые токены; при истечении выполняется refresh под локом, и новые токены снова пишутся в БД.
-
-## 9. Тестирование
-
-- Юнит‑тесты адаптера — в `tests/hh_adapter/`.
-- Для WebApp рекомендуется добавить интеграционные тесты роутов с `httpx.AsyncClient` (по отдельному запросу).
-- Сценарии сессий покрыты тестами: `tests/webapp/test_sessions_and_features.py`, `tests/webapp/test_sessions_upload.py`.
-
-## 10. Примеры вызовов
-
-Инициализация сессии (сырой ввод):
+Инициализация сессии:
 ```bash
 curl -X POST http://localhost:8080/sessions/init_upload \
-  -F hr_id=hr-123 \
+  -b cookies.txt \
   -F vacancy_url=https://hh.ru/vacancy/123456 \
-  -F reuse_by_hash=true \
-  -F ttl_sec=3600 \
   -F "resume_file=@tests/data/resume.pdf;type=application/pdf"
-```
-
-Инициализация сессии (готовые модели):
-```bash
-curl -X POST http://localhost:8080/sessions/init_json \
-  -H "Content-Type: application/json" \
-  -d '{"hr_id":"hr-123","resume":{...},"vacancy":{...},"reuse_by_hash":true}'
 ```
 
 Запуск фичи по session_id:
 ```bash
 curl -X POST http://localhost:8080/features/gap_analyzer/generate \
+  -b cookies.txt \
   -H "Content-Type: application/json" \
   -d '{"session_id":"<uuid>", "options":{"temperature":0.2}}'
 ```
 
-Генерация PDF отчета:
-```bash
-curl -X POST http://localhost:8080/pdf/generate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "feature_name": "gap_analyzer",
-    "data": {/* результат фичи */},
-    "metadata": {
-      "feature_name": "gap_analyzer",
-      "version": "v1",
-      "generated_at": "2025-08-17T10:00:00"
-    }
-  }' \
-  --output report.pdf
 ```
