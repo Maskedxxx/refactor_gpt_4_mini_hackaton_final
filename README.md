@@ -4,17 +4,17 @@
 
 ## Ключевые возможности
 
--   **Модульная архитектура**: Четкое разделение на `hh_adapter` (клиент HH API), `webapp` (FastAPI‑сервис с OAuth2 флоу и персистентным хранением токенов) и `callback_server` (демо для локального получения кода).
--   **4 LLM-фичи для HR процессов**: Cover Letter, GAP-анализ резюме, Interview Checklist, многораундовая Interview Simulation с AI HR-менеджером.
--   **Комплексная PDF Export система**: Профессиональные отчеты для всех LLM-фич с HTML шаблонами и CSS стилизацией.
--   **Plugin-система LLM фич**: Новая архитектура `llm_features` позволяет легко добавлять и удалять LLM-функции без изменения основного кода.
--   **Унифицированное API для LLM**: Универсальные роуты `/features/{name}/generate` для всех LLM-фич с автоматической регистрацией.
--   **Полный цикл OAuth2**: Реализован полный поток авторизации "Authorization Code Grant".
--   **Автоматическое управление токенами**: Прозрачное обновление `access_token` с помощью `refresh_token`.
--   **Асинхронность**: Построен на `asyncio`, `aiohttp` и `FastAPI` для высокой производительности.
--   **Чистая архитектура**: Используются принципы SOLID, Dependency Injection и паттерны (Facade, Factory).
--   **Готовность к тестированию**: Включает юнит‑ и интеграционные тесты (`pytest`), а также демонстрационные точки входа для каждого компонента.
--   **Подробная документация**: Включает высокоуровневый обзор и детальное описание каждого компонента с диаграммами.
+-	**Модульная архитектура**: Четкое разделение на `hh_adapter` (клиент HH API), `webapp` (FastAPI‑сервис с OAuth2 флоу и персистентным хранением токенов) и `callback_server` (демо для локального получения кода).
+-	**4 LLM-фичи для HR процессов**: Cover Letter, GAP-анализ резюме, Interview Checklist, многораундовая Interview Simulation с AI HR-менеджером.
+-	**Комплексная PDF Export система**: Профессиональные отчеты для всех LLM-фич с HTML шаблонами и CSS стилизацией.
+-	**Plugin-система LLM фич**: Новая архитектура `llm_features` позволяет легко добавлять и удалять LLM-функции без изменения основного кода.
+-	**Унифицированное API для LLM**: Универсальные роуты `/features/{name}/generate` для всех LLM-фич с автоматической регистрацией.
+-	**Полный цикл OAuth2**: Реализован полный поток авторизации "Authorization Code Grant".
+-	**Автоматическое управление токенами**: Прозрачное обновление `access_token` с помощью `refresh_token`.
+-	**Асинхронность**: Построен на `asyncio`, `aiohttp` и `FastAPI` для высокой производительности.
+-	**Чистая архитектура**: Используются принципы SOLID, Dependency Injection и паттерны (Facade, Factory).
+-	**Готовность к тестированию**: Включает юнит‑ и интеграционные тесты (`pytest`), а также демонстрационные точки входа для каждого компонента.
+-	**Подробная документация**: Включает высокоуровневый обзор и детальное описание каждого компонента с диаграммами.
 
 ---
 
@@ -34,7 +34,7 @@ cd refactor_gpt_4_mini_hackaton_final
 ```bash
 python -m venv venv
 source venv/bin/activate  # Для macOS/Linux
-# venv\Scripts\activate    # Для Windows
+# venv\\Scripts\\activate    # Для Windows
 
 pip install -r requirements.txt
 ```
@@ -61,7 +61,8 @@ HH_REDIRECT_URI=http://localhost:8080/auth/hh/callback
 
 # Необязательные параметры для WebApp
 # WEBAPP_DB_PATH=app.sqlite3  # путь к SQLite БД (по умолчанию app.sqlite3 в корне)
-\n+# Параметры Auth (MVP)
+
+# Параметры Auth (MVP)
 # AUTH_COOKIE_SECURE=false     # для локалки false; в проде true
 # AUTH_COOKIE_SAMESITE=lax     # lax|strict|none
 # AUTH_SESSION_TTL_SEC=604800  # 7 дней
@@ -71,57 +72,64 @@ HH_REDIRECT_URI=http://localhost:8080/auth/hh/callback
 
 ## Как использовать
 
-Проект можно запустить в трёх режимах.
+Проект можно запустить в нескольких режимах.
 
-### 1. Полный интеграционный сценарий (Рекомендуемый)
+### 1. Унифицированный демо-сценарий (Рекомендуемый)
 
-Этот скрипт запускает полный цикл: стартует сервер, открывает браузер для авторизации, ловит код, обменивает его на токены и делает тестовый запрос к API.
+Этот скрипт запускает полный цикл:
+1.	Регистрирует/логинит пользователя.
+2.	Запускает WebApp.
+3.	Показывает, как инициировать подключение к HH.ru через браузер.
+4.	Демонстрирует вызов LLM-фич и экспорт в PDF.
 
 ```bash
-python -m examples.run_hh_auth_flow
+python -m examples.unified_demo
 ```
 
-### 2. WebApp (мультипользовательский сценарий)
+### 2. WebApp (основной сервис)
 
-Запускает FastAPI сервис с маршрутами `/auth/hh/start`, `/auth/hh/callback`, `/vacancies`.
+Запускает FastAPI сервис, который обслуживает все LLM-фичи и пользовательские сессии.
 
 ```bash
 python -m src.webapp
 ```
 
-После запуска откройте:
+После запуска WebApp, аутентификация и подключение аккаунта HH.ru происходит через следующие шаги:
+1.	**Регистрация/логин пользователя** в системе (см. раздел "Auth (MVP)").
+2.	**Подключение HH.ru аккаунта** через браузер. Для этого пользователь должен перейти по адресу:
+	```
+	http://localhost:8080/auth/hh/connect
+	```
+3.	После успешной авторизации на HH.ru и возврата на сайт, его сессия будет привязана к аккаунту HH.
 
-```
-http://localhost:8080/auth/hh/start?hr_id=hr-123&redirect_to=http%3A%2F%2Flocalhost%3A8080%2Fhealthz
-```
+Все последующие запросы к API, требующие данных от HH.ru (например, списка вакансий), будут автоматически использовать данные подключенного аккаунта. Контекст пользователя передается через cookie (`sid`), поэтому параметр `hr_id` больше не используется.
 
-После успешной авторизации можно вызывать:
-
+Пример запроса списка вакансий (после логина и подключения HH):
 ```
-curl "http://localhost:8080/vacancies?hr_id=hr-123&text=Python"
+curl -b cookies.txt "http://localhost:8080/vacancies?text=Python"
+```
 
 Также доступны эндпоинты готовности:
-
 ```
 http://localhost:8080/healthz
 http://localhost:8080/readyz
-```
 ```
 
 Сессии и персистентность (ускоряет фичи, избегает повторных парсингов):
 
 ```bash
-# Инициализация сессии из PDF и URL вакансии (рекомендуется)
+# Инициализация сессии из PDF и URL вакансии (требует логина)
 curl -X POST http://localhost:8080/sessions/init_upload \
-  -F hr_id=hr-123 \
+  -b cookies.txt \
   -F vacancy_url=https://hh.ru/vacancy/123456 \
   -F reuse_by_hash=true \
   -F "resume_file=@tests/data/resume.pdf;type=application/pdf"
 
-# Инициализация сессии из готовых моделей (альтернатива)
+# Инициализация сессии из готовых моделей (альтернатива, требует логина)
 curl -X POST http://localhost:8080/sessions/init_json \
+  -b cookies.txt \
   -H "Content-Type: application/json" \
-  -d '{"hr_id":"hr-123","resume":{...},"vacancy":{...}}'
+  -d '{"resume":{...},"vacancy":{...}}'
 
 # Запуск любой LLM-фичи по session_id (без повторного парсинга)
 curl -X POST http://localhost:8080/features/gap_analyzer/generate \
@@ -166,29 +174,20 @@ volumes:
   hh_data: {}
 ```
 
-После запуска откройте:
-
+После запуска выполните шаги аутентификации, как описано в разделе "WebApp (основной сервис)". Для подключения HH.ru аккаунта перейдите по адресу:
 ```
-http://localhost:8080/auth/hh/start?hr_id=hr-123
+http://localhost:8080/auth/hh/connect
 ```
 
-### 4. Демонстрация `callback_server`
+### 4. Демонстрация `hh_adapter` (внутренний компонент)
 
-Локальный одноразовый сервер (демо‑режим, не для прод):
+Генерирует ссылку для авторизации на HH.ru. Теперь используется внутри `Auth` сервиса и напрямую не вызывается.
 
 ```bash
-python -m src.callback_server
+# python -m src.hh_adapter # <-- Deprecated
 ```
 
-### 5. Демонстрация `hh_adapter`
-
-Мгновенно генерирует и выводит в консоль ссылку для авторизации на HH.ru.
-
-```bash
-python -m src.hh_adapter
-```
-
-### 6. Демонстрация Parsing (LLM резюме и HH вакансия)
+### 5. Демонстрация Parsing (LLM резюме и HH вакансия)
 
 Пример запуска парсинга резюме из PDF (через LLM) и вакансии из локального JSON:
 
@@ -235,14 +234,11 @@ python -m examples.parse_parsers --fake-llm --resume tests/data/resume.pdf --vac
   curl -X POST -b cookies.txt -c cookies.txt http://localhost:8080/auth/logout
   ```
 
-Демо‑скрипт:
-```bash
-python -m examples.run_auth_demo --base-url http://localhost:8080 --email you@example.com --password secret123
-```
+Демо‑скрипт `run_auth_demo` был объединен с `unified_demo`. Используйте его для ознакомления с полным флоу.
 
 Конфигурация: `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAMESITE`, `AUTH_SESSION_TTL_SEC`. Таблица сессий: `auth_sessions` (не пересекается с LLM `sessions`). Подробнее: `docs/architecture/components/auth.md`.
 
-### 7. LLM Features (новая модульная система)
+### 6. LLM Features (новая модульная система)
 
 #### A. Через унифицированное API
 
@@ -268,15 +264,14 @@ curl -X POST http://localhost:8080/features/cover_letter/generate \
 curl -X POST http://localhost:8080/features/gap_analyzer/generate \
   -H "Content-Type: application/json" \
   -d '{
-    "session_id": "<uuid>",
-    "options": {"analysis_depth": "full", "temperature": 0.2}
+    "session_id":"<uuid>", "options": {"analysis_depth": "full", "temperature": 0.2}
   }'
 
 # Interview Checklist (через session_id или напрямую)
 curl -X POST "http://localhost:8080/features/interview_checklist/generate?version=v1" \
   -H "Content-Type: application/json" \
   -d '{
-    "session_id": "<uuid>",
+    "session_id":"<uuid>",
     "options": {"temperature": 0.3, "language": "ru"}
   }'
 
@@ -284,7 +279,7 @@ curl -X POST "http://localhost:8080/features/interview_checklist/generate?versio
 curl -X POST http://localhost:8080/features/interview_simulation/generate \
   -H "Content-Type: application/json" \
   -d '{
-    "session_id": "<uuid>",
+    "session_id":"<uuid>",
     "options": {"rounds": 5, "difficulty": "middle", "include_behavioral": true}
   }'
 
@@ -298,7 +293,7 @@ curl -X POST "http://localhost:8080/features/interview_checklist/generate?versio
   }'
 ```
 
-### 8. PDF Export (экспорт отчетов)
+### 7. PDF Export (экспорт отчетов)
 
 Все LLM-фичи поддерживают экспорт в PDF формат с профессиональным оформлением:
 
@@ -333,29 +328,7 @@ curl -X POST http://localhost:8080/pdf/generate \
 
 #### B. Через legacy примеры
 
-Старые примеры все еще работают:
-
-```bash
-# Офлайн-режим без сети (фейковый LLM)
-python -m examples.generate_cover_letter --vacancy tests/data/vacancy.json --fake-llm
-
-# Реальный вызов LLM (нужен ключ OpenAI)
-export OPENAI_API_KEY=...
-python -m examples.generate_cover_letter --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json
-
-# GAP-анализ резюме
-python -m examples.generate_gap_analysis --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json
-
-# Interview Checklist
-python -m examples.generate_interview_checklist --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json
-
-# Interview Simulation с сохранением результата
-python -m examples.generate_interview_simulation --resume-pdf tests/data/resume.pdf --vacancy tests/data/vacancy.json --save-result
-
-# Показать промпты
-python -m examples.show_full_prompt --feature cover_letter
-python -m examples.show_full_gap_prompt --prompt-version gap_analyzer.v1
-```
+Старые примеры были заменены на `examples/unified_demo.py`, который демонстрирует весь функционал в одном месте.
 
 #### C. Добавление новых фич
 

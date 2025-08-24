@@ -1,27 +1,33 @@
 # WebApp тесты (FastAPI) — кратко
 
-Назначение: проверить, что новый модуль `src/webapp` обеспечивает корректный OAuth‑флоу, персистентное хранение токенов и устойчивость при конкурентном доступе.
+## Назначение
 
-Файлы
-- conftest.py — фикстуры:
-  - Создаёт temp SQLite и прокидывает `WEBAPP_DB_PATH`.
-  - Задает тестовые `HH_CLIENT_ID/HH_CLIENT_SECRET/HH_REDIRECT_URI`.
-  - Поднимает `httpx.AsyncClient` через `ASGITransport` поверх FastAPI‐приложения (без реального сервера).
-- test_webapp_auth_and_storage.py — сценарии авторизации и хранения:
-  - `/auth/hh/start`: редирект 302 на HH с корректными query, создание одноразового `state`.
-  - `/auth/hh/callback`: мок обмена кода на токены, сохранение `access/refresh/expires_at`, редирект на `redirect_to`.
-  - Неверный `state`: 400 `Invalid or expired state`.
-- test_webapp_vacancies_concurrency.py — конкурентность и авто‑refresh:
-  - Предзаполняем истёкший `access_token` и валидный `refresh_token` в SQLite.
-  - Патчим `_refresh_token` и `HHApiClient.request` (без внешней сети).
-  - 20 параллельных `/vacancies` → все успешны, refresh происходит ровно один раз (per‑HR лок + синхронизация со стором).
+Проверить, что `WebApp` корректно обрабатывает запросы к своим основным эндпоинтам:
+-   Управление сессиями (`/sessions/*`).
+-   Вызов LLM-фич (`/features/*`).
+-   Экспорт в PDF (`/pdf/*`).
 
-Запуск
-- `pip install -r requirements.txt`
-- `pytest -q tests/webapp`
+**Важно:** Тесты OAuth-интеграции и аутентификации вынесены в `tests/auth/`.
 
-Заметки
-- Тесты не используют реальную БД из корня репозитория, а создают временную.
-- TTL `state` по умолчанию 600 сек; при необходимости можно добавить тест истечения TTL (через freezegun/monkeypatch времени).
-- Предупреждение pytest‑asyncio о loop scope можно устранить настройкой в `pytest.ini`.
+## Файлы
 
+-   **`conftest.py`**: Общие фикстуры для тестов `webapp`.
+    -   Создаёт временную SQLite БД.
+    -   Предоставляет `httpx.AsyncClient` для выполнения запросов к приложению без запуска реального сервера.
+-   **`test_sessions_and_features.py`**: Тестирует флоу работы с сессиями через JSON.
+    -   Инициализация сессии через `/sessions/init_json`.
+    -   Проверка дедупликации документов по хэшу.
+    -   Запуск LLM-фич с использованием `session_id`.
+-   **`test_sessions_upload.py`**: Тестирует флоу инициализации сессии через загрузку файлов.
+    -   Инициализация через `POST /sessions/init_upload` (multipart/form-data).
+    -   Проверка, что парсеры (LLM и HH) вызываются только для новых документов.
+
+## Запуск
+
+-   `pip install -r requirements.txt`
+-   `pytest -q tests/webapp`
+
+## Заметки
+
+-   Тесты полностью изолированы от внешней сети и реальных API ключей.
+-   Используется временная база данных для каждого тестового прогона.

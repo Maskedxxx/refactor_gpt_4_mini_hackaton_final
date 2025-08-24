@@ -126,4 +126,10 @@ python -m src.hh_adapter
 pytest tests/hh_adapter/
 ```
 
-```
+## 7. Интеграция и DI (Dependency Injection)
+
+В текущей архитектуре компонент `hh_adapter` используется в основном сервисом `Auth` (`src/auth/hh_service.py`) для управления OAuth2-интеграцией.
+
+Важно отметить, что `Auth` сервис активно использует **Dependency Injection** для предоставления зависимостей в `hh_adapter`. Например, `HHTokenManager` и `aiohttp.ClientSession` инъецируются в `HHAccountService`, что позволяет легко подменять их в тестах на моки.
+
+Это улучшает тестируемость слоя `Auth`, при этом **публичный контракт самого `hh_adapter` остается неизменным** и самодостаточным.
