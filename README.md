@@ -4,8 +4,9 @@
 
 ## Ключевые возможности
 
--	**Модульная архитектура**: Четкое разделение на `hh_adapter` (клиент HH API), `webapp` (FastAPI‑сервис с OAuth2 флоу и персистентным хранением токенов) и `callback_server` (демо для локального получения кода).
+-	**Модульная архитектура**: Четкое разделение на `hh_adapter` (клиент HH API), `webapp` (FastAPI‑сервис с OAuth2 флоу и персистентным хранением токенов), `cli` (консольный интерфейс) и `callback_server` (демо для локального получения кода).
 -	**4 LLM-фичи для HR процессов**: Cover Letter, GAP-анализ резюме, Interview Checklist, многораундовая Interview Simulation с AI HR-менеджером.
+-	**Консольный интерфейс (CLI)**: Полнофункциональный CLI с персистентной аутентификацией, загрузкой документов, генерацией всех LLM-фич и конфигурируемыми настройками интервью.
 -	**Комплексная PDF Export система**: Профессиональные отчеты для всех LLM-фич с HTML шаблонами и CSS стилизацией.
 -	**Plugin-система LLM фич**: Новая архитектура `llm_features` позволяет легко добавлять и удалять LLM-функции без изменения основного кода.
 -	**Унифицированное API для LLM**: Универсальные роуты `/features/{name}/generate` для всех LLM-фич с автоматической регистрацией.
@@ -137,7 +138,54 @@ curl -X POST http://localhost:8080/features/gap_analyzer/generate \
   -d '{"session_id":"<uuid>", "options": {"temperature": 0.2}}'
 ```
 
-### 3. Docker (рекомендуется для деплоя)
+### 3. CLI (Консольный интерфейс)
+
+CLI обеспечивает полный доступ к функционалу системы через командную строку с персистентной аутентификацией.
+
+```bash
+# Запуск WebApp в фоне (если еще не запущен)
+python -m src.webapp &
+
+# Проверка статуса сервиса
+python -m src.cli status
+
+# Аутентификация (один раз)
+python -m src.cli auth login
+
+# Загрузка документов и создание сессии
+python -m src.cli sessions upload \
+  --resume tests/data/resume.pdf \
+  --vacancy-url "https://hh.ru/vacancy/123456"
+
+# Генерация GAP-анализа
+python -m src.cli features run \
+  --name gap_analyzer \
+  --session-id <session-id>
+
+# Симуляция интервью с кастомными настройками
+python -m src.cli features run \
+  --name interview_simulation \
+  --session-id <session-id> \
+  --options src/cli/configs/interview_simulation_options.json \
+  --out interview_result.json
+
+# Экспорт в PDF
+python -m src.cli pdf generate \
+  --feature gap_analyzer \
+  --session-id <session-id> \
+  --out analysis.pdf
+```
+
+**Конфигурация интервью**: Файл `src/cli/configs/interview_simulation_options.json` содержит все настройки:
+- Количество раундов диалога (3-7)
+- Уровень сложности (easy/medium/hard)
+- Стиль HR (supportive/neutral/challenging)
+- Типы вопросов (behavioral/technical/leadership)
+- Креативность генерации (temperature настройки)
+
+**Персистентность**: CLI автоматически сохраняет сессии в `.hh_cli_cookies.json` для избежания повторной аутентификации.
+
+### 4. Docker (рекомендуется для деплоя)
 
 Быстрый запуск в Docker:
 
@@ -201,6 +249,27 @@ python -m examples.parse_parsers --fake-llm --resume tests/data/resume.pdf --vac
 ```
 
 Подробнее о внутренних контрактах и потоках: `docs/architecture/components/parser.md`.
+
+### 6. CLI (запуск сценариев без фронта)
+
+Для быстрого прогона пользовательских сценариев доступен CLI:
+
+```
+python -m src.cli --help
+
+# Настройка демо‑пользователя
+python -m src.cli scenarios test-user-setup
+
+# Подключение HH (откроется браузер)
+python -m src.cli hh connect
+
+# Инициализация сессии и запуск фичи
+python -m src.cli sessions init-json --resume tests/data/simple_resume.json --vacancy tests/data/simple_vacancy.json
+python -m src.cli features run --name cover_letter --session-id <uuid> --out result.json
+
+# Экспорт PDF
+python -m src.cli pdf export --feature-name cover_letter --result result.json --out report.pdf
+```
 
 ---
 

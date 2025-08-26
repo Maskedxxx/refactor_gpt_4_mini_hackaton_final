@@ -54,7 +54,7 @@ class AbstractLLMGenerator(Generic[T], ABC):
         # Инициализация LLM клиента
         if llm is None:
             client = OpenAI(api_key=openai_api_key or os.getenv("OPENAI_API_KEY"))
-            model_name = openai_model_name or os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini-2024-07-18")
+            model_name = openai_model_name or os.getenv("OPENAI_MODEL_NAME", "gpt-5-mini-2025-08-07")
             self._llm = OpenAILLMClient(client, default_model=model_name)
         else:
             self._llm = llm
