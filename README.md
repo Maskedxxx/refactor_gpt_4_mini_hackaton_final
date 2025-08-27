@@ -364,35 +364,35 @@ curl -X POST "http://localhost:8080/features/interview_checklist/generate?versio
 
 ### 7. PDF Export (экспорт отчетов)
 
-Все LLM-фичи поддерживают экспорт в PDF формат с профессиональным оформлением:
+Все LLM-фичи поддерживают экспорт в PDF формат с профессиональным оформлением. Экспорт выполняется по маршруту `/features/{feature_name}/export/pdf`:
 
 ```bash
-# Экспорт результата любой фичи в PDF
-curl -X POST http://localhost:8080/pdf/generate \
+# Экспорт результата любой фичи в PDF (пример: interview_simulation)
+curl -X POST http://localhost:8080/features/interview_simulation/export/pdf \
   -H "Content-Type: application/json" \
   -d '{
-    "feature_name": "interview_simulation",
-    "result": {...},
-    "format_options": {"language": "ru"}
-  }'
+    "result": { /* результат interview_simulation */ },
+    "metadata": {"language": "ru"}
+  }' \
+  --output interview_simulation_report.pdf
 
 # Экспорт GAP-анализа
-curl -X POST http://localhost:8080/pdf/generate \
+curl -X POST http://localhost:8080/features/gap_analyzer/export/pdf \
   -H "Content-Type: application/json" \
   -d '{
-    "feature_name": "gap_analyzer", 
     "result": {"screening": {...}, "requirements_analysis": {...}},
-    "format_options": {"language": "ru"}
-  }'
+    "metadata": {"language": "ru"}
+  }' \
+  --output gap_analysis_report.pdf
 
 # Экспорт сопроводительного письма
-curl -X POST http://localhost:8080/pdf/generate \
+curl -X POST http://localhost:8080/features/cover_letter/export/pdf \
   -H "Content-Type: application/json" \
   -d '{
-    "feature_name": "cover_letter",
     "result": {"letter_text": "...", "personalization": {...}},
-    "format_options": {"language": "ru"}
-  }'
+    "metadata": {"language": "ru"}
+  }' \
+  --output cover_letter_report.pdf
 ```
 
 #### B. Через legacy примеры

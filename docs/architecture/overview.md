@@ -79,7 +79,7 @@ sequenceDiagram
 ```mermaid
 graph TB
     API["/features/{name}/generate"] --> Registry[FeatureRegistry]
-    PDF_API["/pdf/generate"] --> PDFService[PDFExportService]
+    PDF_API["/features/{name}/export/pdf"] --> PDFService[PDFExportService]
     
     Registry --> CoverLetter[LLMCoverLetterGenerator]
     Registry --> GapAnalyzer[LLMGapAnalyzerGenerator]

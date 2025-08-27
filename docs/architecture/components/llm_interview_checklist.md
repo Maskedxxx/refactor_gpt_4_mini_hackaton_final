@@ -211,13 +211,13 @@ python -m examples.generate_interview_checklist \
 Поддерживает экспорт через систему `pdf_export` с профессиональным форматированием:
 
 ```bash
-curl -X POST http://localhost:8080/pdf/generate \
+curl -X POST http://localhost:8080/features/interview_checklist/export/pdf \
   -H "Content-Type: application/json" \
   -d '{
-    "feature_name": "interview_checklist",
     "result": { /* ProfessionalInterviewChecklist */ },
-    "format_options": {"language": "ru"}
-  }'
+    "metadata": {"language": "ru"}
+  }' \
+  --output interview_checklist_report.pdf
 ```
 
 ## Тестирование

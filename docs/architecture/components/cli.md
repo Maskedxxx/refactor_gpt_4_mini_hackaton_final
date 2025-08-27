@@ -143,7 +143,7 @@ CLI полностью использует существующее WebApp API:
 - `/auth/*` - аутентификация
 - `/sessions/*` - управление сессиями  
 - `/features/*/generate` - генерация LLM-фич
-- `/pdf/generate` - экспорт в PDF
+- `/features/{feature_name}/export/pdf` - экспорт в PDF
 
 ## Безопасность
 

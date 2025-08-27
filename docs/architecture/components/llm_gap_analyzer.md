@@ -186,12 +186,11 @@ GAP Analyzer поддерживает экспорт результатов в �
 
 ```bash
 # Через WebApp API
-curl -X POST http://localhost:8080/pdf/generate \
+curl -X POST http://localhost:8080/features/gap_analyzer/export/pdf \
   -H "Content-Type: application/json" \
   -d '{
-    "feature_name": "gap_analyzer",
-    "data": {/* результат GAP анализа */},
-    "metadata": {"feature_name": "gap_analyzer", "version": "v1"}
+    "result": {/* результат GAP анализа */},
+    "metadata": {"version": "v1", "language": "ru"}
   }' \
   --output gap_analysis_report.pdf
 

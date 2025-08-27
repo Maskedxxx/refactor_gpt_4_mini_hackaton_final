@@ -1,5 +1,25 @@
 # Changelog
 
+## 2025-08-27 — PDF Export API alignment + CLI scenarios
+
+- PDF Export API: зафиксирован канонический маршрут `POST /features/{feature_name}/export/pdf`. Все упоминания `/pdf/generate` удалены из документации как устаревшие.
+- Обновлена документация и примеры:
+  - `README.md` — раздел «PDF Export (экспорт отчетов)» переписан на новый маршрут; добавлен раздел «CLI (запуск сценариев без фронта)».
+  - `docs/architecture/overview.md` — диаграмма LLM Features Architecture указывает `"/features/{name}/export/pdf"`.
+  - `docs/architecture/components/pdf_export.md` — диаграммы, контракт роутера и примеры curl обновлены; отражена фактическая сигнатура `PDFExportService.generate_pdf(formatter, data, metadata)`.
+  - `docs/architecture/components/webapp.md` — список роутов и описание заменены на `POST /features/{feature_name}/export/pdf`; обновлена архитектурная диаграмма клиента.
+  - `docs/architecture/components/llm_cover_letter.md`, `llm_gap_analyzer.md`, `llm_interview_checklist.md` — секции «PDF Export» и примеры API обновлены на новый маршрут.
+  - `docs/architecture/components/cli.md` — пункт интеграции с WebApp теперь указывает экспорт PDF через `"/features/{feature_name}/export/pdf"`.
+  - `src/webapp/README.md` — описание модуля и шагов сценария обновлены на новый маршрут.
+- CLI для пользовательских сценариев (без фронта):
+  - Добавлен пакет `src/cli` с точкой входа `python -m src.cli`.
+  - Реализованы команды: `status`, `auth (signup|login|logout|me)`, `hh (status|connect|disconnect)`, `sessions (init-json|init-upload)`, `features (list|run)`, `pdf (export)`, `scenarios (test-user-setup|hh-auth-demo|feature-with-hash|feature-no-hash|full-demo)`.
+  - Персистентная аутентификация через cookie файл `.hh_cli_cookies.json`.
+  - Документация CLI: `src/cli/README.md` и раздел в корневом `README.md`.
+- Технически:
+  - Ветка разработки: `codex/cli-scenarios-initial`.
+  - Изменения не затрагивают серверные маршруты — только документацию и новый CLI-клиент.
+
 ## 2025-08-26 — CLI Implementation, HTTP Timeout Fix & Project Organization
 
 - **CLI консольный интерфейс (`src/cli`):**

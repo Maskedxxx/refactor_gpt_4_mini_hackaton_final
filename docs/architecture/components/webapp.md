@@ -6,7 +6,7 @@
 
 Основные обязанности:
 - Предоставлять унифицированное API для LLM-фич (`/features/{name}/generate`).
-- Предоставлять API для экспорта результатов в PDF (`/pdf/generate`).
+- Предоставлять API для экспорта результатов в PDF (`/features/{feature_name}/export/pdf`).
 - Управлять сессиями для работы с документами (резюме и вакансии), чтобы избежать повторной обработки данных.
 - Предоставлять API для получения списка вакансий с HH.ru (требует аутентификации).
 
@@ -22,8 +22,8 @@
   - `POST /features/{feature_name}/generate` — генерация через любую зарегистрированную фичу.
     - Тело запроса: либо `{ session_id, options, version? }`, либо `{ resume, vacancy, options, version? }`.
 - **PDF Export роуты:**
-  - `POST /pdf/generate` — генерация PDF отчета из результата любой фичи.
-    - Тело запроса: `{ feature_name, result, format_options }`.
+  - `POST /features/{feature_name}/export/pdf` — генерация PDF отчета для конкретной фичи.
+    - Тело запроса: `{ result, metadata? }`.
 - **Сессии и персистентность:**
   - `POST /sessions/init_upload` — инициализация сессии из сырого ввода (PDF + vacancy URL).
   - `POST /sessions/init_json` — инициализация сессии из готовых моделей (`ResumeInfo` + `VacancyInfo`).
@@ -33,7 +33,7 @@
 
 ```mermaid
 graph TD
-    A[Client / Frontend] -->|/features, /pdf, /sessions| B[WebApp]
+    A[Client / Frontend] -->|/features/*, /sessions/*| B[WebApp]
     B -->|uses| D[LLM Features Framework]
     B -->|uses| E[PDF Export Service]
     B -->|uses| F[(SQLite - app.db)]

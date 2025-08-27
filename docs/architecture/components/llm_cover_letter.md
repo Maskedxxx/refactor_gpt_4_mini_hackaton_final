@@ -115,12 +115,11 @@ Cover Letter поддерживает экспорт результатов в �
 
 ```bash
 # Через WebApp API
-curl -X POST http://localhost:8080/pdf/generate \
+curl -X POST http://localhost:8080/features/cover_letter/export/pdf \
   -H "Content-Type: application/json" \
   -d '{
-    "feature_name": "cover_letter",
-    "data": {/* результат Cover Letter */},
-    "metadata": {"feature_name": "cover_letter", "version": "v1"}
+    "result": {/* результат Cover Letter */},
+    "metadata": {"version": "v1", "language": "ru"}
   }' \
   --output cover_letter_report.pdf
 

@@ -15,7 +15,7 @@
 
 ```mermaid
 graph TD
-    A[Client Request] --> B[WebApp /pdf/generate]
+    A[Client Request] --> B[WebApp /features/{feature_name}/export/pdf]
     B --> C[PDFExportService]
     C --> D[Formatter Registry]
     D --> E{Feature Type}
@@ -48,10 +48,10 @@ graph TD
 ```python
 class PDFExportService:
     async def generate_pdf(
-        self, 
-        feature_name: str, 
-        data: Dict[str, Any], 
-        metadata: Dict[str, Any]
+        self,
+        formatter: AbstractPDFFormatter,
+        data: Dict[str, Any],
+        metadata: Dict[str, Any],
     ) -> bytes
 ```
 
@@ -219,20 +219,19 @@ class AbstractPDFFormatter(ABC):
 ### 5.1 WebApp роуты (`src/webapp/pdf.py`)
 
 ```python
-@router.post("/generate")
-async def generate_pdf(request: PDFGenerateRequest) -> Response
+@router.post("/{feature_name}/export/pdf")
+async def export_feature_pdf(feature_name: str, request: PDFExportRequest) -> Response
 ```
 
 **Запрос:**
 ```json
 {
-    "feature_name": "gap_analyzer",
-    "data": { /* результат фичи */ },
-    "metadata": {
-        "feature_name": "gap_analyzer",
-        "version": "v1",
-        "generated_at": "2025-08-17T10:00:00"
-    }
+  "result": { /* результат фичи */ },
+  "metadata": {
+    "version": "v1",
+    "language": "ru",
+    "generated_at": "2025-08-17T10:00:00"
+  }
 }
 ```
 
@@ -245,13 +244,12 @@ async def generate_pdf(request: PDFGenerateRequest) -> Response
 
 **Генерация PDF через API:**
 ```bash
-curl -X POST http://localhost:8080/pdf/generate \
-  -H "Content-Type: application/json" \
+curl -X POST http://localhost:8080/features/gap_analyzer/export/pdf \\
+  -H "Content-Type: application/json" \\
   -d '{
-    "feature_name": "gap_analyzer",
-    "data": {...},
-    "metadata": {...}
-  }' \
+    "result": { /* результат GAP анализа */ },
+    "metadata": {"language": "ru"}
+  }' \\
   --output report.pdf
 ```
 
@@ -284,8 +282,8 @@ sequenceDiagram
     WebApp->>LLMGen: generate(resume, vacancy, options)
     LLMGen-->>WebApp: Feature Result
     
-    User->>WebApp: POST /pdf/generate
-    WebApp->>PDFService: generate_pdf(feature_name, data)
+    User->>WebApp: POST /features/{name}/export/pdf
+    WebApp->>PDFService: generate_pdf(formatter, data)
     PDFService->>PDFService: get_formatter(feature_name)
     PDFService->>PDFService: prepare_context(data)
     PDFService->>WeasyPrint: render_html_to_pdf
