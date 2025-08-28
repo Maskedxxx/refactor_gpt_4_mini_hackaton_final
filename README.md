@@ -4,8 +4,9 @@
 
 ## Ключевые возможности
 
--	**Модульная архитектура**: Четкое разделение на `hh_adapter` (клиент HH API), `webapp` (FastAPI‑сервис с OAuth2 флоу и персистентным хранением токенов), `cli` (консольный интерфейс) и `callback_server` (демо для локального получения кода).
+-	**Модульная архитектура**: Четкое разделение на `hh_adapter` (клиент HH API), `webapp` (FastAPI‑сервис с OAuth2 флоу и персистентным хранением токенов), `frontend` (React приложение с авторизацией), `cli` (консольный интерфейс) и `callback_server` (демо для локального получения кода).
 -	**4 LLM-фичи для HR процессов**: Cover Letter, GAP-анализ резюме, Interview Checklist, многораундовая Interview Simulation с AI HR-менеджером.
+-	**Frontend приложение**: Современный веб-интерфейс на React+TypeScript с Tailwind CSS, формами авторизации и полным покрытием тестами.
 -	**Консольный интерфейс (CLI)**: Полнофункциональный CLI с персистентной аутентификацией, загрузкой документов, генерацией всех LLM-фич и конфигурируемыми настройками интервью.
 -	**Комплексная PDF Export система**: Профессиональные отчеты для всех LLM-фич с HTML шаблонами и CSS стилизацией.
 -	**Plugin-система LLM фич**: Новая архитектура `llm_features` позволяет легко добавлять и удалять LLM-функции без изменения основного кода.
@@ -69,13 +70,62 @@ HH_REDIRECT_URI=http://localhost:8080/auth/hh/callback
 # AUTH_SESSION_TTL_SEC=604800  # 7 дней
 ```
 
+### 4. Настройка Frontend (опционально)
+
+Frontend представляет собой отдельное React приложение, расположенное в директории `frontend/`.
+
+```bash
+cd frontend
+
+# Установка зависимостей
+npm install
+
+# Запуск в режиме разработки (порт 5173)
+npm run dev
+
+# Сборка для продакшена
+npm run build
+
+# Запуск тестов
+npm run test
+
+# Быстрый запуск тестов
+npm run test:quick
+```
+
+**Важно:** Frontend настроен на работу с backend по адресу `http://localhost:8080`. Убедитесь, что WebApp запущен перед использованием frontend.
+
 ---
 
 ## Как использовать
 
 Проект можно запустить в нескольких режимах.
 
-### 1. Унифицированный демо-сценарий (Рекомендуемый)
+### 1. Frontend + WebApp (Рекомендуемый для пользователей)
+
+Запуск полнофункционального веб-интерфейса с backend API:
+
+```bash
+# 1. Запустить backend (в одном терминале)
+python -m src.webapp
+
+# 2. Запустить frontend (в другом терминале)
+cd frontend
+npm run dev
+```
+
+После запуска:
+- **Frontend**: http://localhost:5173 - веб-интерфейс с формами авторизации
+- **Backend API**: http://localhost:8080 - REST API для всех функций
+
+**Функционал Frontend:**
+- Регистрация и вход пользователей с email/password
+- Создание организаций
+- Интеграция с HH.ru OAuth через backend
+- Обработка ошибок и валидация форм
+- Адаптивный интерфейс с Tailwind CSS
+
+### 2. Унифицированный демо-сценарий (CLI/Backend only)
 
 Этот скрипт запускает полный цикл:
 1.	Регистрирует/логинит пользователя.
@@ -87,7 +137,7 @@ HH_REDIRECT_URI=http://localhost:8080/auth/hh/callback
 python -m examples.unified_demo
 ```
 
-### 2. WebApp (основной сервис)
+### 3. WebApp (основной сервис)
 
 Запускает FastAPI сервис, который обслуживает все LLM-фичи и пользовательские сессии.
 
@@ -138,7 +188,7 @@ curl -X POST http://localhost:8080/features/gap_analyzer/generate \
   -d '{"session_id":"<uuid>", "options": {"temperature": 0.2}}'
 ```
 
-### 3. CLI (Консольный интерфейс)
+### 4. CLI (Консольный интерфейс)
 
 CLI обеспечивает полный доступ к функционалу системы через командную строку с персистентной аутентификацией.
 
@@ -185,7 +235,7 @@ python -m src.cli pdf generate \
 
 **Персистентность**: CLI автоматически сохраняет сессии в `.hh_cli_cookies.json` для избежания повторной аутентификации.
 
-### 4. Docker (рекомендуется для деплоя)
+### 5. Docker (рекомендуется для деплоя)
 
 Быстрый запуск в Docker:
 
@@ -227,7 +277,7 @@ volumes:
 http://localhost:8080/auth/hh/connect
 ```
 
-### 4. Демонстрация `hh_adapter` (внутренний компонент)
+### 6. Демонстрация `hh_adapter` (внутренний компонент)
 
 Генерирует ссылку для авторизации на HH.ru. Теперь используется внутри `Auth` сервиса и напрямую не вызывается.
 
@@ -235,7 +285,7 @@ http://localhost:8080/auth/hh/connect
 # python -m src.hh_adapter # <-- Deprecated
 ```
 
-### 5. Демонстрация Parsing (LLM резюме и HH вакансия)
+### 7. Демонстрация Parsing (LLM резюме и HH вакансия)
 
 Пример запуска парсинга резюме из PDF (через LLM) и вакансии из локального JSON:
 
@@ -250,7 +300,7 @@ python -m examples.parse_parsers --fake-llm --resume tests/data/resume.pdf --vac
 
 Подробнее о внутренних контрактах и потоках: `docs/architecture/components/parser.md`.
 
-### 6. CLI (запуск сценариев без фронта)
+### 8. CLI (запуск сценариев без фронта)
 
 Для быстрого прогона пользовательских сценариев доступен CLI:
 
@@ -307,7 +357,7 @@ python -m src.cli pdf export --feature-name cover_letter --result result.json --
 
 Конфигурация: `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_SAMESITE`, `AUTH_SESSION_TTL_SEC`. Таблица сессий: `auth_sessions` (не пересекается с LLM `sessions`). Подробнее: `docs/architecture/components/auth.md`.
 
-### 6. LLM Features (новая модульная система)
+### 9. LLM Features (новая модульная система)
 
 #### A. Через унифицированное API
 
@@ -362,7 +412,7 @@ curl -X POST "http://localhost:8080/features/interview_checklist/generate?versio
   }'
 ```
 
-### 7. PDF Export (экспорт отчетов)
+### 10. PDF Export (экспорт отчетов)
 
 Все LLM-фичи поддерживают экспорт в PDF формат с профессиональным оформлением. Экспорт выполняется по маршруту `/features/{feature_name}/export/pdf`:
 
@@ -427,6 +477,7 @@ pytest
 
 - Общий обзор: `docs/architecture/overview.md`
 - Компоненты:
+  - `docs/architecture/components/frontend.md`
   - `docs/architecture/components/auth.md`
   - `docs/architecture/components/webapp.md`
   - `docs/architecture/components/hh_adapter.md`

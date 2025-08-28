@@ -33,15 +33,34 @@
 
 ```mermaid
 graph TD
-    A[Client / Frontend] -->|/features/*, /sessions/*| B[WebApp]
-    B -->|uses| D[LLM Features Framework]
-    B -->|uses| E[PDF Export Service]
-    B -->|uses| F[(SQLite - app.db)]
-
-    A -->|/vacancies| B
-    B -->|dependency: require_hh_connection| G[Auth Service]
-    G -->|uses hh_adapter| H[HH API]
-    H --> G --> B --> A
+    subgraph "Frontend (Port 5173)"
+        FE[React App]
+        AC[API Client]
+        FE --> AC
+    end
+    
+    subgraph "Backend (Port 8080)"
+        WA[WebApp FastAPI]
+        CORS[CORS Middleware]
+        AUTH[Auth Service]
+        LLM[LLM Features Framework]
+        PDF[PDF Export Service]
+        DB[(SQLite - app.db)]
+        HH[HH API]
+        
+        AC -->|HTTP + Cookies| CORS
+        CORS --> WA
+        WA -->|uses| LLM
+        WA -->|uses| PDF
+        WA -->|uses| DB
+        WA -->|require_hh_connection| AUTH
+        AUTH -->|uses hh_adapter| HH
+    end
+    
+    style FE fill:#e1f5fe
+    style AC fill:#fff3e0
+    style CORS fill:#e8f5e8
+    style WA fill:#f3e5f5
 ```
 
 Компоненты:
@@ -94,6 +113,37 @@ sequenceDiagram
 
 - Доступ к эндпоинтам, работающим с данными пользователя, контролируется через cookie-сессии модуля `Auth`.
 - HTTPS обеспечивается внешним уровнем (Ingress/Proxy). Секреты — через переменные окружения.
+
+### CORS Configuration для Frontend Integration
+
+WebApp настроен для работы с Frontend приложением через CORS middleware:
+
+```python
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:4173",  # Vite preview server
+    ],
+    allow_credentials=True,  # Критически важно для cookie-based auth
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+```
+
+**Ключевые моменты CORS настройки:**
+- `allow_credentials=True` обязателен для передачи `HttpOnly` cookies между доменами
+- `allow_origins` содержит Frontend URLs для development и preview режимов
+- Production настройка должна включать только реальные Frontend домены
+- Поддержка всех HTTP методов для полной функциональности API
+
+**Безопасные паттерны:**
+- Explicit origin whitelist (не используется wildcard `*` с credentials)
+- Cookie-based session management вместо localStorage для токенов
+- Automatic 401 handling с редиректом на форму авторизации
+- CSRF protection через SameSite cookie attributes
 
 ## 6. Конфигурация
 

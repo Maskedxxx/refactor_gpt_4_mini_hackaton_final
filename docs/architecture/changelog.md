@@ -1,5 +1,39 @@
 # Changelog
 
+## 2025-08-28 — Frontend Authentication Module & Test Infrastructure
+
+- **Новый компонент Frontend (`frontend/`):**
+  - Реализовано React+TypeScript приложение с Vite build tool и Tailwind CSS для стилизации.
+  - Создана страница авторизации (`AuthPage`) с переключением между формами входа и регистрации.
+  - Реализованы компоненты `LoginForm` и `SignupForm` с валидацией и обработкой ошибок.
+  - Добавлен API клиент (`lib/api.ts`) для взаимодействия с backend через session-based auth.
+  - Настроена интеграция с backend через CORS middleware и cookie-based sessions.
+
+- **Comprehensive Test Infrastructure:**
+  - Добавлена тестовая инфраструктура на базе Vitest + React Testing Library.
+  - Реализованы unit тесты для всех форм с покрытием пользовательских взаимодействий.
+  - Добавлены интеграционные тесты страницы авторизации с переключением табов.
+  - Созданы тесты API клиента с мокированием axios и обработкой различных сценариев ошибок.
+  - Настроена jsdom среда для симуляции браузерного окружения в Node.js.
+
+- **Authentication Integration:**
+  - Интеграция с существующим Auth Service (`src/auth`) через session cookies.
+  - Поддержка регистрации организаций и управления пользователями.
+  - Обработка ошибок авторизации с локализованными сообщениями.
+  - Реализована автоматическая очистка ошибок при начале ввода пользователем.
+
+- **Development Experience:**
+  - Добавлены npm скрипты для разработки, сборки и тестирования.
+  - Настроена TypeScript конфигурация для современного React разработки.
+  - Созданы специализированные тестовые команды (`test:run`, `test:quick`).
+  - Добавлена документация тестов в `tests/README.md` с объяснением структуры и подходов.
+
+- **Technical Stack:**
+  - Frontend: React 18, TypeScript, Vite, Tailwind CSS
+  - Testing: Vitest, React Testing Library, jsdom, @testing-library/user-event
+  - API: Axios с interceptors для обработки 401 ошибок
+  - State Management: React hooks (useState) для локального состояния форм
+
 ## 2025-08-27 — PDF Export API alignment + CLI scenarios
 
 - PDF Export API: зафиксирован канонический маршрут `POST /features/{feature_name}/export/pdf`. Все упоминания `/pdf/generate` удалены из документации как устаревшие.
