@@ -13,6 +13,7 @@
 # --- /agent_meta ---
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.webapp.features import router as features_router
 from src.webapp.sessions import router as sessions_router
@@ -27,6 +28,15 @@ import src.llm_interview_simulation  # Автоматически регистр
 
 
 app = FastAPI(title="HH Adapter WebApp", version="0.1.0")
+
+# Настройка CORS для frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Порт фронтенда
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 # Подключаем роуты для LLM-фич
 app.include_router(auth_router)
