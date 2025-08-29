@@ -6,6 +6,29 @@
 - Если менялись контракты/эндпоинты — укажите канонические имена/пути (например, `is_connected`, `/features/{name}/export/pdf`).
 - Если правки по результатам ревью — добавьте ссылку на файл в `.claude/reviews/`.
 
+## 2025-08-29 — Frontend Project Creation Wizard & AI Tools
+
+- **Новый 4-шаговый wizard создания проектов (`CreateProjectPage`):**
+  - Step 1: HH.ru connection check с автоматической валидацией статуса
+  - Step 2: PDF upload + URL вакансии с real-time валидацией (`hh\.ru\/vacancy\/\d+`)
+  - Step 3: Preview и confirmation перед вызовом `POST /sessions/init_upload`
+  - Step 4: Success + интерактивные AI tools кнопки вместо автоматического redirect
+- **Smart caching visualization:** показ статуса переиспользования с иконками ♻️ (`reused: {resume: boolean, vacancy: boolean}`)
+- **Переиспользуемый компонент AIToolsList:** preview mode (Dashboard) vs interactive mode (CreateProjectPage) для 4 AI инструментов
+- **Session-based архитектура integration:** полная интеграция с backend `/sessions/init_upload` API через новые методы `apiClient.initSession()`
+- **API Client extensions:** добавлены методы `initSession()` и `getFeatures()` для работы с сессиями и фичами
+- **Роутинг updates:** новые роуты `/project/create` и `/project/:sessionId/tools` (placeholder) в защищенной зоне
+- **TypeScript types:** создание `src/types/api.ts` с типами на базе backend Pydantic моделей (`ResumeInfo`, `VacancyInfo`, `SessionInitResponse`)
+- **Документация:** comprehensive docs для новых компонентов в `docs/architecture/components/frontend/`
+
+## 2025-08-29 — Frontend Tests for Project Creation Wizard
+
+- Добавлены компонент‑интеграционные тесты для `CreateProjectPage` (Vitest + RTL).
+- Покрыты сценарии: happy‑path (HH→Upload→Preview→Success), валидации (PDF/URL), FormData состав (`resume_file`, `vacancy_url`, `reuse_by_hash`), спиннеры шагов 1 и 3.
+- Обработка ошибок HH connect: `409` (optimistic connected + refetch) и `500` (остаёмся на Step 1).
+- Добавлены тесты `AIToolsList` (preview/interactive и onToolClick).
+- Обновлён `frontend/tests/README.md` с практиками: скрытые file inputs через `fireEvent.change`, асинхронные ожидания `findBy*/waitFor`.
+
 ## 2025-08-29 — Frontend Dashboard & HH
 
 - Фронтенд: добавлена `DashboardPage` с отображением статуса HH, быстрыми действиями и ручным обновлением.
