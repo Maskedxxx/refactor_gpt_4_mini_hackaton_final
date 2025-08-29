@@ -46,7 +46,7 @@ Cookie: `sid` (`HttpOnly`, `Secure` — по `AUTH_COOKIE_SECURE`, `SameSite` �
 ### Новые эндпоинты
 
 -   **GET `/auth/hh/status`**: Проверяет, подключен ли HH-аккаунт к текущей сессии пользователя.
-    -   Out: `{ "connected": true, "account_info": { ... } }` или `{ "connected": false }`.
+    -   Out: `{ "is_connected": true, "account_info"?: { ... } }` или `{ "is_connected": false }`.
 -   **GET `/auth/hh/connect`**: Инициирует процесс подключения. Перенаправляет пользователя на сайт HH.ru для авторизации.
 -   **GET `/auth/hh/callback`**: Принимает редирект от HH.ru после успешной авторизации, обменивает `code` на токены и сохраняет их.
 -   **POST `/auth/hh/disconnect`**: Отключает привязанный HH-аккаунт от профиля пользователя.
@@ -89,7 +89,7 @@ GET /me            -> { user: {id, email}, org_id, role }
 
 // HH.ru интеграция через редирект
 GET /auth/hh/connect  -> redirect to HH.ru
-GET /auth/hh/status   -> { connected: boolean }
+GET /auth/hh/status   -> { is_connected: boolean, account_info?: { email?: string, name?: string } }
 ```
 
 ### Session Management

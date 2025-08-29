@@ -1,201 +1,81 @@
-generated_at: "2025-08-24"
-branch: "feat/hh-oauth-user-binding"
-merge_base: "27fc7e699ce5c8583e9d06aae78c902aedda381a"
-commit_range: "27fc7e6..HEAD"
-
 docs:
   - path: "README.md"
-    summary: "Общее описание проекта, запуск (venv/Docker), OAuth2 HH, LLM-фичи, PDF экспорт, примеры вызовов."
-    relates_to:
-      - "src/webapp"
-      - "src/auth"
-      - "src/hh_adapter"
-      - "src/llm_features"
-      - "src/pdf_export"
-    required_updates:
-      - summary: "Удалить ссылки на устаревшие демо-скрипты и заменить на unified_demo; обновить примеры под user_id/org_id и новый HH connect флоу."
-        impacted_commits: ["bdf6ab3", "3ef3651", "cad38b0", "c56d96a", "ffb00df"]
-        details: |
-          - Разделы с "python -m examples.run_hh_auth_flow" и "run_auth_demo" заменить на "examples/unified_demo.py".
-          - Примеры REST с параметром `hr_id` заменить на флоу через cookie-сессию пользователя и эндпоинты Auth: `/auth/hh/status|connect|callback`.
-          - Уточнить, что токены HH больше не управляются WebApp напрямую; контекст берется из `require_hh_connection` (cookie `sid`).
+    summary: "Общее описание проекта, запуск, стек, ключевые фичи."
 
   - path: "AGENTS.md"
-    summary: "Роль и ожидания от агентного помощника, подход к изменениям, как работать с репозиторием."
-    relates_to: ["repo-process", "docs/architecture", "agent_meta"]
-    required_updates: []
+    summary: "Роль агентов, правила работы и изменения в репозитории."
 
   - path: "CLAUDE.md"
-    summary: "Гайд по стилю, contract-first, agent_meta, структура документации, рабочий цикл агента."
-    relates_to: ["repo-process", "agent_meta", "docs/architecture"]
-    required_updates:
-      - summary: "Убедиться, что примеры и упоминания соответствуют новым Auth/H H флоу и user_id/org_id."
-        impacted_commits: ["4aee257", "da7aed5", "c56d96a", "cad38b0"]
-        details: "Документ уже частично обновлен в ветке; проверить согласованность ссылок на /auth/* и контракты при изменении публичных API."
+    summary: "Contract-first, agent_meta, стиль кода и цикл Plan‑Act‑Review."
 
   - path: "GEMINI.md"
-    summary: "Справка/заметки по использованию Gemini/LLM внутри проекта."
-    relates_to: ["dev-notes"]
-    required_updates: []
+    summary: "Заметки по использованию LLM/Gemini в проекте."
 
   - path: "docs/ONBOARDING.md"
-    summary: "Порядок чтения, быстрые команды, где искать входные точки, что является источником правды."
-    relates_to: ["new-contributors", "docs/architecture", "src/webapp", "src/auth", "examples"]
-    required_updates:
-      - summary: "Добавить упоминание о unified_demo и что OAuth флоу теперь в модуле auth."
-        impacted_commits: ["3ef3651", "c56d96a", "ffb00df"]
-        details: "В разделе Entrypoints/Examples кратко сослаться на examples/unified_demo.py; отметить перенос OAuth маршрутов в auth/router.py."
+    summary: "Онбординг: входные точки, порядок чтения, быстрые команды."
 
   - path: "docs/architecture/overview.md"
-    summary: "Высокоуровневый обзор компонентов, их связи и диаграммы последовательностей для OAuth и LLM фич."
-    relates_to: ["src/webapp", "src/auth", "src/hh_adapter", "src/llm_features", "src/pdf_export", "src/callback_server"]
-    required_updates:
-      - summary: "Отразить переход на user_id+org_id и перенос OAuth в auth; убрать дублирующийся пункт WebApp."
-        impacted_commits: ["cad38b0", "c56d96a", "ffb00df"]
-        details: |
-          - Обновить формулировки: управление токенами HH — через Auth/HHAccountService; WebApp использует middleware `require_hh_connection`.
-          - В схемах/тексте заменить `hr_id` на контекст пользователя (cookie-сессия → user_id/org_id).
-          - Исправить дублирование пункта про WebApp в списке компонентов.
+    summary: "Обзор архитектуры и взаимодействий компонентов."
 
   - path: "docs/architecture/changelog.md"
-    summary: "Хронология ключевых архитектурных изменений с пояснениями."
-    relates_to: ["all-modules"]
-    required_updates: []
+    summary: "Хронология ключевых архитектурных изменений."
 
+  # Компоненты
   - path: "docs/architecture/components/auth.md"
-    summary: "Компонент аутентификации приложения: email+пароль, cookie-сессии, организации; теперь также интеграция с HH OAuth."
-    relates_to: ["src/auth", "src/webapp/app.py"]
-    required_updates:
-      - summary: "Добавить раздел о HH OAuth интеграции: роуты, middleware, хранение аккаунтов HH."
-        impacted_commits: ["c56d96a", "fc3b6ea", "2087392"]
-        details: |
-          - Новые эндпоинты: GET `/auth/hh/status`, `/auth/hh/connect`, `/auth/hh/callback`; POST `/auth/hh/disconnect`.
-          - Кратко описать `HHAccountService`, `hh_middleware.require_hh_connection` и изменения в `AuthStorage` (таблица `hh_accounts`, привязка к user_id/org_id).
-          - Убрать ссылку на устаревший пример `examples/run_auth_demo.py`.
+    summary: "Auth: email+пароль, cookie‑сессии, организации, HH OAuth (is_connected)."
 
   - path: "docs/architecture/components/webapp.md"
-    summary: "FastAPI сервис: маршруты LLM-фич, сессии, PDF экспорт; ранее описывал OAuth HH и хранение токенов."
-    relates_to: ["src/webapp", "src/llm_features", "src/pdf_export", "src/auth"]
-    required_updates:
-      - summary: "Удалить/перенести описания OAuth из WebApp в Auth; обновить модели БД и примеры под user_id/org_id."
-        impacted_commits: ["ffb00df", "cad38b0", "c56d96a"]
-        details: |
-          - Удалить разделы про таблицы `tokens` и `oauth_state` (они удалены).
-          - В разделах про сессии заменить `hr_id` на `user_id/org_id`; в диаграммах обновить подписи.
-          - В описании эндпоинтов убрать `hr_id` из query; подчеркнуть зависимость `require_hh_connection`.
-
-  - path: "docs/architecture/components/docker.md"
-    summary: "Инструкции по деплою в Docker/Compose для сценария 'одна школа — один контейнер'."
-    relates_to: ["Dockerfile", "docker-compose.yml", "src/webapp", "src/auth"]
-    required_updates:
-      - summary: "Обновить пользовательский флоу: вместо `hr_id` — логин пользователя + HH connect через /auth/hh/connect; убрать советы по прямому просмотру таблицы tokens."
-        impacted_commits: ["cad38b0", "c56d96a", "ffb00df"]
-        details: |
-          - Примеры URL с `hr_id` заменить на: 1) signup/login 2) `/auth/hh/connect` → `/auth/hh/callback`.
-          - Команду проверки `select hr_id from tokens` удалить или заменить ссылкой на статус `/auth/hh/status`.
+    summary: "WebApp: FastAPI, маршруты, интеграция с сервисами."
 
   - path: "docs/architecture/components/hh_adapter.md"
-    summary: "HH Adapter: генерация auth URL, менеджер токенов, клиент API, DI."
-    relates_to: ["src/hh_adapter", "src/auth"]
-    required_updates:
-      - summary: "Опционально отметить DI улучшения при интеграции с Auth сервисом."
-        impacted_commits: ["2087392"]
-        details: "Кратко указать, что в слое Auth используются инъекции для тестируемости (session/token_manager), публичный контракт hh_adapter без изменений."
-
-  - path: "docs/architecture/components/parsing.md"
-    summary: "Парсинг резюме (LLM) и вакансий (HH JSON) в модели ResumeInfo/VacancyInfo."
-    relates_to: ["src/parsing"]
-    required_updates: []
+    summary: "HH Adapter: обмен токенов и вызовы API HH."
 
   - path: "docs/architecture/components/pdf_export.md"
-    summary: "Система PDF экспорта: форматтеры, шаблоны и сервис печати."
-    relates_to: ["src/pdf_export", "src/llm_features"]
-    required_updates: []
+    summary: "PDF Export: сервис генерации PDF и его API."
 
   - path: "docs/architecture/components/llm_cover_letter.md"
-    summary: "Фича LLM Cover Letter: контракт, модели, промпты, интеграция."
-    relates_to: ["src/llm_cover_letter", "src/llm_features", "src/webapp"]
-    required_updates: []
+    summary: "LLM Cover Letter: генерация сопроводительных писем."
 
   - path: "docs/architecture/components/llm_gap_analyzer.md"
-    summary: "Фича LLM Gap Analyzer: контракт, модели, интеграция, PDF экспорт."
-    relates_to: ["src/llm_gap_analyzer", "src/llm_features", "src/pdf_export", "src/webapp"]
-    required_updates: []
+    summary: "LLM Gap Analyzer: анализ соответствия резюме вакансии."
 
   - path: "docs/architecture/components/llm_interview_checklist.md"
-    summary: "Фича LLM Interview Checklist: контракт, версии, экспорт в PDF."
-    relates_to: ["src/llm_interview_checklist", "src/llm_features", "src/pdf_export", "src/webapp"]
-    required_updates: []
+    summary: "LLM Interview Checklist: чек‑лист подготовки к интервью."
 
   - path: "docs/architecture/components/llm_interview_simulation.md"
-    summary: "Фича LLM Interview Simulation: многораундовая симуляция интервью, опции, PDF."
-    relates_to: ["src/llm_interview_simulation", "src/llm_features", "src/pdf_export", "src/webapp"]
-    required_updates: []
+    summary: "LLM Interview Simulation: симуляция собеседования."
 
-  - path: "docs/architecture/components/webapp_llm_features.md"
-    summary: "Специфика универсального API LLM-фич: версионирование, маппинг options, примеры."
-    relates_to: ["src/webapp/features.py", "src/llm_features"]
-    required_updates: []
+  - path: "docs/architecture/components/parsing.md"
+    summary: "Parsing: извлечение и нормализация данных."
 
   - path: "docs/architecture/components/callback_server.md"
-    summary: "Временный локальный сервер для приёма OAuth2 callback (демо)."
-    relates_to: ["src/callback_server"]
-    required_updates: []
+    summary: "Callback Server: локальный OAuth2 callback (демо)."
 
-  - path: "src/llm_features/README.md"
-    summary: "Архитектура фреймворка LLM-фич: реестр, базовые классы, API-интеграция."
-    relates_to: ["src/llm_features", "src/webapp/features.py"]
-    required_updates: []
+  - path: "docs/architecture/components/webapp_llm_features.md"
+    summary: "WebApp LLM Features: унификация опций, версияция, маршруты."
 
-  - path: "src/llm_cover_letter/prompts/README.md"
-    summary: "Правила и структура промптов для cover_letter; примеры."
-    relates_to: ["src/llm_cover_letter/prompts"]
-    required_updates: []
+  - path: "docs/architecture/components/cli.md"
+    summary: "CLI: сценарии и команды." 
 
-  - path: "tests/README.md"
-    summary: "Обзор тестовой структуры, как запускать, что валидируется; перечень модульных/интеграционных тестов."
-    relates_to: ["tests", "src/webapp", "src/auth", "src/pdf_export", "src/llm_features", "src/hh_adapter"]
-    required_updates:
-      - summary: "Синхронизировать описание с актуальным набором тестов после удаления legacy webapp тестов и добавления auth тестов."
-        impacted_commits: ["57cef05", "bdf6ab3", "2087392"]
-        details: |
-          - Удалены: tests/webapp/test_webapp_auth_and_storage.py, test_webapp_vacancies_concurrency.py.
-          - Добавлены: tests/auth/test_hh_account_service.py, tests/auth/test_hh_oauth_integration.py, tests/auth/test_oauth_states_storage.py.
-          - Обновить разделы и примеры запуска.
+  - path: "docs/architecture/components/docker.md"
+    summary: "Docker: контейнеризация и локальный запуск."
 
-  - path: "tests/webapp/README.md"
-    summary: "Описание интеграционных тестов WebApp (устарело в части OAuth)."
-    relates_to: ["tests/webapp", "src/webapp", "src/auth"]
-    required_updates:
-      - summary: "Удалить разделы про /auth/hh/start и /callback в WebApp; перенести упоминания в раздел про Auth."
-        impacted_commits: ["ffb00df", "c56d96a", "57cef05"]
-        details: "Обновить цели тестов: WebApp фокусируется на /sessions, /features, /pdf; OAuth покрывается в tests/auth/*."
+  # Frontend (высокоуровневый и детализация)
+  - path: "docs/architecture/components/frontend.md"
+    summary: "Frontend: маршрутизация, ProtectedRoute, Layout, интеграции Auth/HH."
 
-  - path: ".claude/prompts/REVIEWER_PROMPT.md"
-    summary: "Промпт для ревьюера: критерии, на что смотреть при проверке PR/изменений."
-    relates_to: ["repo-process", "code-review"]
-    required_updates:
-      - summary: "Проверить согласованность с обновлённой практикой agent_meta и переносом OAuth."
-        impacted_commits: ["4aee257", "da7aed5", "c56d96a"]
-        details: "Добавить напоминание проверять обновление блоков agent_meta при изменении роутов /auth/* и сессионной модели."
+  - path: "docs/architecture/components/frontend/pages/auth-page.md"
+    summary: "AuthPage: табы вход/регистрация, редирект на /dashboard."
 
-  - path: ".claude/reviews/2025-07-24_hh_adapter_review.md"
-    summary: "Ревью по hh_adapter: замечания и рекомендации."
-    relates_to: ["reviews", "src/hh_adapter"]
-    required_updates: []
+  - path: "docs/architecture/components/frontend/pages/dashboard-page.md"
+    summary: "Dashboard: статус HH (is_connected), быстрые действия и ссылки."
 
-  - path: ".claude/reviews/2025-07-24_hh_adapter_follow_up_review.md"
-    summary: "Follow-up ревью hh_adapter: ответы и доработки."
-    relates_to: ["reviews", "src/hh_adapter"]
-    required_updates: []
+  - path: "docs/architecture/components/frontend/pages/protected-route.md"
+    summary: "ProtectedRoute: проверка /me, редирект на /auth, Layout."
 
-  - path: ".claude/reviews/2025-07-25_hh_adapter_final_review.md"
-    summary: "Финальное ревью hh_adapter: фиксация решений."
-    relates_to: ["reviews", "src/hh_adapter"]
-    required_updates: []
+  - path: "docs/architecture/components/frontend/components/layout.md"
+    summary: "Layout: шапка, навигация, меню пользователя, logout."
 
-  - path: ".pytest_cache/README.md"
-    summary: "Автоматически сгенерированный pytest cache README (не часть проектной документации)."
-    relates_to: ["pytest-internals"]
-    required_updates: []
+  - path: "docs/architecture/components/frontend/services/api-client.md"
+    summary: "ApiClient: axios с cookie‑сессиями, 401 перехватчик, HH status (is_connected)."
 
