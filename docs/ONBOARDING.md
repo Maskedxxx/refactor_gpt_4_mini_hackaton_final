@@ -28,13 +28,25 @@
 - Поведение «в коде»: `tests/` (юнит и интеграционные), `examples/` (скрипты‑песочницы).
 - Frontend: `docs/architecture/components/frontend.md` (+ дочерние страницы), код `frontend/src`, тесты `frontend/tests`.
 
+## Quick Index
+
+- `src/` — основной код backend: `auth/`, `webapp/`, `hh_adapter/`, `llm_*`, `pdf_export/`, `parsing/`, `callback_server/`.
+- `frontend/` — React SPA (Vite, TS), маршрутизация и страницы.
+- `docs/` — документация (architecture, helpers, onboarding).
+- `tests/` — pytest (юнит/интеграция); `frontend/tests/` — Vitest.
+- `examples/` — демонстрационные скрипты и сценарии.
+- `.claude/` — prompts, reviews, настройки для AI‑агентов.
+
 ## Repo Handles (быстрые команды)
 
 - Найти входные точки (CLI/сервер):
   - `rg -n "if __name__ == '__main__'|uvicorn|gunicorn|click\.command|Typer\(|FastAPI\(|flask\.|@app\.route" -S`
+  - Fallback: `grep -REn "__main__|uvicorn|gunicorn|click\\.command|Typer\\(|FastAPI\\(|flask\\.|@app\\.route" src examples`
   - Фактические entrypoints в репозитории: `main.py`, `src/webapp/__main__.py`, `src/callback_server/__main__.py`, `src/hh_adapter/__main__.py`.
 - Найти компоненты/слои: `rg -n "usecase|service|repository|gateway|adapter|controller|handler" -S src`
+  - Fallback: `grep -REn "usecase|service|repository|gateway|adapter|controller|handler" src`
 - Конфиг/секреты: `rg -n "(settings|config|.env|dotenv)" -S`
+  - Fallback: `grep -REn "(settings|config|\\.env|dotenv)" .`
 - Документация компонентов: `ls -1 docs/architecture/components`
 - Запуск контейнеров: cм. `Dockerfile`, `docker-compose.yml` (детали — в README).
 - Frontend:
@@ -68,6 +80,14 @@
   - Тесты: `frontend/tests` (Vitest + RTL, jsdom).
   - Документация: `docs/architecture/components/frontend.md` + подразделы (`pages/`, `components/`, `services/`).
   - Запуск: `cd frontend && npm install && npm run dev`.
+
+## Task Navigator
+
+- Новая фронтенд‑страница: `frontend/src/pages/*`, маршрут — `frontend/src/App.tsx`; документация — `docs/architecture/components/frontend/pages/*`.
+- Новая LLM‑фича: см. `docs/architecture/components/webapp_llm_features.md`; код — `src/llm_<feature>/`, регистрация в `FeatureRegistry`, маршруты в `src/webapp`.
+- PDF Export изменения: `src/pdf_export/`, документация — `docs/architecture/components/pdf_export.md`, маршруты `/features/{name}/export/pdf`.
+- Изменения Auth/HH: `src/auth/*` (в т.ч. `router.py`, `hh_service.py`), документация — `docs/architecture/components/auth.md`; статус контракта — `is_connected`.
+- CLI команда: `src/cli/*`, документация — `docs/architecture/components/cli.md`.
 
 ## Local Run
 
