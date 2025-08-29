@@ -13,7 +13,8 @@ tests/
 │       ├── LoginForm.test.tsx  # Тесты формы входа
 │       └── SignupForm.test.tsx # Тесты формы регистрации
 ├── pages/
-│   └── AuthPage.test.tsx      # Тесты страницы авторизации
+│   ├── AuthPage.test.tsx      # Тесты страницы авторизации
+│   └── CreateProjectPage.test.tsx  # Тесты мастера создания проекта
 └── README.md                  # Этот файл
 ```
 
@@ -65,6 +66,20 @@ tests/
 - ✅ Обработка `409 HH_ALREADY_CONNECTED` при `connectToHH` (мгновенный перевод UI в "подключен" + фоновое обновление)
 - ✅ Наличие ключевых ссылок: `/project/create`, `/projects`, `/profile`
 
+### CreateProjectPage (`pages/CreateProjectPage.test.tsx`)
+- ✅ Happy‑path: HH connected → Upload (PDF + URL) → Preview → initSession → Success + AI tools
+- ✅ Disconnected + 409: `connectToHH` возвращает 409 → мгновенно считаем подключённым, затем фоновой рефетч
+- ✅ Ошибка подключения HH (не 409): остаёмся на Step 1, UI стабилен
+- ✅ Валидации: не‑PDF файл, inline валидатор URL, доступность кнопки перехода
+- ✅ FormData: `resume_file` (File name/type), `vacancy_url`, `reuse_by_hash='true'`
+- ✅ Спиннеры: Step 1 (пока грузится статус), Step 3 (пока идёт initSession)
+
+Notes:
+- Для скрытого file input используем `fireEvent.change(input, { target: { files: [file] } })`.
+- Для негативного кейса (не‑PDF) допустим `user.upload(..., { applyAccept: false })`, но предпочтительнее `fireEvent.change`.
+- Для проверки успеха шага 4 надёжнее ждать доменные данные ответа (`resume.title`, `vacancy.name`), а не декоративные заголовки с emoji.
+- После изменения формы повторно получайте элементы и используйте `findBy*`/`waitFor` для асинхронных состояний.
+
 ## Запуск тестов
 
 ```bash
@@ -82,6 +97,9 @@ npm run test:coverage
 
 # Запуск одного файла
 npm run test:run -- tests/pages/DashboardPage.test.tsx
+
+# Мастер создания проекта
+npm run test:run -- tests/pages/CreateProjectPage.test.tsx
 
 # Запуск одного теста по имени
 npm run test:run -- tests/pages/DashboardPage.test.tsx -t "manual refresh"
@@ -101,6 +119,10 @@ npm run test:run -- tests/pages/DashboardPage.test.tsx -t "manual refresh"
 3. **Error scenarios** — обязательное покрытие error handling
 4. **Loading states** — тестирование состояний загрузки
 5. **Form validation** — полное покрытие валидации форм
+
+### Специфика file input и асинхронности
+- Скрытые inputs: `fireEvent.change` надёжнее `userEvent.upload`.
+- `findBy*` и `waitFor`: используйте для появления/исчезновения текстов ошибок и смены disabled.
 
 ### Устойчивость тестов (guidelines)
 - По возможности используйте `role`/`label` вместо точных текстов.

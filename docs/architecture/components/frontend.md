@@ -100,3 +100,8 @@ Comprehensive тестовое покрытие с Vitest + React Testing Librar
 ```bash
 npm run test       # запуск тестов
 ```
+
+Покрытие включает:
+- `DashboardPage`: HH status (loading/connected/disconnected), refresh, 409 handling
+- `CreateProjectPage`: 4‑шаговый wizard, валидации, FormData, спиннеры, ошибки HH connect
+- `AIToolsList`: preview/interactive и onToolClick

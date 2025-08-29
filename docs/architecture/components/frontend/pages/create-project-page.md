@@ -140,3 +140,18 @@ graph TB
 - **AI Tools Component**: `frontend/src/components/ai/AIToolsList.tsx`
 - **API Integration**: `frontend/src/lib/api.ts` (initSession method)
 - **Types**: `frontend/src/types/api.ts`
+
+## Testing Notes
+
+- Компонент‑интеграционные тесты находятся в `frontend/tests/pages/CreateProjectPage.test.tsx`.
+- Основные сценарии:
+  - Happy‑path: HH connected → Upload (PDF + URL) → Preview → initSession → Success + AI tools
+  - Ошибки HH connect: `409` (optimistic connected) и `500` (остаёмся на Step 1)
+  - Валидации: не‑PDF файл (inline ошибка), URL (inline "Корректный URL"), доступность кнопок
+  - FormData: `resume_file`, `vacancy_url`, `reuse_by_hash='true'`
+  - Спиннеры: Step 1 (загрузка статуса), Step 3 (создание)
+
+Практики тестирования:
+- Для скрытого input `#resume-upload` используйте `fireEvent.change(input, { target: { files: [file] } })`.
+- Для проверки шага 4 надёжнее ждать доменные данные ответа (`resume.title`, `vacancy.name`) вместо заголовка с emoji.
+- После изменения полей формы повторно получайте элементы и используйте `findBy*`/`waitFor`.

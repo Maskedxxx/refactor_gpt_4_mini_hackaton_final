@@ -21,6 +21,14 @@
 - **TypeScript types:** создание `src/types/api.ts` с типами на базе backend Pydantic моделей (`ResumeInfo`, `VacancyInfo`, `SessionInitResponse`)
 - **Документация:** comprehensive docs для новых компонентов в `docs/architecture/components/frontend/`
 
+## 2025-08-29 — Frontend Tests for Project Creation Wizard
+
+- Добавлены компонент‑интеграционные тесты для `CreateProjectPage` (Vitest + RTL).
+- Покрыты сценарии: happy‑path (HH→Upload→Preview→Success), валидации (PDF/URL), FormData состав (`resume_file`, `vacancy_url`, `reuse_by_hash`), спиннеры шагов 1 и 3.
+- Обработка ошибок HH connect: `409` (optimistic connected + refetch) и `500` (остаёмся на Step 1).
+- Добавлены тесты `AIToolsList` (preview/interactive и onToolClick).
+- Обновлён `frontend/tests/README.md` с практиками: скрытые file inputs через `fireEvent.change`, асинхронные ожидания `findBy*/waitFor`.
+
 ## 2025-08-29 — Frontend Dashboard & HH
 
 - Фронтенд: добавлена `DashboardPage` с отображением статуса HH, быстрыми действиями и ручным обновлением.

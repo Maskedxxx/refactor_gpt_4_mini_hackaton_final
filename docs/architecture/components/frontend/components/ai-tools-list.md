@@ -170,3 +170,9 @@ useEffect(() => {
 - **Компонент**: `frontend/src/components/ai/AIToolsList.tsx`
 - **Usage Dashboard**: `frontend/src/pages/DashboardPage.tsx:185`
 - **Usage CreateProject**: `frontend/src/pages/CreateProjectPage.tsx:490-495`
+
+## Testing
+
+- См. `frontend/tests/components/ai/AIToolsList.test.tsx`:
+  - Preview mode: рендер 4 карточек без кликов
+  - Interactive mode: клик по кнопке вызывает `onToolClick(toolId)`
