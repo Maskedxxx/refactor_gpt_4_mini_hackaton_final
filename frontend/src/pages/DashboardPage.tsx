@@ -18,13 +18,10 @@ import {
   FolderOpen, 
   CheckCircle, 
   AlertTriangle,
-  ExternalLink,
-  FileText,
-  BarChart3,
-  ClipboardList,
-  Users
+  ExternalLink
 } from 'lucide-react'
 import { apiClient } from '../lib/api'
+import { AIToolsList } from '../components/ai/AIToolsList'
 
 interface HHStatus {
   is_connected: boolean
@@ -185,47 +182,7 @@ const DashboardPage = () => {
               🤖 Доступные AI инструменты
             </h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-start p-4 border border-gray-200 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-gray-900">Cover Letter</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Генерация персонализированных сопроводительных писем
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start p-4 border border-gray-200 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-gray-900">Gap Analyzer</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Анализ соответствия резюме вакансии
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start p-4 border border-gray-200 rounded-lg">
-                <ClipboardList className="w-6 h-6 text-purple-600 mt-1 flex-shrink-0" />
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-gray-900">Interview Checklist</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Подготовка к собеседованию
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start p-4 border border-gray-200 rounded-lg">
-                <Users className="w-6 h-6 text-orange-600 mt-1 flex-shrink-0" />
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-gray-900">Interview Simulation</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Симуляция собеседования
-                  </p>
-                </div>
-              </div>
-            </div>
+            <AIToolsList showAsButtons={false} />
           </div>
         </div>
 

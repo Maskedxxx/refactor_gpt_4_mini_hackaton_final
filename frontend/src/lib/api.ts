@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance } from 'axios';
 import type { LoginRequest, SignupRequest, AuthResponse, User, ApiError } from '../types/auth';
+import type { SessionInitResponse, FeatureListResponse } from '../types/api';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -98,6 +99,30 @@ class ApiClient {
     }
   }
 
+
+  // Инициация сессии с загрузкой документов
+  async initSession(formData: FormData): Promise<SessionInitResponse> {
+    try {
+      const response = await this.client.post<SessionInitResponse>('/sessions/init_upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Получение списка доступных AI фич
+  async getFeatures(): Promise<FeatureListResponse> {
+    try {
+      const response = await this.client.get<FeatureListResponse>('/features/');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
 
   // Проверка готовности API
   async checkHealth(): Promise<boolean> {
