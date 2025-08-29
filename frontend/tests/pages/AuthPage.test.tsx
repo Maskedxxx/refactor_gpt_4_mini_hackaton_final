@@ -1,6 +1,6 @@
 // frontend/tests/pages/AuthPage.test.tsx
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AuthPage } from '../../src/pages/AuthPage'
 import * as api from '../../src/lib/api'
@@ -13,11 +13,22 @@ vi.mock('../../src/lib/api', () => ({
   }
 }))
 
+// Mock useNavigate to avoid Router context and to assert redirects
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
 describe('AuthPage', () => {
   const mockApiClient = vi.mocked(api.apiClient)
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockNavigate.mockReset()
   })
 
   it('should render with login form by default', () => {
@@ -57,13 +68,9 @@ describe('AuthPage', () => {
     expect(screen.getByRole('button', { name: 'Войти' })).toBeInTheDocument()
   })
 
-  it('should show success message after successful login', async () => {
+  it('should navigate to /dashboard after successful login', async () => {
     const user = userEvent.setup()
-    const mockResponse = {
-      user: { id: 1, email: 'test@example.com' },
-      message: 'Успешный вход'
-    }
-    mockApiClient.login.mockResolvedValue(mockResponse)
+    mockApiClient.login.mockResolvedValue({ user: { id: 1 }, message: 'ok' } as any)
 
     render(<AuthPage />)
 
@@ -76,21 +83,14 @@ describe('AuthPage', () => {
     await user.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText('✅ Успешно!')).toBeInTheDocument()
-      expect(screen.getByText('Вы успешно вошли в систему.')).toBeInTheDocument()
+      expect(mockApiClient.login).toHaveBeenCalled()
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
     })
-
-    // Form should be hidden
-    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument()
   })
 
-  it('should show success message after successful signup', async () => {
+  it('should navigate to /dashboard after successful signup', async () => {
     const user = userEvent.setup()
-    const mockResponse = {
-      user: { id: 1, email: 'test@example.com', org_name: 'Test Org' },
-      message: 'Пользователь создан'
-    }
-    mockApiClient.signup.mockResolvedValue(mockResponse)
+    mockApiClient.signup.mockResolvedValue({ user: { id: 1 }, message: 'created' } as any)
 
     render(<AuthPage />)
 
@@ -108,21 +108,14 @@ describe('AuthPage', () => {
     await user.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText('✅ Успешно!')).toBeInTheDocument()
-      expect(screen.getByText('Аккаунт создан и вы авторизованы.')).toBeInTheDocument()
+      expect(mockApiClient.signup).toHaveBeenCalled()
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
     })
-
-    // Form should be hidden
-    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument()
   })
 
-  it('should maintain form mode in success message', async () => {
+  it('should keep active tab styling before redirect on login', async () => {
     const user = userEvent.setup()
-    const mockResponse = {
-      user: { id: 1, email: 'test@example.com' },
-      message: 'Успешный вход'
-    }
-    mockApiClient.login.mockResolvedValue(mockResponse)
+    mockApiClient.login.mockResolvedValue({ user: { id: 1 } } as any)
 
     render(<AuthPage />)
 
@@ -138,7 +131,7 @@ describe('AuthPage', () => {
     await user.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText('Вы успешно вошли в систему.')).toBeInTheDocument()
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
     })
   })
 

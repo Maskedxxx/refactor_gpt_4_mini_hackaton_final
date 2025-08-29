@@ -1,5 +1,15 @@
 # Changelog
 
+## 2025-08-29 — Frontend Dashboard & HH
+
+- Фронтенд: добавлена `DashboardPage` с отображением статуса HH, быстрыми действиями и ручным обновлением.
+- Роутинг: `ProtectedRoute`, переход на `/dashboard`, обновлён layout.
+- Интеграция HH: контракт статуса `is_connected`; обработка `409 HH_ALREADY_CONNECTED` при connect.
+- Auth: формы `LoginForm`/`SignupForm` очищают ошибки при вводе; `AuthPage` редиректит на `/dashboard` после успеха.
+- Клиент: `ApiClient` — методы статуса/подключения HH, корректировки interceptor’а.
+- Тесты: базовые тесты `DashboardPage`; обновлены тесты `AuthPage`; дополнён `frontend/tests/README.md`.
+- Документация: обновлены гайды по тестам фронтенда, смена `connected` → `is_connected`, консолидация `docs_map`, апдейт `ONBOARDING.md`.
+
 ## 2025-08-28 — Frontend Authentication Module & Test Infrastructure
 
 - **Новый компонент Frontend (`frontend/`):**

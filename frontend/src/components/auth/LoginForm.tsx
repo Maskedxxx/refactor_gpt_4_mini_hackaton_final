@@ -50,6 +50,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    // Очистка сообщения об ошибке при новом вводе
+    if (error) {
+      setError(null);
+    }
     setFormData(prev => ({
       ...prev,
       [name]: value,

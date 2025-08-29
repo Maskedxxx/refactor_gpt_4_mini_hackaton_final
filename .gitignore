@@ -26,6 +26,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 .hh_cli_cookies.json
+frontend/.vite/
 
 # PyInstaller
 #  Usually these files are created by PyInstaller. More info: https://pyinstaller.readthedocs.io/en/stable/spec-files.html

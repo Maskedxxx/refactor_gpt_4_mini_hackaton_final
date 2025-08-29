@@ -69,7 +69,7 @@ class ApiClient {
   }
 
   // Проверка статуса подключения HH.ru
-  async getHHStatus(): Promise<{ connected: boolean }> {
+  async getHHStatus(): Promise<{ is_connected: boolean; expires_in_seconds?: number; connected_at?: number }> {
     try {
       const response = await this.client.get('/auth/hh/status');
       return response.data;
@@ -79,9 +79,25 @@ class ApiClient {
   }
 
   // Инициация подключения к HH.ru (redirect)
-  connectToHH(): void {
-    window.location.href = `${this.client.defaults.baseURL}/auth/hh/connect`;
+  async connectToHH(): Promise<void> {
+    try {
+      const response = await this.client.get('/auth/hh/connect');
+      // Если backend вернул JSON с auth_url, делаем redirect
+      if (response.data && response.data.auth_url) {
+        window.location.href = response.data.auth_url;
+      }
+    } catch (error: any) {
+      console.error('HH connect error:', error);
+      
+      // Если 409 Conflict - аккаунт уже подключен
+      if (error.response?.status === 409) {
+        throw error; // Пробрасываем оригинальную ошибку с кодом
+      }
+      
+      throw new Error('Не удалось подключиться к HH.ru');
+    }
   }
+
 
   // Проверка готовности API
   async checkHealth(): Promise<boolean> {

@@ -13,7 +13,8 @@
 
 1) `README.md` — что это за проект, варианты запуска (venv/Docker), переменные окружения.
 2) `docs/architecture/overview.md` — высокоуровневая схема и компоненты.
-3) `docs/architecture/components/*.md` — детали конкретного модуля/сервиса (имя файла соответствует модулю, например `llm_gap_analyzer.md`).
+3) `docs/helpers/docs_map.yaml` — быстрая карта документации (пути и краткие описания).
+4) `docs/architecture/components/*.md` — детали конкретного модуля/сервиса (имя файла соответствует модулю, например `llm_gap_analyzer.md`).
 4) `docs/architecture/changelog.md` — последние ключевые изменения (если планируете правки — добавляйте запись).
 5) Код целевого модуля — начните с файлов в `src/<module>/` и `agent_meta` (см. ниже).
 6) Для демонстрации сценариев — `examples/` (скрипты генерации и проверки отдельных фич).
@@ -24,7 +25,8 @@
 
 - Архитектура: `docs/architecture/overview.md`, `docs/architecture/components/*.md`.
 - Изменения: `docs/architecture/changelog.md`.
-- Поведение «в коде»: `tests/` (юнит и интеграционные), `examples/` (скрипты-песочницы).
+- Поведение «в коде»: `tests/` (юнит и интеграционные), `examples/` (скрипты‑песочницы).
+- Frontend: `docs/architecture/components/frontend.md` (+ дочерние страницы), код `frontend/src`, тесты `frontend/tests`.
 
 ## Repo Handles (быстрые команды)
 
@@ -35,6 +37,10 @@
 - Конфиг/секреты: `rg -n "(settings|config|.env|dotenv)" -S`
 - Документация компонентов: `ls -1 docs/architecture/components`
 - Запуск контейнеров: cм. `Dockerfile`, `docker-compose.yml` (детали — в README).
+- Frontend:
+  - Список страниц/сервисов фронта: `ls -1 docs/architecture/components/frontend/{pages,services,components}`
+  - Быстрый старт dev‑сервера: `cd frontend && npm run dev`
+  - Запуск фронтовых тестов: `cd frontend && npm run test:run`
 
 ## Components Map (из docs/architecture/components)
 
@@ -45,6 +51,7 @@
 - `llm_*` — фичи LLM: cover_letter, gap_analyzer, interview_checklist, interview_simulation.
 - `parsing` — парсинг резюме/вакансий и подсистема LLM-промптов для парсинга.
 - `pdf_export` — HTML-шаблоны и CSS-стили для PDF-отчетов, форматтеры и сервис печати.
+- `frontend` — React+TypeScript приложение (Vite): страницы `AuthPage`, `DashboardPage`, защищённый роут `ProtectedRoute`, `Layout`, клиент `ApiClient`.
 
 Кодовая структура соответствует этим компонентам в `src/` (папки `src/<component>`).
 
@@ -56,17 +63,27 @@
 - Адаптер HH: `src/hh_adapter/` — OAuth2, управление токенами, клиент HH.
 - Callback: `src/callback_server/` — локальный обработчик кода авторизации (используется в `unified_demo`).
 - PDF: `src/pdf_export/` — шаблоны, стили, форматтеры и сервис печати.
+- Frontend (SPA):
+  - Код: `frontend/src` (вход — `frontend/src/main.tsx`, маршрутизация — `frontend/src/App.tsx`).
+  - Тесты: `frontend/tests` (Vitest + RTL, jsdom).
+  - Документация: `docs/architecture/components/frontend.md` + подразделы (`pages/`, `components/`, `services/`).
+  - Запуск: `cd frontend && npm install && npm run dev`.
 
 ## Local Run
 
 - Установка зависимостей: `pip install -r requirements.txt` (см. `README.md` для venv и переменных окружения).
 - Docker/Compose: см. `Dockerfile`, `docker-compose.yml` и раздел запуска в `README.md`.
+- Frontend: `cd frontend && npm install && npm run dev` (Vite dev server).
 
 ## Tests
 
 - Тесты находятся в `tests/` (юнит и интеграционные):
   - покрывают `callback_server`, `hh_adapter`, `parsing`, `pdf_export`, `webapp`, а также интеграцию `llm_features`.
 - Запуск: `pytest -q` (или вариант из `README.md`).
+- Frontend‑тесты: `frontend/tests` — Vitest + RTL.
+  - Запуск разово: `cd frontend && npm run test:run`
+  - Watch/UI: `npm test` / `npm run test:ui`
+  - Точечный файл: `npm run test:run -- tests/pages/DashboardPage.test.tsx`
 
 ## agent_meta в исходниках
 
