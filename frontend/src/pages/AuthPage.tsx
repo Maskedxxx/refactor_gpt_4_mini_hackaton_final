@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/auth/LoginForm';
 import { SignupForm } from '../components/auth/SignupForm';
 
@@ -6,11 +7,11 @@ type AuthMode = 'login' | 'signup';
 
 export const AuthPage: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>('login');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   const handleAuthSuccess = () => {
-    // Временно показываем сообщение об успехе
-    setIsAuthenticated(true);
+    // Перенаправляем на Dashboard после успешной авторизации
+    navigate('/dashboard');
   };
 
   return (
@@ -51,32 +52,10 @@ export const AuthPage: React.FC = () => {
 
         {/* Формы */}
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {isAuthenticated ? (
-            <div className="text-center space-y-4">
-              <div className="text-green-600 text-lg font-semibold">
-                ✅ Успешно!
-              </div>
-              <p className="text-gray-600">
-                {mode === 'signup' ? 'Аккаунт создан и вы авторизованы.' : 'Вы успешно вошли в систему.'}
-              </p>
-              <p className="text-sm text-gray-500">
-                Dashboard будет добавлен в следующей итерации.
-              </p>
-              <button 
-                onClick={() => setIsAuthenticated(false)}
-                className="text-indigo-600 hover:text-indigo-500 text-sm"
-              >
-                ← Вернуться к форме
-              </button>
-            </div>
+          {mode === 'login' ? (
+            <LoginForm onSuccess={handleAuthSuccess} />
           ) : (
-            <>
-              {mode === 'login' ? (
-                <LoginForm onSuccess={handleAuthSuccess} />
-              ) : (
-                <SignupForm onSuccess={handleAuthSuccess} />
-              )}
-            </>
+            <SignupForm onSuccess={handleAuthSuccess} />
           )}
         </div>
 
